@@ -5,7 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#2F5D50">
 <title>리드나우 2 (시범)</title>
-<link rel="manifest" href="m/ui2.webmanifest">
+<link rel="manifest" href="m/ui2.webmanifest" id="u2-manifest">
+<script>/* 📱 페이지마다 휴대폰 앱으로 설치(N22 ★): ?p=페이지 → m/페이지.webmanifest(아이콘·색 · 시작 화면 = 그 페이지) — 기본 페이지만(새로 만든 페이지는 공용 설치 파일) */
+(function () { try { var K = ['home', 'search', 'products', 'sellers', 'orders', 'purchase', 'biz', 'market', 'projects', 'settings', 'inbox', 'pending']; var p = new URLSearchParams(location.search).get('p'); if (p && K.indexOf(p) >= 0) document.getElementById('u2-manifest').href = 'm/' + p + '.webmanifest'; } catch (e) {} })();</script>
 <link rel="stylesheet" href="src/u2.css">
 <!-- 리드나우 2 — 꾸밈 웹앱 시범. 지금 웹앱(U2_BASE)을 그대로 불러와 그 위에 격자·편집기를 얹음. 지금 웹앱 파일은 하나도 바꾸지 않음 -->
 <script src="u2-config.js"></script>

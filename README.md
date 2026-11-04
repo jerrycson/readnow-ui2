@@ -39,7 +39,7 @@
 | `src/u2-catalog.js` | 위젯 목록을 지금 웹앱에서 실행 중에 뽑음(탭·섹션·홈 칸·화면·기능 찾기) · 분류 12 · ≈MB · 🆕 · 메모리 예산 |
 | `src/u2-adapters.js` | 섹션 위젯(T2 — 같은 탭은 한 번 그려 나눠 줌) · 계약 검사 |
 | `u2-contract.json` | 새 웹앱이 기대는 옛 함수·값·화면 id(계약 목록) |
-| `src/u2-widgets.js` | 기본 UI 위젯 53종 + 리드나우 기능 위젯 5종 |
+| `src/u2-widgets.js` | 기본 UI 위젯 58종(계산 카드·질의·저장한 보기·📥 할 일·🔎 스캔 검수 포함) + 리드나우 기능 위젯 6종(탭·섹션·머리줄·홈 칸·화면·기능) |
 | `src/u2-theme.js` | 색 토큰·밝음/어두움/높은 대비·모양·무늬 6·글꼴·아이콘 |
 | `src/u2-shell.js` | 머리줄·페이지·주소 길·메뉴·쓰기 허락·견본·내보내기/가져오기 |
 | `src/u2.css` | 모양(모두 `.u2-` 머리) |
@@ -66,6 +66,7 @@ NODE_PATH=... node tests/t_actions.js    # 단계 5 행동·자료
 NODE_PATH=... node tests/t_adapters.js   # 단계 6 어댑터·자동 목록
 NODE_PATH=... node tests/t_track.js      # 단계 7 따라잡기(RN_REPO=지금 웹앱 저장소)
 NODE_PATH=... node tests/t_default.js    # 단계 8 기본 배치(지금 웹앱과 같은가)·견본·📥 할 일
+NODE_PATH=... node tests/t_new.js        # 단계 9 설치 아이콘·내보내기/가져오기·스캔 검수
 ```
 - 인터넷의 지금 웹앱은 받지 않습니다 — `U2_BASE`로 가는 요청을 기기 안 배포본 사본(`U2_TEST_OUT`, 기본 `/home/user/w/out`)에서 돌려줍니다.
 - Firebase는 가짜(`tests/fbstub2.js`)입니다.

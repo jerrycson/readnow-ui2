@@ -190,3 +190,4 @@ body.u2-editing .u2-page { margin-left: 260px; margin-right: 300px; padding-bott
 .u2-inbox { display: flex; flex-direction: column; gap: 4px; } .u2-ibh { font-weight: 700; margin-bottom: 4px; } .u2-ibh b { font-size: 22px; margin-left: 6px; }
 .u2-ibr { display: grid; grid-template-columns: 28px 1fr auto auto; gap: 8px; align-items: center; padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px; }
 .u2-ibr.u2-ibon { border-left: 4px solid var(--red); background: var(--redSoft); } .u2-ibr b { font-size: 16px; } .u2-ibn { min-width: 0; overflow-wrap: anywhere; }
+.u2-scanmsg { margin: 6px 0; padding: 8px; border-radius: 8px; background: var(--soft); font-weight: 700; } .u2-scanmsg.u2-ok { background: var(--soft); color: var(--cloth); } .u2-scanmsg.u2-bad { background: var(--redSoft); color: var(--red); } .u2-scanv { width: 100%; max-height: 40vh; border-radius: 8px; }

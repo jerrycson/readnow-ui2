@@ -171,6 +171,26 @@
       b.querySelectorAll('[data-i]').forEach((x) => (x.onclick = () => { if (ctx.edit) return; const r = rows[+x.dataset.i]; U2.actions.run(U2.actions.parseSeq(r.ac), ctx); }));
       return { dyn: true }; } });
 
+  /* ═══ 🔎 스캔 검수(N8 ①) — 바코드(블루투스 스캐너는 글 칸에 치고 Enter · 휴대폰은 카메라 BarcodeDetector)로 '맞는 책인지' 대조 · 읽기만(자료를 바꾸지 않음) ═══ */
+  W.def('scan', { name: '스캔 검수', group: '입력', icon: '🔎', w: 8, h: 12, props: [{ k: 'list', label: '맞아야 할 것(줄마다: 바코드·SKU | 이름)', type: 'area', def: '9788900000001 | 시험 책 하나\n9788900000002 | 시험 책 둘' }, { k: 'var', label: '또는 변수(줄 목록)에서', type: 'text', def: '' }, { k: 'sound', label: '소리', type: 'check', def: true }],
+    render(b, p, ctx) {
+      const exp = () => { const src = p.var && U2.vars[p.var] ? String(U2.vars[p.var]) : p.list; return lines(src).map((l) => { const [c, n] = l.split('|').map((x) => (x || '').trim()); return { c: c.replace(/[^0-9A-Za-z-]/g, ''), n: n || '' }; }).filter((x) => x.c); };
+      const done = new Set(U2.ls.get('scan-' + ctx.wid, []) || []);
+      const beep = (ok0) => { if (!p.sound) return; try { const A = new (window.AudioContext || window.webkitAudioContext)(); const o = A.createOscillator(); o.frequency.value = ok0 ? 880 : 220; o.connect(A.destination); o.start(); o.stop(A.currentTime + (ok0 ? 0.08 : 0.3)); } catch (e) {} };
+      const draw = (msg, tone) => { const L = exp(); b.innerHTML = `<div class="u2-scan"><div class="u2-row"><input class="u2-in" style="flex:1" inputmode="numeric" placeholder="바코드를 찍거나 쳐서 Enter" aria-label="바코드"><button type="button" class="u2-btn" data-cam>📷 카메라</button></div>
+        <div class="u2-scanmsg ${tone || ''}" role="status">${esc(msg || '맞는 책이면 ✓, 아니면 ✕ — 이 기기에만 기억')}</div>
+        <div class="u2-sub">${[...done].filter((c) => L.some((x) => x.c === c)).length} / ${L.length} 확인</div><ul class="u2-list">${L.map((x) => `<li class="${done.has(x.c) ? 'u2-t-cloth' : ''}">${done.has(x.c) ? '✓' : '○'} ${esc(x.n || x.c)} <small class="u2-sub">${esc(x.c)}</small></li>`).join('')}</ul>${done.size ? '<button type="button" class="u2-btn" data-reset>처음부터</button>' : ''}</div>`;
+        const inp = b.querySelector('input'); inp.onkeydown = (e) => { if (e.key === 'Enter') { W.scanCheck(inp.value); } }; if (!ctx.edit) setTimeout(() => { try { if (document.activeElement === document.body) inp.focus({ preventScroll: true }); } catch (e) {} }, 0);
+        const rs = b.querySelector('[data-reset]'); if (rs) rs.onclick = () => { done.clear(); U2.ls.set('scan-' + ctx.wid, []); draw('처음부터'); };
+        b.querySelector('[data-cam]').onclick = () => cam(); };
+      const check = (raw) => { const c = String(raw || '').replace(/[^0-9A-Za-z-]/g, ''); if (!c) return; const hit = exp().find((x) => x.c === c); if (hit) { done.add(c); U2.ls.set('scan-' + ctx.wid, [...done]); beep(true); draw('✓ 맞음: ' + (hit.n || c), 'u2-ok'); } else { beep(false); draw('✕ 목록에 없는 바코드: ' + c, 'u2-bad'); } };
+      W.scanCheck = check;
+      let stream = null, timer = null;
+      const cam = async () => { if (!('BarcodeDetector' in window) || !navigator.mediaDevices) return U2.toast('이 브라우저는 카메라 바코드를 못 읽음 — 블루투스 스캐너나 글로 쳐 주세요', 1); try { const det = new BarcodeDetector({ formats: ['ean_13', 'code_128', 'ean_8'] }); stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } }); const v = document.createElement('video'); v.className = 'u2-scanv'; v.srcObject = stream; v.setAttribute('playsinline', ''); await v.play(); b.querySelector('.u2-scan').prepend(v); timer = setInterval(async () => { try { const r = await det.detect(v); if (r[0]) { stop(); check(r[0].rawValue); } } catch (e) {} }, 300); } catch (e) { U2.toast('카메라를 못 엶: ' + e.message, 1); stop(); } };
+      const stop = () => { clearInterval(timer); timer = null; if (stream) stream.getTracks().forEach((t) => t.stop()); stream = null; };
+      draw(); return () => stop();
+    } });
+
   /* ═══ 리드나우 기능(옛 화면 그대로 — 어댑터 첫 묶음 · 나머지는 6단계) ═══ */
   const legacyOk = (type) => U2.legacy && U2.legacy.ready && (!type || !U2.adapters || U2.adapters.kindOk(type));
   const safeBox = (b, what) => { b.innerHTML = `<div class="u2-empty">⚠ 지금 웹앱을 불러오지 못해 '${esc(what)}'을(를) 여기서 볼 수 없습니다<br><a class="u2-link" href="${esc(U2.base)}">지금 웹앱에서 열기 ›</a></div>`; };

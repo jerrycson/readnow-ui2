@@ -8,7 +8,7 @@
   const U2 = (window.U2 = window.U2 || {});
   const esc = (s) => U2.esc(s);
   const W = (window.U2W = { defs: {}, order: [] });
-  W.def = (type, d) => { d.type = type; W.defs[type] = d; W.order.push(type); };
+  W.def = (type, d) => { d.type = type; if (!W.defs[type]) W.order.push(type); W.defs[type] = d; };
   W.GROUPS = ['글·그림', '단추·링크', '틀', '자료 보기', '입력', '기타', '리드나우 기능'];
   const lines = (t) => String(t || '').split('\n').map((s) => s.trim()).filter(Boolean);
   const num = (v) => { const n = parseFloat(String(v).replace(/[^0-9.\-]/g, '')); return isFinite(n) ? n : 0; };
@@ -65,6 +65,7 @@
   /* 서랍·모달 블록: 화면 안 층(브라우저 창 아님) */
   const layer = (cls, title, html) => { const L = document.createElement('div'); L.className = 'u2-layer ' + cls; L.innerHTML = `<div class="u2-lbox" role="dialog" aria-modal="true"><div class="u2-lhead"><b>${esc(title)}</b><button type="button" class="u2-btn" data-x>닫기</button></div><div class="u2-lbody u2-txt">${html}</div></div>`; const close = () => { L.remove(); document.removeEventListener('keydown', kd, true); }; const kd = (e) => { if (e.key === 'Escape') { e.stopPropagation(); close(); } }; L.querySelector('[data-x]').onclick = close; L.onclick = (e) => { if (e.target === L) close(); }; document.addEventListener('keydown', kd, true); (U2.$('.u2-root') || document.body).appendChild(L); return L; };
   W.layer = layer;
+  W.h = { esc, lines, num, rich, layer }; /* 늦게 받는 위젯 파일이 같은 도구를 씀 */
   W.def('drawer', { name: '서랍', group: '틀', icon: '🗄', w: 4, h: 3, props: [{ k: 'label', label: '단추 글', type: 'text', def: '서랍 열기' }, { k: 'side', label: '나오는 쪽', type: 'select', opts: { right: '오른쪽', left: '왼쪽', bottom: '아래' }, def: 'right' }, { k: 'title', label: '서랍 제목', type: 'text', def: '서랍' }, { k: 'text', label: '내용', type: 'area', def: '' }],
     render(b, p, ctx) { b.innerHTML = `<div class="u2-fill"><button type="button" class="u2-btn">${esc(p.label)}</button></div>`; b.querySelector('button').onclick = () => !ctx.edit && layer('u2-drawer u2-d-' + p.side, p.title, rich(p.text)); } });
   W.def('modal', { name: '모달 블록', group: '틀', icon: '🪟', w: 4, h: 3, props: [{ k: 'label', label: '단추 글', type: 'text', def: '자세히' }, { k: 'title', label: '제목', type: 'text', def: '안내' }, { k: 'text', label: '내용', type: 'area', def: '' }],
@@ -94,30 +95,11 @@
       draw(); } });
   W.def('list', { name: '목록', group: '자료 보기', icon: '📃', w: 6, h: 8, props: [{ k: 'items', label: '줄마다 하나', type: 'area', def: '첫째\n둘째\n셋째' }, { k: 'more', label: '처음 보일 수(더 보기)', type: 'number', def: 10 }],
     render(b, p) { const all = lines(p.items); let n = Math.max(1, num(p.more) || 10); const draw = () => { b.innerHTML = `<ul class="u2-list">${all.slice(0, n).map((x) => `<li>${rich(x)}</li>`).join('')}</ul>${all.length > n ? `<button type="button" class="u2-btn" data-more>더 보기 · ${Math.min(10, all.length - n)}개 더 (남은 ${all.length - n})</button>` : ''}`; const m = b.querySelector('[data-more]'); if (m) m.onclick = () => { n += 10; draw(); }; }; draw(); } });
-  W.def('gallery', { name: '카드 목록', group: '자료 보기', icon: '🖼', w: 12, h: 10, props: [{ k: 'items', label: '줄마다: 제목 | 설명 | 아이콘', type: 'area', def: '첫 책 | 설명 | 📚\n둘째 책 | 설명 | 📗' }],
-    render(b, p) { b.innerHTML = `<div class="u2-gal">${lines(p.items).map((l) => { const [t, d, i] = l.split('|').map((s) => (s || '').trim()); return `<div class="u2-gcard"><span class="u2-gi">${esc(i || '📄')}</span><b>${esc(t)}</b><small>${esc(d)}</small></div>`; }).join('')}</div>`; } });
-  W.def('board', { name: '보드(단계 칸)', group: '자료 보기', icon: '🧱', w: 16, h: 12, props: [{ k: 'cols', label: '줄마다: 칸 이름: 항목, 항목', type: 'area', def: '새 주문: 가, 나\n송장: 다\n완료: 라, 마, 바' }],
-    render(b, p) { b.innerHTML = `<div class="u2-board">${lines(p.cols).map((l) => { const [t, r] = l.split(':'); const it = String(r || '').split(',').map((s) => s.trim()).filter(Boolean); return `<div class="u2-bcol"><div class="u2-bh">${esc(t)} <span class="u2-badge">${it.length}</span></div>${it.map((x) => `<div class="u2-bi">${esc(x)}</div>`).join('')}</div>`; }).join('')}</div>`; } });
-  W.def('calendar', { name: '달력', group: '자료 보기', icon: '📅', w: 10, h: 14, minW: 6, props: [{ k: 'events', label: '줄마다: 날(1~31) 글', type: 'area', def: '5 택배 수거\n15 정산' }],
-    render(b, p) { const now = new Date(), y = now.getFullYear(), m = now.getMonth(); const first = new Date(y, m, 1).getDay(), days = new Date(y, m + 1, 0).getDate(); const ev = {}; lines(p.events).forEach((l) => { const mm = /^(\d{1,2})\s+(.+)$/.exec(l); if (mm) (ev[+mm[1]] = ev[+mm[1]] || []).push(mm[2]); }); let h = `<div class="u2-calh">${y}년 ${m + 1}월</div><div class="u2-cal">${'일월화수목금토'.split('').map((d) => `<b>${d}</b>`).join('')}`; for (let i = 0; i < first; i++) h += '<span></span>'; for (let d = 1; d <= days; d++) h += `<span class="${d === now.getDate() ? 'u2-today' : ''}">${d}${(ev[d] || []).map((e) => `<i>${esc(e)}</i>`).join('')}</span>`; b.innerHTML = h + '</div>'; } });
-  W.def('timeline', { name: '타임라인', group: '자료 보기', icon: '🕒', w: 8, h: 10, props: [{ k: 'items', label: '줄마다: 시각 | 글', type: 'area', def: '09:00 | 출고 시작\n14:00 | 마감' }],
-    render(b, p) { b.innerHTML = `<ol class="u2-tl">${lines(p.items).map((l) => { const [t, x] = l.split('|').map((s) => (s || '').trim()); return `<li><time>${esc(t)}</time><span>${esc(x)}</span></li>`; }).join('')}</ol>`; } });
-  /* 차트: 막대·선·원·게이지·스파크라인 — SVG 직접(지금 웹앱 gaugeSvg 방식) */
-  const parseKV = (t) => String(t || '').split(/[,\n]/).map((s) => s.trim()).filter(Boolean).map((s, i) => { const [k, v] = s.includes(':') ? s.split(':') : [String(i + 1), s]; return [k.trim(), num(v)]; });
-  W.chartSvg = (kind, kv, max) => {
-    const vals = kv.map((x) => x[1]); const mx = max || Math.max(1, ...vals); const W0 = 300, H0 = 150;
-    if (kind === 'gauge' || kind === 'pie') {
-      if (kind === 'gauge') { const v = vals[0] || 0, f = Math.max(0, Math.min(1, v / (max || 100))); const a = Math.PI * (1 - f); const x = 150 + 110 * Math.cos(a), y = 140 - 110 * Math.sin(a); return `<svg viewBox="0 0 ${W0} ${H0}" class="u2-svg" role="img" aria-label="게이지 ${v}"><path d="M40 140 A110 110 0 0 1 260 140" fill="none" stroke="var(--line)" stroke-width="18"/><path d="M40 140 A110 110 0 0 1 ${x.toFixed(1)} ${y.toFixed(1)}" fill="none" stroke="var(--cloth)" stroke-width="18"/><text x="150" y="132" text-anchor="middle" class="u2-svgt">${v}</text></svg>`; }
-      const tot = vals.reduce((s, v) => s + Math.max(0, v), 0) || 1; let ang = -Math.PI / 2; const cs = ['var(--cloth)', 'var(--amber)', 'var(--red)', 'var(--gold)', 'var(--tap)', 'var(--sub)'];
-      return `<svg viewBox="0 0 ${W0} ${H0}" class="u2-svg" role="img" aria-label="원 차트">${kv.map(([k, v], i) => { const f = Math.max(0, v) / tot, a2 = ang + f * Math.PI * 2; const p = `M100 75 L${(100 + 65 * Math.cos(ang)).toFixed(1)} ${(75 + 65 * Math.sin(ang)).toFixed(1)} A65 65 0 ${f > 0.5 ? 1 : 0} 1 ${(100 + 65 * Math.cos(a2)).toFixed(1)} ${(75 + 65 * Math.sin(a2)).toFixed(1)}Z`; ang = a2; return `<path d="${p}" fill="${cs[i % cs.length]}"/><text x="185" y="${20 + i * 18}" class="u2-svgl"><tspan fill="${cs[i % cs.length]}">■</tspan> ${esc(k)} ${v}</text>`; }).join('')}</svg>`;
-    }
-    const n = Math.max(1, vals.length), bw = (W0 - 20) / n;
-    if (kind === 'bar') return `<svg viewBox="0 0 ${W0} ${H0}" class="u2-svg" role="img" aria-label="막대 차트">${kv.map(([k, v], i) => { const h = (Math.max(0, v) / mx) * (H0 - 30); return `<rect x="${10 + i * bw + 3}" y="${H0 - 18 - h}" width="${Math.max(2, bw - 6)}" height="${h}" fill="var(--cloth)" rx="3"/><text x="${10 + i * bw + bw / 2}" y="${H0 - 4}" text-anchor="middle" class="u2-svgl">${esc(k)}</text>`; }).join('')}</svg>`;
-    const pts = vals.map((v, i) => `${(10 + (n === 1 ? 0.5 : i / (n - 1)) * (W0 - 20)).toFixed(1)},${(H0 - 18 - (v / mx) * (H0 - 30)).toFixed(1)}`).join(' ');
-    return `<svg viewBox="0 0 ${W0} ${H0}" class="u2-svg" role="img" aria-label="${kind === 'spark' ? '스파크라인' : '선 차트'}" preserveAspectRatio="none"><polyline points="${pts}" fill="none" stroke="var(--cloth)" stroke-width="${kind === 'spark' ? 2 : 3}"/></svg>`;
-  };
-  W.def('chart', { name: '차트', group: '자료 보기', icon: '📊', w: 8, h: 10, minW: 3, minH: 4, props: [{ k: 'kind', label: '모양', type: 'select', opts: { bar: '막대', line: '선', pie: '원', gauge: '게이지', spark: '스파크라인' }, def: 'bar' }, { k: 'data', label: '값(이름:값, 쉼표)', type: 'area', def: '월:3, 화:5, 수:2, 목:6, 금:4' }, { k: 'max', label: '최대(게이지)', type: 'number', def: 100 }],
-    render(b, p) { b.innerHTML = `<div class="u2-chart">${W.chartSvg(p.kind, parseKV(p.data), p.kind === 'gauge' ? num(p.max) || 100 : 0)}</div>`; } });
+
+
+
+
+
   W.def('progress', { name: '진행 막대', group: '자료 보기', icon: '⏳', w: 8, h: 3, props: [{ k: 'label', label: '이름', type: 'text', def: '오늘 출고' }, { k: 'value', label: '값', type: 'number', def: 3 }, { k: 'max', label: '전체', type: 'number', def: 10 }],
     render(b, p) { const f = Math.max(0, Math.min(1, num(p.value) / (num(p.max) || 1))); b.innerHTML = `<div class="u2-prog"><small>${esc(p.label)} ${num(p.value)} / ${num(p.max)}</small><div class="u2-pbar" role="progressbar" aria-valuenow="${num(p.value)}" aria-valuemax="${num(p.max)}"><i style="width:${(f * 100).toFixed(1)}%"></i></div></div>`; } });
   W.def('meter', { name: '계기판', group: '자료 보기', icon: '🎛', w: 8, h: 4, props: [{ k: 'label', label: '이름', type: 'text', def: '재고 건강' }, { k: 'value', label: '값(0~100)', type: 'number', def: 62 }, { k: 'warn', label: '주의 아래', type: 'number', def: 40 }, { k: 'bad', label: '나쁨 아래', type: 'number', def: 20 }],
@@ -141,21 +123,15 @@
     render(b, p) { const tick = () => { const n = new Date(); let t; const m = /^(\d{1,2}):(\d{2})$/.exec(p.until || ''); if (m) { const d = new Date(n); d.setHours(+m[1], +m[2], 0, 0); let s = Math.round((d - n) / 1000); t = s <= 0 ? '지남' : `${Math.floor(s / 3600)}시간 ${Math.floor((s % 3600) / 60)}분 남음`; } else t = n.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }); b.innerHTML = `<div class="u2-clock"><small>${esc(p.label || (m ? p.until + '까지' : '지금'))}</small><b>${t}</b></div>`; }; tick(); const h = setInterval(tick, 15000); return () => clearInterval(h); } });
   W.def('memo', { name: '메모장(이 기기)', group: '기타', icon: '🗒', w: 6, h: 8, props: [{ k: 'ph', label: '자리 글', type: 'text', def: '이 기기에만 저장되는 메모' }],
     render(b, p, ctx) { const k = 'memo-' + ctx.wid; b.innerHTML = `<textarea class="u2-in u2-memo" placeholder="${esc(p.ph)}" aria-label="메모"></textarea>`; const t = b.querySelector('textarea'); t.value = U2.ls.get(k, '') || ''; let h; t.oninput = () => { clearTimeout(h); h = setTimeout(() => U2.ls.set(k, t.value), 500); }; return () => clearTimeout(h); } });
-  W.def('iframe', { name: '바깥 페이지 보기', group: '기타', icon: '🪟', w: 12, h: 16, props: [{ k: 'url', label: '주소(허락한 주소만)', type: 'text', def: '' }],
-    render(b, p) { const ok = (U2.CFG.iframeOk || []).some((h) => String(p.url || '').indexOf(h) === 0); b.innerHTML = ok ? `<iframe class="u2-ifr" src="${esc(p.url)}" loading="lazy" sandbox="allow-scripts allow-same-origin" title="바깥 페이지"></iframe>` : `<div class="u2-empty">허락한 주소만 열 수 있습니다 (${esc((U2.CFG.iframeOk || []).join(', '))})</div>`; } });
-  W.def('varbar', { name: '변수 바', group: '기타', icon: '🎚', w: 24, h: 3, props: [{ k: 'vars', label: '줄마다: 이름: 고를 것, …', type: 'area', def: '판매처: 전체, 알라딘, 예스24\n기간: 오늘, 7일, 30일' }],
-    render(b) { const p = arguments[1]; b.innerHTML = `<div class="u2-row">${lines(p.vars).map((l) => { const [n, r] = l.split(':'); return `<label class="u2-lab">${esc(n)} <select class="u2-in" data-var="${esc(n.trim())}">${String(r || '').split(',').map((s) => `<option>${esc(s.trim())}</option>`).join('')}</select></label>`; }).join('')}</div>`; b.querySelectorAll('[data-var]').forEach((s) => { U2.vars[s.dataset.var] = s.value; s.onchange = () => { U2.vars[s.dataset.var] = s.value; U2.emit('vars', U2.vars); }; }); } });
-  W.def('repeat', { name: '반복', group: '기타', icon: '🔁', w: 12, h: 8, props: [{ k: 'items', label: '줄마다 자료(| 로 칸)', type: 'area', def: '로거 | 켜짐\nJS-MAIN | 켜짐' }, { k: 'tpl', label: '모양({1} {2} = 칸)', type: 'text', def: '💻 {1} — {2}' }],
-    render(b, p) { b.innerHTML = `<div class="u2-gal">${lines(p.items).map((l) => { const c = l.split('|').map((s) => s.trim()); return `<div class="u2-gcard">${esc(String(p.tpl || '').replace(/\{(\d)\}/g, (m, i) => c[+i - 1] || ''))}</div>`; }).join('')}</div>`; } });
+
+
+
   W.def('recent', { name: '최근 연 페이지', group: '기타', icon: '🕘', w: 6, h: 6, props: [], render(b, p, ctx) { const r = U2.ls.get('recent', []) || []; b.innerHTML = r.length ? `<div class="u2-col">${r.slice(0, 8).map((id) => { const n = navList().find((x) => x.id === id) || { title: id }; return `<button type="button" class="u2-btn" data-pg="${esc(id)}">${esc(n.icon || '')} ${esc(n.title)}</button>`; }).join('')}</div>` : '<div class="u2-empty">아직 없음</div>'; wirePg(b, ctx); } });
 
   /* ═══ 자료·계산(단계 5) ═══ */
   W.def('calc', { name: '계산 카드', group: '자료 보기', icon: '🧮', w: 5, h: 5, props: [{ k: 'label', label: '이름', type: 'text', def: '계산' }, { k: 'expr', label: '식(예 퍼센트(연결확정.수, 주문.전체수))', type: 'text', def: '주문.전체수' }, { k: 'unit', label: '단위', type: 'text', def: '' }, { k: 'warnIf', label: '빨강 조건(식 · 값은 이름 값)', type: 'text', def: '' }],
     render(b, p) { const r = U2.data.eval(p.expr); let warn = false; if (p.warnIf) { const w = U2Expr.eval(p.warnIf, U2.data.ctx({ 값: r.v })); warn = !w.err && U2Expr.truthy(w.v); } b.innerHTML = `<div class="u2-kpi ${warn ? 'u2-warn' : ''}"><small>${esc(p.label)}</small><b>${r.err ? '<span class="u2-t-red" style="font-size:13px">⚠ ' + esc(r.err) + '</span>' : esc(U2Expr.show(r.v))}<span class="u2-unit">${esc(p.unit)}</span></b></div>`; return { dyn: true }; } });
-  W.def('query', { name: 'Firestore 질의 목록(읽기만)', group: '자료 보기', icon: '🗃', w: 12, h: 12, adminOnly: true, props: [{ k: 'col', label: '칸 이름(예 ui2_pages)', type: 'text', def: 'ui2_pages' }, { k: 'where', label: "조건(칸 == 값 · 비우면 없음)", type: 'text', def: '' }, { k: 'order', label: '정렬 칸', type: 'text', def: '' }, { k: 'desc', label: '큰 것부터', type: 'check', def: false }, { k: 'limit', label: '몇 문서(200까지)', type: 'number', def: 20 }, { k: 'fields', label: '보일 칸(쉼표 · 비우면 id만)', type: 'text', def: 'title' }],
-    render(b, p, ctx) { if (ctx.edit) { b.innerHTML = `<div class="u2-empty">🗃 ${esc(p.col)} 에서 ${Math.min(200, +p.limit || 20)}문서 읽음(보기 모드에서)</div>`; return; } b.innerHTML = '<div class="u2-empty">⏳ 읽는 중…</div>'; let dead = false;
-      U2.data.query(p).then((rows) => { if (dead) return; const f = String(p.fields || '').split(',').map((s) => s.trim()).filter(Boolean); b.innerHTML = `<div class="u2-tblw"><table class="u2-tbl"><thead><tr><th>id</th>${f.map((k) => `<th>${esc(k)}</th>`).join('')}</tr></thead><tbody>${rows.map((r) => `<tr><td>${esc(r._id)}</td>${f.map((k) => `<td>${esc(typeof r[k] === 'object' ? JSON.stringify(r[k]).slice(0, 60) : r[k])}</td>`).join('')}</tr>`).join('') || `<tr><td colspan="${f.length + 1}">없음</td></tr>`}</tbody></table></div>`; }).catch((e) => { if (!dead) b.innerHTML = `<div class="u2-empty">⚠ ${esc(e.message)}</div>`; });
-      return () => { dead = true; }; } });
+
   W.def('views', { name: '저장한 보기', group: '기타', icon: '⭐', w: 12, h: 4, props: [{ k: 'save', label: "'지금 보기 저장' 칸 보이기", type: 'check', def: true }],
     render(b, p, ctx) { const draw = () => { const vs = U2.data.views(); b.innerHTML = `<div class="u2-row">${vs.map((v) => `<button type="button" class="u2-btn" data-v="${esc(v.name)}">⭐ ${esc(v.name)} <small class="u2-sub">${esc(v.scope)}</small></button>`).join('') || '<span class="u2-sub">저장한 보기가 없음</span>'}${p.save && !ctx.edit ? '<input class="u2-in" style="width:140px" placeholder="보기 이름" aria-label="보기 이름"><button type="button" class="u2-btn u2-pri" data-sv>지금 보기 저장</button>' : ''}</div>`;
         b.querySelectorAll('[data-v]').forEach((x) => (x.onclick = () => !ctx.edit && U2.data.openView(x.dataset.v).catch((e) => U2.toast(e.message, 1))));
@@ -172,24 +148,22 @@
       return { dyn: true }; } });
 
   /* ═══ 🔎 스캔 검수(N8 ①) — 바코드(블루투스 스캐너는 글 칸에 치고 Enter · 휴대폰은 카메라 BarcodeDetector)로 '맞는 책인지' 대조 · 읽기만(자료를 바꾸지 않음) ═══ */
-  W.def('scan', { name: '스캔 검수', group: '입력', icon: '🔎', w: 8, h: 12, props: [{ k: 'list', label: '맞아야 할 것(줄마다: 바코드·SKU | 이름)', type: 'area', def: '9788900000001 | 시험 책 하나\n9788900000002 | 시험 책 둘' }, { k: 'var', label: '또는 변수(줄 목록)에서', type: 'text', def: '' }, { k: 'sound', label: '소리', type: 'check', def: true }],
-    render(b, p, ctx) {
-      const exp = () => { const src = p.var && U2.vars[p.var] ? String(U2.vars[p.var]) : p.list; return lines(src).map((l) => { const [c, n] = l.split('|').map((x) => (x || '').trim()); return { c: c.replace(/[^0-9A-Za-z-]/g, ''), n: n || '' }; }).filter((x) => x.c); };
-      const done = new Set(U2.ls.get('scan-' + ctx.wid, []) || []);
-      const beep = (ok0) => { if (!p.sound) return; try { const A = new (window.AudioContext || window.webkitAudioContext)(); const o = A.createOscillator(); o.frequency.value = ok0 ? 880 : 220; o.connect(A.destination); o.start(); o.stop(A.currentTime + (ok0 ? 0.08 : 0.3)); } catch (e) {} };
-      const draw = (msg, tone) => { const L = exp(); b.innerHTML = `<div class="u2-scan"><div class="u2-row"><input class="u2-in" style="flex:1" inputmode="numeric" placeholder="바코드를 찍거나 쳐서 Enter" aria-label="바코드"><button type="button" class="u2-btn" data-cam>📷 카메라</button></div>
-        <div class="u2-scanmsg ${tone || ''}" role="status">${esc(msg || '맞는 책이면 ✓, 아니면 ✕ — 이 기기에만 기억')}</div>
-        <div class="u2-sub">${[...done].filter((c) => L.some((x) => x.c === c)).length} / ${L.length} 확인</div><ul class="u2-list">${L.map((x) => `<li class="${done.has(x.c) ? 'u2-t-cloth' : ''}">${done.has(x.c) ? '✓' : '○'} ${esc(x.n || x.c)} <small class="u2-sub">${esc(x.c)}</small></li>`).join('')}</ul>${done.size ? '<button type="button" class="u2-btn" data-reset>처음부터</button>' : ''}</div>`;
-        const inp = b.querySelector('input'); inp.onkeydown = (e) => { if (e.key === 'Enter') { W.scanCheck(inp.value); } }; if (!ctx.edit) setTimeout(() => { try { if (document.activeElement === document.body) inp.focus({ preventScroll: true }); } catch (e) {} }, 0);
-        const rs = b.querySelector('[data-reset]'); if (rs) rs.onclick = () => { done.clear(); U2.ls.set('scan-' + ctx.wid, []); draw('처음부터'); };
-        b.querySelector('[data-cam]').onclick = () => cam(); };
-      const check = (raw) => { const c = String(raw || '').replace(/[^0-9A-Za-z-]/g, ''); if (!c) return; const hit = exp().find((x) => x.c === c); if (hit) { done.add(c); U2.ls.set('scan-' + ctx.wid, [...done]); beep(true); draw('✓ 맞음: ' + (hit.n || c), 'u2-ok'); } else { beep(false); draw('✕ 목록에 없는 바코드: ' + c, 'u2-bad'); } };
-      W.scanCheck = check;
-      let stream = null, timer = null;
-      const cam = async () => { if (!('BarcodeDetector' in window) || !navigator.mediaDevices) return U2.toast('이 브라우저는 카메라 바코드를 못 읽음 — 블루투스 스캐너나 글로 쳐 주세요', 1); try { const det = new BarcodeDetector({ formats: ['ean_13', 'code_128', 'ean_8'] }); stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } }); const v = document.createElement('video'); v.className = 'u2-scanv'; v.srcObject = stream; v.setAttribute('playsinline', ''); await v.play(); b.querySelector('.u2-scan').prepend(v); timer = setInterval(async () => { try { const r = await det.detect(v); if (r[0]) { stop(); check(r[0].rawValue); } } catch (e) {} }, 300); } catch (e) { U2.toast('카메라를 못 엶: ' + e.message, 1); stop(); } };
-      const stop = () => { clearInterval(timer); timer = null; if (stream) stream.getTracks().forEach((t) => t.stop()); stream = null; };
-      draw(); return () => stop();
-    } });
+
+
+  /* ── 늦게 받는 위젯(설계안 8-4 '위젯 코드 늦게 받기'): 덜 쓰는 무거운 위젯은 src/u2-widgets-extra.js — 처음 놓이거나 보일 때 받음(쉬는 때 미리 받아 둠) ── */
+  W.LAZY_FILE = 'src/u2-widgets-extra.js';
+  W.lazyLoad = () => W._lz || (W._lz = new Promise((res, rej) => { const sc = document.createElement('script'); sc.src = W.LAZY_FILE + '?v=' + U2.ver; sc.onload = () => res(); sc.onerror = () => { W._lz = null; rej(new Error('위젯 파일을 못 받음')); }; document.head.appendChild(sc); }));
+  const lazyRender = function (b, p, ctx) { b.innerHTML = '<div class="u2-empty">⏳ 위젯을 불러오는 중…</div>'; let dead = false; W.lazyLoad().then(() => { if (!dead && ctx.cell && ctx.cell.isConnected) U2.mountCell(ctx.cell, ctx.wid, ctx.pg || (U2.edit ? U2.edit.draft : U2.effective(U2.cur)), ctx.edit); }).catch((e) => { if (!dead) b.innerHTML = '<div class="u2-empty">⚠ ' + esc(e.message) + '</div>'; }); return () => { dead = true; }; };
+  W.def('gallery', Object.assign({"name": "카드 목록", "group": "자료 보기", "icon": "🖼", "w": 12, "h": 10, "lazy": true}, { props: [], render: lazyRender }));
+  W.def('board', Object.assign({"name": "보드(단계 칸)", "group": "자료 보기", "icon": "🧱", "w": 16, "h": 12, "lazy": true}, { props: [], render: lazyRender }));
+  W.def('calendar', Object.assign({"name": "달력", "group": "자료 보기", "icon": "📅", "w": 10, "h": 14, "minW": 6, "lazy": true}, { props: [], render: lazyRender }));
+  W.def('timeline', Object.assign({"name": "타임라인", "group": "자료 보기", "icon": "🕒", "w": 8, "h": 10, "lazy": true}, { props: [], render: lazyRender }));
+  W.def('chart', Object.assign({"name": "차트", "group": "자료 보기", "icon": "📊", "w": 8, "h": 10, "minW": 3, "minH": 4, "lazy": true}, { props: [], render: lazyRender }));
+  W.def('iframe', Object.assign({"name": "바깥 페이지 보기", "group": "기타", "icon": "🪟", "w": 12, "h": 16, "lazy": true}, { props: [], render: lazyRender }));
+  W.def('varbar', Object.assign({"name": "변수 바", "group": "기타", "icon": "🎚", "w": 24, "h": 3, "lazy": true}, { props: [], render: lazyRender }));
+  W.def('repeat', Object.assign({"name": "반복", "group": "기타", "icon": "🔁", "w": 12, "h": 8, "lazy": true}, { props: [], render: lazyRender }));
+  W.def('query', Object.assign({"name": "Firestore 질의 목록(읽기만)", "group": "자료 보기", "icon": "🗃", "w": 12, "h": 12, "adminOnly": true, "lazy": true}, { props: [], render: lazyRender }));
+  W.def('scan', Object.assign({"name": "스캔 검수", "group": "입력", "icon": "🔎", "w": 8, "h": 12, "lazy": true}, { props: [], render: lazyRender }));
 
   /* ═══ 리드나우 기능(옛 화면 그대로 — 어댑터 첫 묶음 · 나머지는 6단계) ═══ */
   const legacyOk = (type) => U2.legacy && U2.legacy.ready && (!type || !U2.adapters || U2.adapters.kindOk(type));

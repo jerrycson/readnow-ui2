@@ -107,11 +107,12 @@
     for (const it of items) {
       let c = this.cells.get(it.id);
       if (!c) { c = document.createElement('div'); c.className = 'u2-cell'; c.dataset.wid = it.id; this.el.appendChild(c); this.cells.set(it.id, c); if (this.opt.onNew) this.opt.onNew(c, it); }
-      const st = G.css(it); c.style.gridColumn = st.gridColumn; c.style.gridRow = st.gridRow; c.style.zIndex = it.float ? 5 + (it.z || 0) : '';
-      c.classList.toggle('u2-float', !!it.float); c.classList.toggle('u2-locked', !!it.lock); keep.add(it.id);
+      const st = G.css(it); const key = st.gridColumn + '|' + st.gridRow + '|' + (it.float ? 1 : 0) + (it.lock ? 1 : 0) + (it.z || 0);
+      if (c._pk !== key) { c._pk = key; c.style.gridColumn = st.gridColumn; c.style.gridRow = st.gridRow; c.style.zIndex = it.float ? 5 + (it.z || 0) : ''; c.classList.toggle('u2-float', !!it.float); c.classList.toggle('u2-locked', !!it.lock); } /* 자리가 그대로인 칸은 건드리지 않음(끌기 중 장면마다 80칸 → 움직인 칸만) */
+      keep.add(it.id);
     }
     for (const [id, c] of this.cells) if (!keep.has(id)) { if (this.opt.onGone) this.opt.onGone(c, id); c.remove(); this.cells.delete(id); }
-    this.el.style.minHeight = (G.bottom(items) + (extraRows || 0)) * this.rowH + 'px';
+    const mh = (G.bottom(items) + (extraRows || 0)) * this.rowH + 'px'; if (this.el.style.minHeight !== mh) this.el.style.minHeight = mh;
   };
   /* 화면 좌표 → 칸 좌표 */
   G.View.prototype.toCell = function (px, py) {

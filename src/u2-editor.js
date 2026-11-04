@@ -108,7 +108,8 @@
     const E = this; U2.mountCell(c, id, E.draft, true); c.tabIndex = 0; c.setAttribute('role', 'button');
     const w = E.draft.widgets[id]; c.setAttribute('aria-label', ((W.defs[w.type] || {}).name || w.type) + ' 위젯');
     const ov = document.createElement('div'); ov.className = 'u2-ov';
-    ov.innerHTML = '<span class="u2-ovname">' + esc((W.defs[w.type] || {}).name || w.type) + '</span>' + ['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw'].map((h) => `<i class="u2-hd u2-hd-${h}" data-hd="${h}"></i>`).join('');
+    const it0 = U2.catalog && (W.defs[w.type] || {}).legacy ? (U2.catalog.items || []).find((i) => i.perm === U2.permKey(w)) : null; const mb = it0 && it0.mem && it0.mem.mb ? ' · ≈' + it0.mem.mb + 'MB' : '';
+    ov.innerHTML = '<span class="u2-ovname">' + esc((W.defs[w.type] || {}).name || w.type) + '</span><span class="u2-perf" title="그리기 시간·받는 자료(편집 때만)">⏱ ' + (c._ms != null ? c._ms : '-') + 'ms' + esc(mb) + '</span>' /* E11 위젯 성능 배지 */ + ['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw'].map((h) => `<i class="u2-hd u2-hd-${h}" data-hd="${h}"></i>`).join('');
     c.appendChild(ov);
     c.addEventListener('focus', () => { if (!E.sel.has(id) && !E._dragging) { E.sel.clear(); E.sel.add(id); E.markSel(); E.drawProps(); } });
   };
@@ -399,6 +400,6 @@
     if (!quiet && E.dirty()) U2.toast('게시 안 한 고침은 이 기기 초안으로 남아 있습니다');
     U2.render({ reset: true });
   };
-  U2.openEditor = (scope, opt) => { if (U2.edit) return; scope = scope || (U2.isAdmin() ? 'pub' : 'mine'); if (scope === 'pub' && !U2.isAdmin()) scope = 'mine'; if (U2.view) { U2.view.destroy(); U2.view = null; } return new Editor(scope, opt); };
+  U2.openEditor = (scope, opt) => { if (U2.edit) return; if (window.U2W && U2W.lazyLoad) U2W.lazyLoad().then(() => U2.edit && U2.edit.drawProps()).catch(() => {}); /* 편집할 때는 늦게 받는 위젯도 모두 */ scope = scope || (U2.isAdmin() ? 'pub' : 'mine'); if (scope === 'pub' && !U2.isAdmin()) scope = 'mine'; if (U2.view) { U2.view.destroy(); U2.view = null; } return new Editor(scope, opt); };
   U2.Editor = Editor;
 })();

@@ -74,7 +74,7 @@
     if (!d) { b.innerHTML = '<div class="u2-empty">모르는 위젯: ' + esc(w && w.type) + '</div>'; return; }
     if (!p.guide && d && d.legacy && !edit) { try { if (w.type === 'legacy.homecard' && typeof W_DESC !== 'undefined' && W_DESC[p.ref]) p.guide = W_DESC[p.ref]; else { const it = U2.catalog && (U2.catalog.items || []).find((i) => i.perm === U2.permKey(w)); if (it && (it.desc || it.title)) p.guide = it.title + (it.desc ? ' — ' + it.desc : '') + (it.mem && it.mem.mb ? ' · 켜면 받는 자료 ≈' + it.mem.mb + 'MB' : ''); } } catch (e) {} if (w.type === 'legacy.tab' || w.type === 'legacy.header') p.guide = ''; } /* 📖 옛 기능 위젯은 지금 웹앱 설명(W_DESC·기능 찾기 설명)을 그대로(E7) */
     if (p.guide && !edit) { const gb = document.createElement('button'); gb.type = 'button'; gb.className = 'u2-guide-btn'; gb.textContent = 'ⓘ'; gb.setAttribute('aria-label', '이 위젯 설명'); gb.onclick = () => { let g = f.querySelector('.u2-guide'); if (g) return g.remove(); g = document.createElement('div'); g.className = 'u2-guide'; g.textContent = p.guide; f.appendChild(g); }; f.appendChild(gb); } /* 📖 위젯마다 설명(E7) — 누를 때만(톡 누르기 툴팁 아님) */
-    try { const off = d.render(b, p, { wid, page: pg.id, edit: !!edit, cell: c }); if (typeof off === 'function') c._u2off = off; else if (off && off.dyn) c._dyn = true; } catch (e) { b.innerHTML = '<div class="u2-empty">⚠ 위젯 오류: ' + esc(e.message) + '</div>'; console.error('[u2] 위젯', wid, e); }
+    const _t0 = performance.now(); try { const off = d.render(b, p, { wid, page: pg.id, edit: !!edit, cell: c, pg }); if (typeof off === 'function') c._u2off = off; else if (off && off.dyn) c._dyn = true; } catch (e) { b.innerHTML = '<div class="u2-empty">⚠ 위젯 오류: ' + esc(e.message) + '</div>'; console.error('[u2] 위젯', wid, e); } c._ms = Math.round((performance.now() - _t0) * 10) / 10; /* 위젯 성능 배지(E11)용 */
   };
   /* 옛 기능 위젯을 누르면 그 위젯 종류를 쓰기 막이에 알림(허락 목록과 견줌) */
   document.addEventListener('pointerdown', (e) => { const c = e.target.closest && e.target.closest('.u2-cell[data-perm]'); if (c) U2.setCtx(c.dataset.perm); }, true);
@@ -85,7 +85,7 @@
     opt = opt || {}; const host = U2.$('#u2-page'); if (!host) return;
     if (U2.edit && !opt.fromEditor) return U2.edit.refresh();
     const pg = U2.effective(U2.cur); const bp = G.bpOf(host.clientWidth || innerWidth);
-    if (!U2.view || opt.reset || U2.view._pg !== pg.id || U2.view._edit) { if (U2.view) U2.view.destroy(); U2.view = new G.View(host, { onNew: (c, it) => U2.mountCell(c, it.id, U2.effective(U2.cur), false), onGone: (c) => { if (c._u2off) try { c._u2off(); } catch (e) {} if (c._ro) c._ro.disconnect(); } }); U2.view._pg = pg.id; }
+    if (!U2.view || opt.reset || U2.view._pg !== pg.id || U2.view._edit) { if (U2.view) U2.view.destroy(); U2.view = new G.View(host, { onNew: (c, it) => U2.lazyMount(c, it), onGone: (c) => { if (U2._io) U2._io.unobserve(c); if (c._u2off) try { c._u2off(); } catch (e) {} if (c._ro) c._ro.disconnect(); } }); U2.view._pg = pg.id; }
     const v = U2.view; v.setup(bp.cols, (pg.grid && pg.grid.rowH) || G.ROW_H, pg.grid && pg.grid.half); v._bp = bp.k;
     let items = U2.layoutFor(pg, bp).filter((i) => U2.data.visible(pg.widgets[i.id])); /* 보이기 조건(단계 5) */ if (pg.grid && pg.grid.compact) G.compact(items); v._items = items;
     v.place(items, 0); autoH(v, pg);
@@ -94,6 +94,16 @@
     const mine = U2.$('#u2-mine'); if (mine) mine.hidden = !pg._mine;
     if (U2._firstMs == null) U2._firstMs = Math.round(performance.now()); /* 첫 화면 시각(설계안 8-1) */
     U2.emit('rendered', { page: pg.id, bp: bp.k, n: items.length });
+  };
+  /* 보이는 것만 그림(설계안 8-4): 화면에서 멀리(아래 1화면+800px 넘게) 있는 기본 위젯은 다가올 때 그림 · 멀어지면 비움(입력 위젯·식이 든 것·옛 기능은 늘 그림) */
+  const KEEP = new Set(['search', 'select', 'date', 'number', 'input', 'checklist', 'rating', 'memo', 'switch', 'varbar', 'scan', 'fab', 'views']);
+  U2.lazyMount = (c, it) => {
+    const pg = U2.effective(U2.cur); const w = pg.widgets[it.id]; const d = W.defs[w && w.type] || {};
+    const far = U2.CFG.lazyView !== false && !d.legacy && !d.autoH && !KEEP.has(w && w.type) && (it.y * ((pg.grid && pg.grid.rowH) || G.ROW_H)) > innerHeight + 800;
+    if (!far) return U2.mountCell(c, it.id, pg, false);
+    c.classList.add('u2-lazy'); c._lazy = true;
+    if (!U2._io) U2._io = new IntersectionObserver((ents) => ents.forEach((en) => { const cell = en.target; if (!U2.view || U2.edit) return; const id = cell.dataset.wid; if (en.isIntersecting && cell._lazy) { cell._lazy = false; cell.classList.remove('u2-lazy'); U2.mountCell(cell, id, U2.effective(U2.cur), false); } else if (!en.isIntersecting && !cell._lazy && cell._lazyOk && !cell.contains(document.activeElement)) { if (cell._u2off) try { cell._u2off(); } catch (e) {} cell._u2off = null; cell.innerHTML = ''; cell._lazy = true; cell.classList.add('u2-lazy'); } }), { rootMargin: '800px 0px' });
+    c._lazyOk = true; U2._io.observe(c);
   };
   U2.curPage = () => (U2.cur ? U2.effective(U2.cur) : null);
   /* 다른 페이지를 화면 안 층(모달·서랍)에 — 행동 '모달로 열기'(Wix 라이트박스) */
@@ -227,6 +237,10 @@
   U2.exportJson = () => { const data = { kind: 'readnow-ui2-layout', ver: U2.ver, at: U2.now(), dev: U2.dev(), site: { nav: U2.site.nav, theme: U2.site.theme }, pages: U2.pages, prefs: U2.prefs }; const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 1)], { type: 'application/json' })); a.download = 'readnow2-배치-' + U2.today() + '.json'; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000); U2.toast('배치 파일을 내려받음'); };
   U2.importJson = async (file) => { try { const d = JSON.parse(await file.text()); if (d.kind !== 'readnow-ui2-layout' || !d.pages) throw new Error('리드나우 2 배치 파일이 아님'); const id = U2.cur; const pg = d.pages[id]; if (!pg) throw new Error('이 페이지(' + id + ') 배치가 파일에 없음'); U2.openEditor(U2.isAdmin() ? 'pub' : 'mine', { load: pg, note: '가져온 파일' }); U2.toast('가져온 배치를 편집기에 열었습니다 — 게시해야 반영'); } catch (e) { U2.toast('가져오기 실패: ' + e.message, 1); } };
 
+  /* ── 늦게 받기(설계안 8-4): 편집기(u2-editor.js)·덜 쓰는 위젯(u2-widgets-extra.js)은 첫 화면에 필요 없음 → 지금 웹앱 기능을 다 불러온 뒤 쉬는 때 받음 · ✏ 꾸미기를 먼저 누르면 그때 ── */
+  U2.need = (src) => (U2._need = U2._need || {})[src] || (U2._need[src] = new Promise((res, rej) => { const sc = document.createElement('script'); sc.src = src + '?v=' + U2.ver; sc.onload = () => res(); sc.onerror = () => { U2._need[src] = null; rej(new Error('파일을 못 받음: ' + src)); }; document.head.appendChild(sc); }));
+  if (!U2.openEditor) U2.openEditor = (scope, opt) => { U2.toast('편집기를 불러오는 중…'); return U2.need('src/u2-editor.js').then(() => U2.openEditor(scope, opt)).catch((e) => U2.toast(e.message, 1)); };
+  U2.preload = () => { const idle = window.requestIdleCallback || ((f) => setTimeout(f, 300)); idle(() => { U2.need('src/u2-editor.js').catch(() => {}); U2W.lazyLoad().catch(() => {}); }, { timeout: 4000 }); };
   /* ── 시작 ── */
   U2.boot = () => {
     document.body.classList.add('u2-body');
@@ -242,7 +256,8 @@
     U2.banner('u2-loading', '⏳ 지금 웹앱 기능을 불러오는 중…', 'u2-info');
     U2.on('safe', (s) => { U2.banner('u2-loading', ''); U2.banner('u2-safe', `⚠ <b>안전 모드</b> — 지금 웹앱 기능을 불러오지 못했습니다: ${esc(s.why)}<br>꾸미기 위젯은 그대로 쓰고, 기능은 <a href="${esc(U2.base)}">지금 웹앱에서 열기 ›</a>`, 'u2-warn'); U2.render({ reset: true }); });
     U2.loadTrack = async () => { for (const u of ['https://raw.githubusercontent.com/jerrycson/readnow-ui2/track/TRACK.json', 'TRACK.json']) { try { const r = await fetch(u, { cache: 'no-cache' }); if (r.ok) { U2._track = await r.json(); return U2._track; } } catch (e) {} } return null; };
-    U2.on('legacyLoaded', () => { setTimeout(() => U2.loadTrack().then(() => U2.data && U2.data.bump()), 3000);
+    U2.on('safe', () => U2.preload());
+    U2.on('legacyLoaded', () => { U2.preload(); setTimeout(() => U2.loadTrack().then(() => U2.data && U2.data.bump()), 3000);
       U2.banner('u2-loading', ''); U2.render({ reset: true }); setInterval(() => U2.legacy.checkNew(), U2.CFG.verCheckMin * 60e3); document.addEventListener('visibilitychange', () => { if (!document.hidden) U2.legacy.checkNew(); }); });
     U2.on('legacyShell', () => U2.render({ reset: true }));
     U2.on('auth', (u) => { if (u) U2.loadAll(); });

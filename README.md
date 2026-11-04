@@ -32,7 +32,7 @@
 | `src/u2-guard.js` | 쓰기 막이 · 충돌 감시기(타이머·새 기기 열쇠·긴 멈춤·중복 id) |
 | `src/u2-loader.js` | 지금 웹앱 틀 읽기 → CSS(@layer legacy) → 스크립트 차례대로 → 잇기 · 안전 모드 · 새 판 확인 · 옛 기능 어댑터 첫 묶음 |
 | `src/u2-grid.js` | 격자 계산(밀어내기·위로 붙이기·비율 바꿈·휴대폰 흘리기)과 그리기 |
-| `src/u2-editor.js` | 편집기(서랍·속성판·층 나무·끌기·손잡이 8·키보드·Ctrl+Z 100걸음·초안·게시·게시 기록·편집 잠금) |
+| `src/u2-editor.js` | (첫 화면 뒤 쉬는 때 받음 · ✏ 꾸미기를 먼저 누르면 그때)  편집기(서랍·속성판·층 나무·끌기·손잡이 8·키보드·Ctrl+Z 100걸음·초안·게시·게시 기록·편집 잠금) |
 | `src/u2-expr.js` | 계산식(eval 없음 · 한국어 함수 합·평균·원·퍼센트·만약 …) |
 | `src/u2-data.js` | 자료 연결 — 지금 웹앱 상태 한국어 별칭(읽기만) · 변수 · =식/{{식}} · 보이기 조건 · 저장한 보기 · Firestore 질의 예산 |
 | `src/u2-actions.js` | 행동 16가지 · 차례 실행 · 두 번 누르기 · 단축키(옛 단축키와 겹침 막음) |
@@ -40,6 +40,7 @@
 | `src/u2-adapters.js` | 섹션 위젯(T2 — 같은 탭은 한 번 그려 나눠 줌) · 계약 검사 |
 | `u2-contract.json` | 새 웹앱이 기대는 옛 함수·값·화면 id(계약 목록) |
 | `src/u2-widgets.js` | 기본 UI 위젯 58종(계산 카드·질의·저장한 보기·📥 할 일·🔎 스캔 검수 포함) + 리드나우 기능 위젯 6종(탭·섹션·머리줄·홈 칸·화면·기능) |
+| `src/u2-widgets-extra.js` | 덜 쓰는 무거운 위젯 10종(카드 목록·보드·달력·타임라인·차트·바깥 페이지·변수 바·반복·질의·스캔 검수) — 첫 화면 뒤 쉬는 때·처음 놓일 때 받음 |
 | `src/u2-theme.js` | 색 토큰·밝음/어두움/높은 대비·모양·무늬 6·글꼴·아이콘 |
 | `src/u2-shell.js` | 머리줄·페이지·주소 길·메뉴·쓰기 허락·견본·내보내기/가져오기 |
 | `src/u2.css` | 모양(모두 `.u2-` 머리) |
@@ -93,6 +94,7 @@ NODE_PATH=... node tests/t_tabswap.js    # 섹션 위젯 S.tab 잠깐 바꾸기
 NODE_PATH=... node tests/t_pairs.js      # H-02·03·04
 NODE_PATH=... node tests/t_coexist.js    # H-06·07·08·12
 NODE_PATH=... node tests/t_soak.js       # H-14·15
+NODE_PATH=... node tests/t_perf.js       # 단계 11 숫자(U2_PERF_OUT·U2_PERF_BEFORE로 전/후)
 ```
 - 인터넷의 지금 웹앱은 받지 않습니다 — `U2_BASE`로 가는 요청을 기기 안 배포본 사본(`U2_TEST_OUT`, 기본 `/home/user/w/out`)에서 돌려줍니다.
 - Firebase는 가짜(`tests/fbstub2.js`)입니다.

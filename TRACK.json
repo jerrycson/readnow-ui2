@@ -1,0 +1,7 @@
+{
+  "kind": "readnow-ui2-track",
+  "contract": ["shell", "renderMain", "S.tab", "S.limit", "featGo", "FEAT", "PG_SCR", "WIDGETS", "W_DESC", "isAdminDevice", "deviceName", "#app", "#main", "#sheet", "#modal", "#toast", "header.top", "APP_VER"],
+  "rows": [
+    { "app": "1.78.369", "date": "2026-11-04", "change": "시작 판", "newItems": [], "contract": "ok", "ui2": "0.1.0", "state": "done", "by": "u2a" }
+  ]
+}

@@ -22,9 +22,10 @@ async function open(opt) {
   await ctx.route(/gstatic\.com\/firebasejs\//, (r) => r.fulfill({ body: /firebase-app-compat\.js/.test(r.request().url()) ? STUB : '/* 가짜 */', contentType: 'application/javascript' }));
   await ctx.route(/^https:\/\/jerrycson\.github\.io\/readnow-scripts\//, (r) => {
     const u = new URL(r.request().url()); const rel = u.pathname.replace(/^\/readnow-scripts\//, '');
-    const ov = opt.override && opt.override(rel); if (ov) return r.fulfill(ov);
+    const ov = (opt.override && opt.override(rel)) || (opt.ovRef && opt.ovRef.fn && opt.ovRef.fn(rel)); if (ov) return r.fulfill(ov);
     const f = path.join(OUT, rel); if (!f.startsWith(OUT) || !fs.existsSync(f) || fs.statSync(f).isDirectory()) return r.fulfill({ status: 404, body: '' });
-    r.fulfill({ body: fs.readFileSync(f), contentType: TYPES[path.extname(f).slice(1)] || 'application/octet-stream' });
+    const body = fs.readFileSync(f); const go = () => r.fulfill({ body, contentType: TYPES[path.extname(f).slice(1)] || 'application/octet-stream' }).catch(() => {});
+    if (opt.slowKbps) setTimeout(go, 150 + (body.length * 8) / opt.slowKbps); else go(); /* 느린 망 흉내(가로챈 응답은 브라우저 망 흉내가 안 걸려 직접 늦춤) */
   });
   if (opt.init) await p.addInitScript(opt.init);
   if (opt.seed) await p.addInitScript((s) => { window.__FS_SEED = s; }, opt.seed);

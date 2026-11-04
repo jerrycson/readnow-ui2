@@ -55,7 +55,7 @@ body.u2-body #app > header.top, body.u2-body #app > #main, body.u2-body #app > #
 .u2-cardbtn { flex-direction: column; width: 100%; height: 100%; gap: 2px; }
 .u2-cb-i { font-size: 28px; }
 .u2-cardbtn small { color: var(--sub); }
-.u2-fab { position: fixed; right: 16px; bottom: calc(96px + env(safe-area-inset-bottom, 0px)); z-index: 11; border-radius: 50%; width: 52px; height: 52px; font-size: 22px; background: var(--cloth); color: var(--paper); box-shadow: var(--u2-sh3); }
+.u2-fab { position: fixed; left: 16px; bottom: calc(140px + env(safe-area-inset-bottom, 0px)); /* 왼쪽 — 오른쪽 아래는 지금 웹앱 떠 있는 것(책방 친구·맨 위로·그래프 스위치) 자리 · 아래 가운데는 알림 띠(H-06) */ z-index: 11; border-radius: 50%; width: 52px; height: 52px; font-size: 22px; background: var(--cloth); color: var(--paper); box-shadow: var(--u2-sh3); }
 .u2-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .u2-col { display: flex; flex-direction: column; gap: 6px; }
 .u2-col > .u2-btn { justify-content: flex-start; }

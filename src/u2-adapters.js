@@ -34,6 +34,8 @@
     try { const X = typeof THIN_X !== 'undefined' ? THIN_X[tab] || [] : []; ids.forEach((id) => { if (out[id]) return; const q = (X.find((x) => x[0] === id) || [])[1]; if (!q) return; const c = [...box.children].find((n) => n.matches(q) || n.querySelector(q)); if (c) out[id] = c; }); } catch (e) {}
     box.remove(); return out;
   };
+  /* 같은 탭 머리 부분(소개·묶음 단추 등 id가 있는 것)이 섹션마다 따라 나오면 id가 겹침 → 이미 화면에 있는 id의 요소는 새로 넣는 쪽에서 뺌(옛 코드는 id로 첫 요소만 찾음) */
+  A.dedupe = (n, host) => { n.querySelectorAll('[id]').forEach((e) => { const o = document.getElementById(e.id); if (o && !host.contains(o) && !n.contains(o)) e.remove(); }); };
   /* 모아서 그림: 같은 틱에 놓인 섹션 위젯을 탭마다 한 번에 */
   const flush = () => {
     const q = A.q; A.q = []; A._pend = false; const byTab = new Map();
@@ -42,7 +44,7 @@
       const ids = [...new Set(items.map((i) => i.id))]; const got = A.renderSecs(tab, ids, 'only');
       let miss = ids.filter((id) => !got[id]); if (miss.length) { const f = A.renderSecs(tab, miss, 'full'); miss.forEach((id) => { if (f[id]) got[id] = f[id]; }); } /* 고른 것만 그리기가 안 되는 탭(설정 등)은 탭 전체에서 떼어 냄 */
       miss = ids.filter((id) => !got[id]); miss.forEach((id) => { const w = A.renderSecs(tab, [id], 'whole'); if (w[id]) got[id] = w[id]; }); /* 카드형(매입·상품) — 휴대폰 화면 그대로 */
-      items.forEach((it) => { const n = got[it.id]; if (n) { if (n.tagName === 'DETAILS') n.open = true; it.b.replaceChildren(n); got[it.id] = null; A.retry(it); } else it.b.innerHTML = `<div class="u2-empty">이 섹션은 지금 비어 있거나 이 기기에서 보이지 않음 (${U2.esc(it.id)})</div>`; });
+      items.forEach((it) => { const n = got[it.id]; if (n) { if (n.tagName === 'DETAILS') n.open = true; A.dedupe(n, it.b); it.b.replaceChildren(n); got[it.id] = null; A.retry(it); } else it.b.innerHTML = `<div class="u2-empty">이 섹션은 지금 비어 있거나 이 기기에서 보이지 않음 (${U2.esc(it.id)})</div>`; });
     });
   };
   A.mountSec = (b, tab, id) => {

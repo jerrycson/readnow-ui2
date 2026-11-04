@@ -49,6 +49,26 @@
 | `.github/workflows/ui2-track.yml` | 30분마다 따라잡기 표 → 이 저장소 `track` 가지 · 계약이 깨지면 이슈 |
 | `tests/` | Playwright 시험 |
 
+## 조화 시험(설계안 8-2) — 어느 시험이 맡나
+| 번호 | 무엇 | 시험 |
+|---|---|---|
+| H-01 | 위젯 하나씩(기본 58 · 섹션 122 · 화면 115 · 기능 128) | t_widgets · t_adapters · t_feats |
+| H-02 | 둘씩 짝(기본 모든 짝 1,596 · 기능 대표 짝 190) | t_pairs |
+| H-03 | 분류마다 한 페이지 몽땅 | t_pairs |
+| H-04 | 무작위 배치 200 × 폭 4단계 | t_pairs · t_grid_unit |
+| H-05 | 옛 상세 층·뒤로 가기·Esc | t_load · t_adapters · t_actions |
+| H-06 | 떠 있는 것 겹침(책방 친구·맨 위로·그래프 스위치·알림) | t_coexist |
+| H-07 | 두 웹앱 함께(같은 주소 공간) | t_coexist |
+| H-08 | 단축키가 초점에 따라 갈림 | t_coexist · t_actions |
+| H-09 | CSS 새어 나감(양쪽) | t_widgets |
+| H-10 | 쓰기 막이(읽기만·위젯 허락) | t_load · t_perm · t_feats |
+| H-11 | 돈 숫자 같음(시험 자료 tests/seed2.js) | t_money |
+| H-12 | 휴대폰 얇은 모드·4칸·길게 눌러 끌기 | t_coexist · t_editor |
+| H-13 | 판 바뀜·계약 깨짐 | t_load · t_adapters · t_track |
+| H-14 | 오래 쓰기(줄인 판 150초 · U2_SOAK_SEC) | t_soak |
+| H-15 | 느린 망·끊김·초안 | t_soak |
+| H-16 | 개인 정보 | tools/ship-check2.sh |
+
 ## Firebase 칸(새 웹앱만 씀)
 `ui2_site/main`(전체 설정·메뉴·쓰기 허락) · `ui2_pages/<페이지>`(공용 배치) · `ui2_versions/<페이지>_<판>`(게시 기록) · `ui2_prefs/<기기>`(개인 배치) · `ui2_locks/<페이지>`(편집 잠금) · `ui2_blocked/<기기>_<날짜>`(막은 쓰기 — 칸 이름만) · `ui2_perf/<기기>_<날짜>`(충돌 감시 요약)
 
@@ -67,6 +87,12 @@ NODE_PATH=... node tests/t_adapters.js   # 단계 6 어댑터·자동 목록
 NODE_PATH=... node tests/t_track.js      # 단계 7 따라잡기(RN_REPO=지금 웹앱 저장소)
 NODE_PATH=... node tests/t_default.js    # 단계 8 기본 배치(지금 웹앱과 같은가)·견본·📥 할 일
 NODE_PATH=... node tests/t_new.js        # 단계 9 설치 아이콘·내보내기/가져오기·스캔 검수
+NODE_PATH=... node tests/t_money.js      # H-11 돈 숫자
+NODE_PATH=... node tests/t_feats.js      # 기능 단추 전부
+NODE_PATH=... node tests/t_tabswap.js    # 섹션 위젯 S.tab 잠깐 바꾸기
+NODE_PATH=... node tests/t_pairs.js      # H-02·03·04
+NODE_PATH=... node tests/t_coexist.js    # H-06·07·08·12
+NODE_PATH=... node tests/t_soak.js       # H-14·15
 ```
 - 인터넷의 지금 웹앱은 받지 않습니다 — `U2_BASE`로 가는 요청을 기기 안 배포본 사본(`U2_TEST_OUT`, 기본 `/home/user/w/out`)에서 돌려줍니다.
 - Firebase는 가짜(`tests/fbstub2.js`)입니다.

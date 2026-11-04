@@ -42,7 +42,7 @@
       const ids = [...new Set(items.map((i) => i.id))]; const got = A.renderSecs(tab, ids, 'only');
       let miss = ids.filter((id) => !got[id]); if (miss.length) { const f = A.renderSecs(tab, miss, 'full'); miss.forEach((id) => { if (f[id]) got[id] = f[id]; }); } /* 고른 것만 그리기가 안 되는 탭(설정 등)은 탭 전체에서 떼어 냄 */
       miss = ids.filter((id) => !got[id]); miss.forEach((id) => { const w = A.renderSecs(tab, [id], 'whole'); if (w[id]) got[id] = w[id]; }); /* 카드형(매입·상품) — 휴대폰 화면 그대로 */
-      items.forEach((it) => { const n = got[it.id]; if (n) { if (n.tagName === 'DETAILS') n.open = true; it.b.replaceChildren(n); got[it.id] = null; } else it.b.innerHTML = `<div class="u2-empty">이 섹션은 지금 비어 있거나 이 기기에서 보이지 않음 (${U2.esc(it.id)})</div>`; });
+      items.forEach((it) => { const n = got[it.id]; if (n) { if (n.tagName === 'DETAILS') n.open = true; it.b.replaceChildren(n); got[it.id] = null; A.retry(it); } else it.b.innerHTML = `<div class="u2-empty">이 섹션은 지금 비어 있거나 이 기기에서 보이지 않음 (${U2.esc(it.id)})</div>`; });
     });
   };
   A.mountSec = (b, tab, id) => {
@@ -50,10 +50,17 @@
     const it = { b, tab, id, dead: false }; A.secs.add(it);
     const go = () => { A.q.push(it); if (!A._pend) { A._pend = true; queueMicrotask(flush); } };
     if (U2.legacy.shellDone) go(); else it.off = U2.on('legacyShell', () => !it.dead && go());
-    it.redraw = go; return () => { it.dead = true; if (it.off) it.off(); A.secs.delete(it); };
+    it.redraw = go; return () => { it.dead = true; clearTimeout(it.rt); if (it.off) it.off(); A.secs.delete(it); };
   };
   /* 옛 코드가 다시 그리라고 하면(renderMain) — 0.7초 모아서, 화면에 있는 섹션 위젯만 */
   A.refresh = () => { if (!A.secs.size) return; clearTimeout(A._rt); A._rt = setTimeout(() => A.secs.forEach((it) => { if (!it.dead && it.b.isConnected && !it.b.contains(document.activeElement)) it.redraw(); }), 700); };
+  /* 옛 코드는 자료를 다 받으면 'S.tab이 그 탭일 때만' 다시 그림(지금 웹앱 50곳) — 섹션 위젯은 다른 탭 페이지에 있으므로 못 받음
+   * → ① 받은 자료 표시(주문·상품·판매자·매입·시장 지표·고객)가 바뀌면 섹션 위젯을 다시 그림(2초마다 값만 봄 · 가벼움)
+   *   ② 그린 섹션에 '받는 중' 표시가 남아 있으면 1.5·3·6·12·24초 뒤 다시(5번까지) */
+  const FLAGS = () => { try { return [S.ordersLoaded, S.prodLoaded, S.sellersLoaded, S.pmLoaded, S.pmatchLoaded, S.custLoaded, S.pur && S.pur.loaded, S.qnaAll && S.qnaAll.length, S.ver].join('|'); } catch (e) { return ''; } };
+  let flag0 = null; setInterval(() => { if (!A.secs.size || document.hidden) return; const f = FLAGS(); if (flag0 !== null && f !== flag0) A.refresh(); flag0 = f; }, 2000);
+  const LOADING = /받는 중|불러오는 중|기다리는 중/;
+  A.retry = (it) => { if (it.dead || !it.b.isConnected) return; const busy = LOADING.test(it.b.textContent) || it.b.querySelector('.ldg, .wload'); if (!busy) { it.tries = 0; return; } it.tries = (it.tries || 0) + 1; if (it.tries > 5) return; clearTimeout(it.rt); it.rt = setTimeout(() => !it.dead && it.redraw(), 1500 * Math.pow(2, it.tries - 1)); };
   /* ── 계약 검사 ── */
   A.contract = null;
   A.check = async () => {

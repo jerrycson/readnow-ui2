@@ -35,4 +35,24 @@ async function open(opt) {
 }
 function done(name) { console.log(`\n${name}: 통과 ${passes} · 실패 ${fails}`); process.exitCode = fails ? 1 : 0; }
 const nonU2Writes = (p) => p.evaluate(() => (window.__FSW || []).filter((w) => !/^ui2_/.test(String(w.n).split('/')[0])).map((w) => w.n + ':' + w.op));
-module.exports = { open, ok, done, nonU2Writes, chromium, OUT, PORT };
+/* 지금 웹앱을 그대로 엶(견줄 때) — 같은 가짜 Firebase·같은 배포본 사본 */
+async function openClassic(opt) {
+  opt = opt || {}; const b = opt.browser || (await chromium.launch());
+  const ctx = opt.ctx || (await b.newContext({ viewport: opt.vp || { width: 1400, height: 900 }, serviceWorkers: 'block', ...(opt.ua ? { userAgent: opt.ua, isMobile: true, hasTouch: true } : {}) }));
+  const p = await ctx.newPage(); const errs = []; p.on('pageerror', (e) => errs.push('PAGEERR ' + e.message));
+  if (!opt.ctx) await routeAll(ctx, opt);
+  await p.goto('https://jerrycson.github.io/readnow-scripts/app/index.html'); await p.waitForTimeout(opt.settle || 4000);
+  return { b, ctx, p, errs, close: async () => { if (!opt.browser) await b.close(); else if (!opt.ctx) await ctx.close(); else await p.close(); } };
+}
+/* 시험용 길 묶음: 바깥 막음 · 가짜 Firebase · 지금 웹앱 사본 · (U2_ORIGIN을 쓰면) 새 웹앱도 같은 주소 공간(jerrycson.github.io/readnow-ui2/)으로 */
+async function routeAll(ctx, opt) {
+  opt = opt || {};
+  await ctx.route(/^https?:\/\/(?!localhost)/, (r) => r.fulfill({ status: 404, body: '' }));
+  await ctx.route(/gstatic\.com\/firebasejs\//, (r) => r.fulfill({ body: /firebase-app-compat\.js/.test(r.request().url()) ? STUB : '/* 가짜 */', contentType: 'application/javascript' }));
+  await ctx.route(/^https:\/\/jerrycson\.github\.io\/readnow-scripts\//, (r) => { const rel = new URL(r.request().url()).pathname.replace(/^\/readnow-scripts\//, ''); const ov = opt.override && opt.override(rel); if (ov) return r.fulfill(ov); const f = path.join(OUT, rel); if (!f.startsWith(OUT) || !fs.existsSync(f) || fs.statSync(f).isDirectory()) return r.fulfill({ status: 404, body: '' }); r.fulfill({ body: fs.readFileSync(f), contentType: TYPES[path.extname(f).slice(1)] || 'application/octet-stream' }); });
+  const ROOT = path.join(__dirname, '..');
+  await ctx.route(/^https:\/\/jerrycson\.github\.io\/readnow-ui2\//, (r) => { const rel = new URL(r.request().url()).pathname.replace(/^\/readnow-ui2\//, '') || 'index.html'; const f = path.join(ROOT, rel); if (!f.startsWith(ROOT) || !fs.existsSync(f) || fs.statSync(f).isDirectory()) return r.fulfill({ status: 404, body: '' }); r.fulfill({ body: fs.readFileSync(f), contentType: TYPES[path.extname(f).slice(1)] || 'application/octet-stream' }); });
+}
+const seedFn = require('./seed2.js');
+const seed = (p, n) => p.evaluate(`(${seedFn.toString()})(${JSON.stringify(n || {})})`);
+module.exports = { open, openClassic, routeAll, seed, ok, done, nonU2Writes, chromium, OUT, PORT, STUB };

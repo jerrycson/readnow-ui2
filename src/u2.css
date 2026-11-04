@@ -184,3 +184,4 @@ body.u2-editing .u2-page { margin-left: 260px; margin-right: 300px; padding-bott
   .u2-xywh label { width: calc(50% - 4px); }
 }
 .u2-folded .u2-b { display: none; } .u2-folded .u2-wf { height: auto; } /* 행동 "다른 위젯 접기/펴기" */
+.u2-here { opacity: .5; } .u2-drcat { padding-left: 8px; } .u2-membar { font-weight: 700; }

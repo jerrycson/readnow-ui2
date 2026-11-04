@@ -163,11 +163,13 @@
       draw(); return U2.on('views', draw); } });
 
   /* ═══ 리드나우 기능(옛 화면 그대로 — 어댑터 첫 묶음 · 나머지는 6단계) ═══ */
-  const legacyOk = () => U2.legacy && U2.legacy.ready;
+  const legacyOk = (type) => U2.legacy && U2.legacy.ready && (!type || !U2.adapters || U2.adapters.kindOk(type));
   const safeBox = (b, what) => { b.innerHTML = `<div class="u2-empty">⚠ 지금 웹앱을 불러오지 못해 '${esc(what)}'을(를) 여기서 볼 수 없습니다<br><a class="u2-link" href="${esc(U2.base)}">지금 웹앱에서 열기 ›</a></div>`; };
-  W.TABS = { home: ['🏠', '홈'], search: ['👤', '고객'], products: ['📚', '상품'], sellers: ['🧑‍💼', '판매자'], orders: ['🧾', '주문·매출'], purchase: ['🛒', '매입'], biz: ['💹', '경영'], market: ['🌐', '시장조사'], projects: ['🧪', '프로젝트'] };
+  W.TABS = { home: ['🏠', '홈'], search: ['👤', '고객'], products: ['📚', '상품'], sellers: ['🧑‍💼', '판매자'], orders: ['🧾', '주문·매출'], purchase: ['🛒', '매입'], biz: ['💹', '경영'], market: ['🌐', '시장조사'], projects: ['🧪', '프로젝트'], settings: ['⚙', '설정'] }; /* 설정은 지금 웹앱 머리줄 ⚙ 단추 화면 — 10번째 페이지(설계안 단계 8) */
   W.def('legacy.tab', { name: '지금 웹앱 탭 전체', group: '리드나우 기능', icon: '🧩', legacy: true, one: true, w: 24, h: 40, autoH: true, props: [{ k: 'ref', label: '탭', type: 'select', opts: Object.fromEntries(Object.entries(W.TABS).map(([k, v]) => [k, v.join(' ')])), def: 'home' }],
-    render(b, p, ctx) { if (!legacyOk()) return safeBox(b, (W.TABS[p.ref] || [])[1] || p.ref); if (ctx.edit) { b.innerHTML = `<div class="u2-empty">🧩 지금 웹앱 '${esc((W.TABS[p.ref] || [])[1] || p.ref)}' 탭이 여기에 그대로 나옵니다 (편집 중에는 자리만)</div>`; return; } return U2.legacy.mountTab(b, p.ref, ctx); } });
+    render(b, p, ctx) { if (!legacyOk('legacy.tab')) return safeBox(b, (W.TABS[p.ref] || [])[1] || p.ref); if (ctx.edit) { b.innerHTML = `<div class="u2-empty">🧩 지금 웹앱 '${esc((W.TABS[p.ref] || [])[1] || p.ref)}' 탭이 여기에 그대로 나옵니다 (편집 중에는 자리만)</div>`; return; } return U2.legacy.mountTab(b, p.ref, ctx); } });
+  W.def('legacy.sec', { name: '지금 웹앱 섹션 하나', group: '리드나우 기능', icon: '🧩', legacy: true, one: true, w: 12, h: 16, autoH: true, props: [{ k: 'ref', label: '섹션 id', type: 'text', def: 'bz_pace' }, { k: 'tab', label: '탭', type: 'select', opts: Object.fromEntries(Object.entries(W.TABS).map(([k, v]) => [k, v.join(' ')])), def: 'biz' }],
+    render(b, p, ctx) { const it = U2.catalog && (U2.catalog.items || []).find((i) => i.kind === 'sec' && i.key === p.ref); const nm = it ? it.title : p.ref; if (!legacyOk('legacy.sec')) return safeBox(b, nm); if (ctx.edit) { b.innerHTML = `<div class="u2-empty">🧩 ${esc(nm)}<small>${esc((W.TABS[p.tab] || [])[1] || p.tab)} 탭 섹션 · 받는 자료 ≈${it && it.mem ? it.mem.mb : '?'}MB</small></div>`; return; } return U2.adapters.mountSec(b, p.tab, p.ref); } });
   W.def('legacy.header', { name: '지금 웹앱 머리줄(찾기·설정 단추)', group: '리드나우 기능', icon: '🔝', legacy: true, one: true, w: 24, h: 8, autoH: true, props: [],
     render(b, p, ctx) { if (!legacyOk()) return safeBox(b, '머리줄'); if (ctx.edit) { b.innerHTML = '<div class="u2-empty">🔝 지금 웹앱 머리줄(찾기 칸·⚙ 설정·❓ 설명서)</div>'; return; } return U2.legacy.mountHeader(b); } });
   W.def('legacy.feat', { name: '지금 웹앱 기능 단추', group: '리드나우 기능', icon: '🔧', legacy: true, w: 6, h: 3, props: [{ k: 'feat', label: '기능(🔍 기능 찾기 이름 일부)', type: 'text', def: '오늘 출고' }, { k: 'label', label: '단추 글(비우면 기능 이름)', type: 'text', def: '' }],

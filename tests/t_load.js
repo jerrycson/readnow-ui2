@@ -22,10 +22,10 @@ const { open, ok, done, nonU2Writes } = require('./lib');
   /* ③ 9페이지를 모두 돌며 읽기만 */
   const pages = await p.evaluate(() => U2.site.nav.map((n) => n.id));
   for (const id of pages) { await p.evaluate((i) => U2.go(i), id); await p.waitForTimeout(700); }
-  const tabOk = await p.evaluate(() => U2.cur === 'projects' && document.querySelector('.u2-cell #main') && S.tab === 'projects');
-  ok(tabOk, '탭 9개 페이지를 차례로 열면 옛 탭도 따라 바뀜(마지막 프로젝트)');
+  const tabOk = await p.evaluate(() => U2.cur === 'settings' && document.querySelector('.u2-cell #main') && S.tab === 'settings');
+  ok(tabOk && pages.length === 10, '페이지 10개(탭 9 + ⚙ 설정)를 차례로 열면 옛 탭도 따라 바뀜(마지막 설정)', pages.length + '개');
   await p.goBack(); await p.waitForTimeout(700);
-  ok(await p.evaluate(() => U2.cur === 'market'), '페이지 사이 뒤로 가기(?p= 주소 길)');
+  ok(await p.evaluate(() => U2.cur === 'projects'), '페이지 사이 뒤로 가기(?p= 주소 길)');
   const w1 = await nonU2Writes(p); const bl = await p.evaluate(() => U2.guard.blocked.length);
   ok(w1.length === 0, '읽기만 — 지금 웹앱이 뒤에서 하려던 쓰기도 ui2_ 밖은 0건 통과', '막은 것 ' + bl + '건' + (w1.length ? ' 통과한 것: ' + w1.join(', ') : ''));
   /* ④ 길목마다 */

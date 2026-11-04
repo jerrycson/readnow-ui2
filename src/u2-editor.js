@@ -82,7 +82,8 @@
   Editor.prototype.status = function () {
     const E = this; const st = U2.$('#u2-edst'); if (!st) return;
     const own = E.bp === 'pc' ? '' : E.own() ? ' · 이 폭: PC에서 흘린 배치 + 따로 고친 위젯 ' + E.ovIds().size + '개' : ' · 이 폭은 PC 배치에서 저절로(고친 위젯만 따로 기억)';
-    st.innerHTML = `${E.scope === 'mine' ? '📱 이 기기 배치' : '🌐 공용 배치'} · ${esc(E.draft.title)} · ${E.dirty() ? '<b>게시 안 한 고침 있음</b>' + (E.savedAt ? ' · 초안 저장됨' : '') : '바뀐 것 없음'}${own}${E.lockedBy ? ' · <b class="u2-t-red">' + esc(E.lockedBy) + '가 편집 중 — 게시 막힘</b>' : ''}`;
+    const pm = U2.catalog && U2.legacy && U2.legacy.ready ? U2.catalog.pageMem(E.draft) : null; const memTxt = pm ? ` · <span class="u2-membar ${E.bp === 'phone' && pm.mb > U2.catalog.PHONE_MB ? 'u2-t-red' : ''}" title="이 페이지 옛 기능 위젯이 받는 자료">받는 자료 ≈${pm.mb}MB${pm.unknown ? '+' : ''}${E.bp === 'phone' ? ' / 휴대폰 예산 ' + U2.catalog.PHONE_MB + 'MB' : ''}</span>` : '';
+    st.innerHTML = `${E.scope === 'mine' ? '📱 이 기기 배치' : '🌐 공용 배치'} · ${esc(E.draft.title)} · ${E.dirty() ? '<b>게시 안 한 고침 있음</b>' + (E.savedAt ? ' · 초안 저장됨' : '') : '바뀐 것 없음'}${own}${E.lockedBy ? ' · <b class="u2-t-red">' + esc(E.lockedBy) + '가 편집 중 — 게시 막힘</b>' : ''}${memTxt}`;
     U2.$$('#u2-edtop [data-bp]').forEach((b) => b.classList.toggle('u2-pri', b.dataset.bp === E.bp));
     U2.$$('#u2-edtop [data-scope]').forEach((b) => b.classList.toggle('u2-pri', b.dataset.scope === E.scope));
     const pb = U2.$('#u2-edtop [data-e="pub"]'); if (pb && !pb.classList.contains('u2-armed')) pb.textContent = E.scope === 'mine' ? '💾 이 기기에 저장' : '🚀 게시';
@@ -239,12 +240,13 @@
     const basic = W.order.filter((t) => !W.defs[t].legacy);
     const item = (type, name, icon, extra, props) => `<button type="button" class="u2-dri" draggable="true" data-type="${esc(type)}" ${props ? `data-props="${esc(JSON.stringify(props))}"` : ''} data-q="${esc((name + ' ' + (extra || '')).toLowerCase())}"><span>${esc(icon || '')}</span> ${esc(name)}${extra ? `<small>${esc(extra)}</small>` : ''}</button>`;
     const groups = W.GROUPS.filter((g) => g !== '리드나우 기능').map((g) => `<details class="u2-drg" open><summary>${esc(g)} <small>${basic.filter((t) => W.defs[t].group === g).length}</small></summary>${basic.filter((t) => W.defs[t].group === g).map((t) => item(t, W.defs[t].name, W.defs[t].icon)).join('')}</details>`).join('');
-    const lg = `<details class="u2-drg" open><summary>리드나우 기능 ${U2.legacy && U2.legacy.ready ? '' : '<small>(안전 모드 — 지금 웹앱을 못 불러옴)</small>'}</summary>
-      ${item('legacy.header', '지금 웹앱 머리줄', '🔝', '찾기 칸·설정 단추')}
-      ${Object.entries(W.TABS).map(([k, v]) => item('legacy.tab', '탭 전체 — ' + v[1], v[0], '옛 탭 그대로', { ref: k })).join('')}
-      ${cat.screens.slice(0, 120).map((s) => item('legacy.screen', s.t, '🪟', '화면 열기 단추', { scr: s.k })).join('')}
-      ${cat.home.map((h) => item('legacy.homecard', h.t, '🏠', h.d || '홈 칸', { ref: h.k })).join('')}
-      ${cat.feats.slice(0, 400).map((f) => item('legacy.feat', f.t, '🔧', f.k.slice(0, 60), { feat: f.t })).join('')}</details>`;
+    /* 리드나우 기능 — 지금 웹앱에서 저절로 뽑은 목록(u2-catalog) · 분류 12 · ≈MB · 🆕 · 이 페이지에 있음 */
+    let lg = '';
+    if (U2.legacy && U2.legacy.ready && U2.catalog) {
+      const items = U2.catalog.get().filter((i) => !i.needsArg); const here = new Set(Object.values(E.draft.widgets).map((w) => U2.permKey(w)).filter(Boolean));
+      const byCat = U2.catalog.CATS.map((c, ci) => [c, items.filter((i) => i.cat === ci)]).filter(([, l]) => l.length);
+      lg = `<details class="u2-drg" open><summary>리드나우 기능 <small>${items.length}</small></summary>${item('legacy.header', '지금 웹앱 머리줄', '🔝', '찾기 칸·설정 단추')}${byCat.map(([c, l]) => `<details class="u2-drg u2-drcat"><summary>${esc(c)} <small>${l.length}</small></summary>${l.slice(0, 250).map((i) => { const mb = i.mem && i.mem.mb ? ` · ≈${i.mem.mb}MB` : ''; const kind = { tab: '탭 전체', sec: '섹션', home: '홈 칸', screen: '화면 열기', feat: '기능 단추' }[i.kind]; return item(i.type, (i.isNew ? '🆕 ' : '') + i.title, i.icon, kind + mb + (here.has(i.perm) ? ' · 이 페이지에 있음' : '') + ' ' + (i.desc || ''), i.props).replace('class="u2-dri"', 'class="u2-dri' + (here.has(i.perm) ? ' u2-here' : '') + '"').replace(/data-q="([^"]*)"/, (m, q) => `data-q="${q} ${esc((i.words || '').toLowerCase().slice(0, 400))}"`); }).join('')}</details>`).join('')}</details>`;
+    } else lg = `<details class="u2-drg" open><summary>리드나우 기능 <small>(안전 모드 — 지금 웹앱을 못 불러옴)</small></summary></details>`;
     dr.innerHTML = `<div class="u2-drhead"><input id="u2-edq" type="search" class="u2-in" placeholder="위젯 찾기 ( / 누르고 바로 )" aria-label="위젯 찾기"></div><div class="u2-drlist">${groups}${lg}</div><p class="u2-hint">누르면 빈 곳에 넣음 · PC는 끌어서 원하는 칸에</p>`;
     const q = dr.querySelector('#u2-edq');
     q.oninput = () => { const s = q.value.trim().toLowerCase(); dr.querySelectorAll('.u2-dri').forEach((b) => (b.hidden = !!s && b.dataset.q.indexOf(s) < 0)); if (s) dr.querySelectorAll('.u2-drg').forEach((d) => (d.open = true)); };
@@ -327,6 +329,9 @@
     const E = this, out = []; const ws = Object.entries(E.draft.widgets);
     const cnt = {}; ws.forEach(([, w]) => { if ((W.defs[w.type] || {}).one) { const k = w.type + ':' + ((w.props || {}).ref || ''); cnt[k] = (cnt[k] || 0) + 1; } }); Object.entries(cnt).forEach(([k, n]) => n > 1 && out.push('같은 옛 기능 위젯 ' + n + '개: ' + k));
     if (ws.filter(([, w]) => w.type === 'legacy.tab').length > 1) out.push('옛 탭 전체 위젯이 둘 이상');
+    const tabRef = (ws.find(([, w]) => w.type === 'legacy.tab') || [, { props: {} }])[1].props.ref; ws.forEach(([id, w]) => { if (w.type === 'legacy.sec' && tabRef && (w.props || {}).tab === tabRef) out.push('섹션 위젯 ' + id + '이(가) 같은 탭 전체 위젯과 함께 있음(옛 화면 id가 겹침)'); });
+    if (U2.adapters && U2.adapters.bad && U2.adapters.bad.length) ws.forEach(([id, w]) => { if (!U2.adapters.kindOk(w.type)) out.push('계약이 깨진 위젯(안전 모드로 보임): ' + id); });
+    { const pm = U2.catalog && U2.catalog.pageMem(E.draft); if (pm && E.draft.layouts.phone !== undefined && pm.mb > U2.catalog.PHONE_MB) out.push('휴대폰 예산 넘음: 받는 자료 ≈' + pm.mb + 'MB'); }
     G.BPS.forEach((b) => { const o = G.hasOverlap(U2.layoutFor(E.draft, b)); if (o) out.push(b.name + ' 폭에서 겹침: ' + o.join(' · ')); });
     if (!ws.length) out.push('빈 페이지');
     const nav = new Set((U2.site.nav || []).map((n) => n.id)); ws.forEach(([id, w]) => { const p = w.props || {}; if (p.act === 'page' && p.arg && !nav.has(p.arg)) out.push('없는 페이지로 가는 단추: ' + id + ' → ' + p.arg); });

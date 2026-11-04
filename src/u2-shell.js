@@ -33,7 +33,7 @@
   U2.site = U2.ls.get('c:ui2_site/main', null) || U2.defaultSite();
   U2.pages = {}; U2.prefs = null; U2.cur = null; U2.view = null; U2.edit = null;
   U2.pageForTab = (tab) => { const n = (U2.site.nav || []).find((x) => x.id === tab); if (n) return n.id; for (const [id, p] of Object.entries(U2.pages)) if (Object.values(p.widgets || {}).some((w) => w.type === 'legacy.tab' && w.props && w.props.ref === tab)) return id; return null; };
-  U2.permKey = (w) => { if (!w) return ''; const p = w.props || {}; if (w.type === 'legacy.tab') return 'tab:' + p.ref; if (w.type === 'legacy.feat') return 'feat:' + p.feat; if (w.type === 'legacy.screen') return 'screen:' + p.scr; if (w.type === 'legacy.homecard') return 'home:' + p.ref; if (w.type === 'legacy.header') return 'header'; return ''; };
+  U2.permKey = (w) => { if (!w) return ''; const p = w.props || {}; if (w.type === 'legacy.tab') return 'tab:' + p.ref; if (w.type === 'legacy.feat') return 'feat:' + p.feat; if (w.type === 'legacy.screen') return 'screen:' + p.scr; if (w.type === 'legacy.homecard') return 'home:' + p.ref; if (w.type === 'legacy.header') return 'header'; if (w.type === 'legacy.sec') return 'sec:' + p.ref; return ''; };
   /* 개인 배치가 있으면 그것을(Q4 ①) */
   U2.effective = (id) => { const pub = U2.pages[id] || U2.defaultPage(id); const mine = U2.prefs && U2.prefs.pages && U2.prefs.pages[id]; return mine ? Object.assign({}, pub, { layouts: mine.layouts, widgets: mine.widgets, grid: mine.grid || pub.grid, _mine: true, _basedOn: mine.basedOn }) : pub; };
   U2.layoutFor = (pg, bp) => {

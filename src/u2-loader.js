@@ -57,13 +57,15 @@
     const oShell = window.shell; L.oRender = window.renderMain;
     window.shell = function () { const r = oShell.apply(this, arguments); L.shellDone = true; try { L.lastTab = S.tab; } catch (e) {} /* 여는 순간의 옛 탭은 따라가지 않음(옛 코드가 '그 자리 되살리기'로 탭을 정해도 새 웹앱 페이지는 주소 ?p= 그대로) */ document.body.classList.add('u2-legacy-on'); U2.emit('legacyShell'); return r; };
     window.renderMain = function () {
+      if (U2.adapters && U2.adapters.rendering) return; /* 섹션 위젯을 그리는 동안 옛 코드가 부른 다시 그리기는 무시(탭을 잠깐 바꿔 두었으므로) */
       let tab = null; try { tab = S.tab; } catch (e) {}
       if (L.shellDone && tab && tab !== L.lastTab) { L.lastTab = tab; const pid = U2.pageForTab && U2.pageForTab(tab); if (pid && pid !== U2.cur) { U2.go(pid); return; } }
-      L.refreshCards(); if (U2.data) U2.data.bump(); /* 식이 든 위젯도 0.7초 모아 */
+      L.refreshCards(); if (U2.data) U2.data.bump(); if (U2.adapters) U2.adapters.refresh(); /* 식이 든 위젯도 0.7초 모아 */
       if (!L.tabMounted) { L.dirty = true; return; } /* 이 페이지에 옛 탭이 없으면 그리지 않음(가벼움) */
       return L.oRender.apply(this, arguments);
     };
     L.ready = true;
+    setTimeout(() => { try { U2.adapters && U2.adapters.check(); } catch (e) {} }, 0); /* 계약 검사 */
     try { firebase.auth().onAuthStateChanged((u) => { U2.authed = !!u; U2.emit('auth', u); }); } catch (e) {}
   };
   const home = () => document.getElementById('app');
@@ -75,6 +77,7 @@
       b.innerHTML = ''; b.appendChild(main); L.tabMounted++;
       try { S.tab = ref; S.limit = 30; } catch (e) {} L.lastTab = ref;
       try { L.oRender(); } catch (e) { console.error('[u2] 옛 탭 그리기', e); }
+      try { U2.catalog && setTimeout(() => U2.catalog.learn(main, ref), 1500); } catch (e) {} /* 화면에 나온 섹션을 목록에 더함 */
       return true;
     };
     let ok = put(), off = null, dead = false;

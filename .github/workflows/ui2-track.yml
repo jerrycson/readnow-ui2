@@ -1,0 +1,41 @@
+# 리드나우 2 — 지금 웹앱 따라잡기 표를 30분마다 저절로 (설계안 9-3)
+# 하는 일: 지금 웹앱 저장소(readnow-scripts)를 읽기만 해서 tools/track.js → 바뀌면 이 저장소 'track' 가지에 TRACK.json·TRACK.md만 올림
+#          계약(❌)이 깨지면 이 저장소에 이슈 하나(같은 판이면 다시 안 만듦) · 지금 웹앱 저장소에는 아무것도 쓰지 않음
+name: 따라잡기 표
+on:
+  schedule:
+    - cron: '7,37 * * * *'
+  workflow_dispatch: {}
+permissions:
+  contents: write
+  issues: write
+concurrency: { group: ui2-track, cancel-in-progress: false }
+jobs:
+  track:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: track 가지의 지난 표 받기(있으면)
+        run: |
+          git fetch origin track:track 2>/dev/null && git show track:TRACK.json > TRACK.json || true
+      - uses: actions/checkout@v4
+        with: { repository: jerrycson/readnow-scripts, path: _rs, fetch-depth: 600 }
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - name: 따라잡기 표 만들기
+        id: t
+        run: |
+          set +e; node tools/track.js --repo _rs --since 7; echo "code=$?" >> "$GITHUB_OUTPUT"
+          node -e "const J=require('./TRACK.json'); const b=J.rows.filter(r=>r.state==='❌'); console.log('bad=' + (b.length ? b[b.length-1].app : ''))" >> "$GITHUB_OUTPUT"
+      - name: track 가지에 올리기
+        run: |
+          git config user.name "ui2-track"; git config user.email "ui2-track@users.noreply.github.com"
+          mkdir -p /tmp/t && cp TRACK.json TRACK.md /tmp/t/
+          git checkout --orphan _t && git rm -rfq . && cp /tmp/t/* . && git add TRACK.json TRACK.md
+          git commit -qm "따라잡기 표 $(date -u +%FT%TZ)" && git push -qf origin _t:track
+      - name: 계약이 깨지면 이슈
+        if: steps.t.outputs.bad != ''
+        env: { GH_TOKEN: '${{ github.token }}', V: '${{ steps.t.outputs.bad }}' }
+        run: |
+          T="❌ 따라잡기: 지금 웹앱 $V 에서 계약이 깨짐"
+          gh issue list --state open --search "$T in:title" --json number -q '.[0].number' | grep -q . || gh issue create --title "$T" --body "tools/track.js가 찾음 — TRACK.md(track 가지)의 ❌ 줄을 보고 src/u2-adapters.js·u2-contract.json을 고칩니다."

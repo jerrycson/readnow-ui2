@@ -43,7 +43,10 @@
 | `src/u2-theme.js` | 색 토큰·밝음/어두움/높은 대비·모양·무늬 6·글꼴·아이콘 |
 | `src/u2-shell.js` | 머리줄·페이지·주소 길·메뉴·쓰기 허락·견본·내보내기/가져오기 |
 | `src/u2.css` | 모양(모두 `.u2-` 머리) |
-| `TRACK.md` · `TRACK.json` | 지금 웹앱 따라잡기 표(7단계에서 저절로 채움) |
+| `TRACK.md` · `TRACK.json` | 지금 웹앱 따라잡기 표 — `node tools/track.js --repo ../readnow-scripts`(읽기만) · 손으로 반영 표시 `--mark <커밋> ✅ "메모"` |
+| `tools/track.js` | 따라잡기 자동 검사(판마다 새 탭·섹션·화면·기능·홈 칸 · 계약 · CHANGELOG·날짜) |
+| `tools/ship-check2.sh` | 올리기 전 검사(문법·JSON·판 번호·팝업·개인 정보·따라잡기 ❌) · `install`로 push 전에 저절로 |
+| `.github/workflows/ui2-track.yml` | 30분마다 따라잡기 표 → 이 저장소 `track` 가지 · 계약이 깨지면 이슈 |
 | `tests/` | Playwright 시험 |
 
 ## Firebase 칸(새 웹앱만 씀)
@@ -61,6 +64,7 @@ NODE_PATH=... node tests/t_mem.js       # 메모리 예산(설계안 8-1)
 node tests/t_expr_unit.js                 # 단계 5 계산식 200
 NODE_PATH=... node tests/t_actions.js    # 단계 5 행동·자료
 NODE_PATH=... node tests/t_adapters.js   # 단계 6 어댑터·자동 목록
+NODE_PATH=... node tests/t_track.js      # 단계 7 따라잡기(RN_REPO=지금 웹앱 저장소)
 ```
 - 인터넷의 지금 웹앱은 받지 않습니다 — `U2_BASE`로 가는 요청을 기기 안 배포본 사본(`U2_TEST_OUT`, 기본 `/home/user/w/out`)에서 돌려줍니다.
 - Firebase는 가짜(`tests/fbstub2.js`)입니다.

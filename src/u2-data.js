@@ -28,6 +28,8 @@
     ['시각.시', '지금 몇 시(0~23)', () => new Date().getHours()],
     ['시각.요일', '오늘 요일(0=일)', () => new Date().getDay()],
     ['막은쓰기.수', '이 기기에서 막은 쓰기 수', () => (U2.guard ? U2.guard.blocked.length : 0)],
+    ['따라잡기.할일', '따라잡기 표 ⬜·❌ 줄 수(표를 받았으면)', () => (U2._track ? U2._track.rows.filter((r) => r.state === '⬜' || r.state === '❌').length : null)],
+    ['계약.깨짐', '지금 불러온 판에서 깨진 계약 수', () => (U2.adapters && U2.adapters.bad ? U2.adapters.bad.length : null)],
   ];
   const D = (U2.data = { ALIAS: AL, alias: new Map(AL.map((a) => [a[0], a])) });
   D.ctx = (extra) => ({ get: (n) => { if (extra && n in extra) return extra[n]; if (n in U2.vars) return U2.vars[n]; const a = D.alias.get(n); if (a) { try { const v = a[2](); return v === undefined ? null : v; } catch (e) { return null; } } return undefined; } });

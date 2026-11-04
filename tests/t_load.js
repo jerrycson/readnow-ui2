@@ -20,7 +20,7 @@ const { open, ok, done, nonU2Writes } = require('./lib');
   const sh2 = await p.evaluate(() => ({ on: document.getElementById('sheet').classList.contains('on'), cur: U2.cur }));
   ok(!sh2.on && sh2.cur === 'home', '뒤로 가기 → 상세 화면만 닫히고 새 웹앱 페이지는 그대로', JSON.stringify(sh2));
   /* ③ 9페이지를 모두 돌며 읽기만 */
-  const pages = await p.evaluate(() => U2.site.nav.map((n) => n.id));
+  const pages = await p.evaluate(() => U2.site.nav.map((n) => n.id).filter((id) => id !== 'inbox')); /* 📥 할 일은 새 웹앱 페이지(옛 탭 없음) */
   for (const id of pages) { await p.evaluate((i) => U2.go(i), id); await p.waitForTimeout(700); }
   const tabOk = await p.evaluate(() => U2.cur === 'settings' && document.querySelector('.u2-cell #main') && S.tab === 'settings');
   ok(tabOk && pages.length === 10, '페이지 10개(탭 9 + ⚙ 설정)를 차례로 열면 옛 탭도 따라 바뀜(마지막 설정)', pages.length + '개');

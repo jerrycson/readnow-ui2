@@ -162,6 +162,15 @@
         const sv = b.querySelector('[data-sv]'); if (sv) sv.onclick = () => { const n = b.querySelector('input').value; U2.data.saveView(n, false).then(() => U2.toast('보기 저장: ' + n)).catch((e) => U2.toast(e.message, 1)); }; };
       draw(); return U2.on('views', draw); } });
 
+  /* ═══ 📥 할 일 받은편지함(N3 ★) — 흩어진 '안 끝난 것'을 한 목록으로 · 숫자는 지금 웹앱 상태 별칭(읽기만) · 누르면 원래 화면 ═══ */
+  W.INBOX = '🔗 | 연결 확정 기다림 | 연결확정.수 | 지금 웹앱 탭 열기: pending\n💬 | 받은 문의(전체) | 문의.전체수 | 지금 웹앱 기능 실행: 고객 문의 주제\n🔒 | 이 기기에서 막은 쓰기(시범) | 막은쓰기.수 | 짧은 알림: 시범 중에는 지금 웹앱에서 해 주세요\n🔁 | 새 웹앱 따라잡기 할 일 | 따라잡기.할일 | \n⚠ | 계약이 깨진 옛 기능 | 계약.깨짐 | ';
+  W.def('inbox', { name: '할 일 받은편지함', group: '자료 보기', icon: '📥', w: 12, h: 12, props: [{ k: 'items', label: '줄마다: 아이콘 | 이름 | 식(숫자) | 행동: 대상', type: 'area', def: W.INBOX }, { k: 'hideZero', label: '0인 줄은 숨김', type: 'check', def: false }],
+    render(b, p, ctx) { const rows = lines(p.items).map((l) => { const [ic, nm, ex, ac] = l.split('|').map((s) => (s || '').trim()); const r = ex ? U2.data.eval(ex) : { v: null }; return { ic, nm, v: r.err ? null : r.v, err: r.err, ac }; }).filter((r) => !(p.hideZero && !r.v));
+      const total = rows.reduce((s0, r) => s0 + (typeof r.v === 'number' ? r.v : 0), 0);
+      b.innerHTML = `<div class="u2-inbox"><div class="u2-ibh">처리할 것 <b class="${total ? 'u2-t-red' : 'u2-t-cloth'}">${total.toLocaleString()}</b></div>${rows.map((r, i) => `<div class="u2-ibr ${typeof r.v === 'number' && r.v > 0 ? 'u2-ibon' : ''}"><span>${esc(r.ic)}</span><span class="u2-ibn">${esc(r.nm)}</span><b>${r.err ? '—' : esc(U2Expr.show(r.v))}</b>${r.ac ? `<button type="button" class="u2-btn" data-i="${i}">열기 ›</button>` : '<span></span>'}</div>`).join('')}</div>`;
+      b.querySelectorAll('[data-i]').forEach((x) => (x.onclick = () => { if (ctx.edit) return; const r = rows[+x.dataset.i]; U2.actions.run(U2.actions.parseSeq(r.ac), ctx); }));
+      return { dyn: true }; } });
+
   /* ═══ 리드나우 기능(옛 화면 그대로 — 어댑터 첫 묶음 · 나머지는 6단계) ═══ */
   const legacyOk = (type) => U2.legacy && U2.legacy.ready && (!type || !U2.adapters || U2.adapters.kindOk(type));
   const safeBox = (b, what) => { b.innerHTML = `<div class="u2-empty">⚠ 지금 웹앱을 불러오지 못해 '${esc(what)}'을(를) 여기서 볼 수 없습니다<br><a class="u2-link" href="${esc(U2.base)}">지금 웹앱에서 열기 ›</a></div>`; };

@@ -185,3 +185,8 @@ body.u2-editing .u2-page { margin-left: 260px; margin-right: 300px; padding-bott
 }
 .u2-folded .u2-b { display: none; } .u2-folded .u2-wf { height: auto; } /* 행동 "다른 위젯 접기/펴기" */
 .u2-here { opacity: .5; } .u2-drcat { padding-left: 8px; } .u2-membar { font-weight: 700; }
+
+/* 📥 할 일 받은편지함 */
+.u2-inbox { display: flex; flex-direction: column; gap: 4px; } .u2-ibh { font-weight: 700; margin-bottom: 4px; } .u2-ibh b { font-size: 22px; margin-left: 6px; }
+.u2-ibr { display: grid; grid-template-columns: 28px 1fr auto auto; gap: 8px; align-items: center; padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px; }
+.u2-ibr.u2-ibon { border-left: 4px solid var(--red); background: var(--redSoft); } .u2-ibr b { font-size: 16px; } .u2-ibn { min-width: 0; overflow-wrap: anywhere; }

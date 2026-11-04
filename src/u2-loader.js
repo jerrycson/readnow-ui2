@@ -75,7 +75,7 @@
     const put = () => {
       const main = document.getElementById('main'); if (!main) { b.innerHTML = '<div class="u2-empty">⏳ 지금 웹앱을 여는 중…</div>'; return false; }
       b.innerHTML = ''; b.appendChild(main); L.tabMounted++;
-      try { S.tab = ref; S.limit = 30; } catch (e) {} L.lastTab = ref;
+      try { S.tab = ref; S.limit = 30; S._userAt = Date.now(); } catch (e) {} L.lastTab = ref; /* 사람이 페이지를 바꾼 것 = 옛 화면도 미루지 않고 바로 그림 */
       try { L.oRender(); } catch (e) { console.error('[u2] 옛 탭 그리기', e); }
       try { U2.catalog && setTimeout(() => U2.catalog.learn(main, ref), 1500); } catch (e) {} /* 화면에 나온 섹션을 목록에 더함 */
       return true;

@@ -65,6 +65,7 @@ node tests/t_expr_unit.js                 # 단계 5 계산식 200
 NODE_PATH=... node tests/t_actions.js    # 단계 5 행동·자료
 NODE_PATH=... node tests/t_adapters.js   # 단계 6 어댑터·자동 목록
 NODE_PATH=... node tests/t_track.js      # 단계 7 따라잡기(RN_REPO=지금 웹앱 저장소)
+NODE_PATH=... node tests/t_default.js    # 단계 8 기본 배치(지금 웹앱과 같은가)·견본·📥 할 일
 ```
 - 인터넷의 지금 웹앱은 받지 않습니다 — `U2_BASE`로 가는 요청을 기기 안 배포본 사본(`U2_TEST_OUT`, 기본 `/home/user/w/out`)에서 돌려줍니다.
 - Firebase는 가짜(`tests/fbstub2.js`)입니다.

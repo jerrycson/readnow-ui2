@@ -49,7 +49,7 @@
   U2.mountCell = (c, wid, pg, edit) => {
     if (c._u2off) { try { c._u2off(); } catch (e) {} c._u2off = null; }
     const w = pg.widgets[wid]; const d = W.defs[w && w.type];
-    const p = Object.assign(W.defaults(w && w.type), (w && w.props) || {});
+    const p0 = Object.assign(W.defaults(w && w.type), (w && w.props) || {}); const R = edit ? { p: p0, dyn: false } : U2.data.resolve(p0); const p = R.p; c._dyn = R.dyn; /* '=식'·{{식}} 풀기(단계 5) */
     c.innerHTML = ''; const f = document.createElement('div'); f.className = 'u2-wf' + (d && d.legacy ? ' u2-wf-lg' : ''); f.style.cssText = frameStyle(p);
     if (p.s_pat && p.s_pat !== 'none') { const bg = document.createElement('div'); bg.className = 'u2-wpat'; bg.style.background = U2.theme.pattern(p.s_pat); f.appendChild(bg); }
     if (p.s_title) { const t = document.createElement('div'); t.className = 'u2-wt'; t.textContent = p.s_title; f.appendChild(t); }
@@ -57,7 +57,7 @@
     c.dataset.type = (w && w.type) || ''; const pk = U2.permKey(w); if (pk) c.dataset.perm = pk; else delete c.dataset.perm;
     if (!d) { b.innerHTML = '<div class="u2-empty">모르는 위젯: ' + esc(w && w.type) + '</div>'; return; }
     if (p.guide && !edit) { const gb = document.createElement('button'); gb.type = 'button'; gb.className = 'u2-guide-btn'; gb.textContent = 'ⓘ'; gb.setAttribute('aria-label', '이 위젯 설명'); gb.onclick = () => { let g = f.querySelector('.u2-guide'); if (g) return g.remove(); g = document.createElement('div'); g.className = 'u2-guide'; g.textContent = p.guide; f.appendChild(g); }; f.appendChild(gb); } /* 📖 위젯마다 설명(E7) — 누를 때만(톡 누르기 툴팁 아님) */
-    try { const off = d.render(b, p, { wid, page: pg.id, edit: !!edit, cell: c }); if (typeof off === 'function') c._u2off = off; } catch (e) { b.innerHTML = '<div class="u2-empty">⚠ 위젯 오류: ' + esc(e.message) + '</div>'; console.error('[u2] 위젯', wid, e); }
+    try { const off = d.render(b, p, { wid, page: pg.id, edit: !!edit, cell: c }); if (typeof off === 'function') c._u2off = off; else if (off && off.dyn) c._dyn = true; } catch (e) { b.innerHTML = '<div class="u2-empty">⚠ 위젯 오류: ' + esc(e.message) + '</div>'; console.error('[u2] 위젯', wid, e); }
   };
   /* 옛 기능 위젯을 누르면 그 위젯 종류를 쓰기 막이에 알림(허락 목록과 견줌) */
   document.addEventListener('pointerdown', (e) => { const c = e.target.closest && e.target.closest('.u2-cell[data-perm]'); if (c) U2.setCtx(c.dataset.perm); }, true);
@@ -70,13 +70,24 @@
     const pg = U2.effective(U2.cur); const bp = G.bpOf(host.clientWidth || innerWidth);
     if (!U2.view || opt.reset || U2.view._pg !== pg.id || U2.view._edit) { if (U2.view) U2.view.destroy(); U2.view = new G.View(host, { onNew: (c, it) => U2.mountCell(c, it.id, U2.effective(U2.cur), false), onGone: (c) => { if (c._u2off) try { c._u2off(); } catch (e) {} if (c._ro) c._ro.disconnect(); } }); U2.view._pg = pg.id; }
     const v = U2.view; v.setup(bp.cols, (pg.grid && pg.grid.rowH) || G.ROW_H, pg.grid && pg.grid.half); v._bp = bp.k;
-    let items = U2.layoutFor(pg, bp); if (pg.grid && pg.grid.compact) G.compact(items); v._items = items;
+    let items = U2.layoutFor(pg, bp).filter((i) => U2.data.visible(pg.widgets[i.id])); /* 보이기 조건(단계 5) */ if (pg.grid && pg.grid.compact) G.compact(items); v._items = items;
     v.place(items, 0); autoH(v, pg);
     document.title = (pg.title || '') + ' · 리드나우 2';
     U2.$$('.u2-nav [data-pg]').forEach((x) => x.classList.toggle('on', x.dataset.pg === U2.cur));
     const mine = U2.$('#u2-mine'); if (mine) mine.hidden = !pg._mine;
     if (U2._firstMs == null) U2._firstMs = Math.round(performance.now()); /* 첫 화면 시각(설계안 8-1) */
     U2.emit('rendered', { page: pg.id, bp: bp.k, n: items.length });
+  };
+  U2.curPage = () => (U2.cur ? U2.effective(U2.cur) : null);
+  /* 다른 페이지를 화면 안 층(모달·서랍)에 — 행동 '모달로 열기'(Wix 라이트박스) */
+  U2.miniPage = async (id, cls) => {
+    const pg = U2.pages[id] || (U2.pages[id] = await U2.loadPage(id)); const eff = U2.effective(id);
+    const L = W.layer(cls || 'u2-modal', (eff.icon || '') + ' ' + (eff.title || id), ''); const body = L.querySelector('.u2-lbody'); body.classList.remove('u2-txt');
+    const v = new G.View(body, { onNew: (c, it) => U2.mountCell(c, it.id, eff, false), onGone: (c) => { if (c._u2off) try { c._u2off(); } catch (e) {} } });
+    const bp = G.bpOf(body.clientWidth || 600); v.setup(bp.cols, (eff.grid && eff.grid.rowH) || G.ROW_H, eff.grid && eff.grid.half);
+    v.place(U2.layoutFor(eff, bp).filter((i) => !(W.defs[(eff.widgets[i.id] || {}).type] || {}).legacy && U2.data.visible(eff.widgets[i.id])), 0);
+    const mo = new MutationObserver(() => { if (!L.isConnected) { v.destroy(); mo.disconnect(); } }); mo.observe(L.parentNode || document.body, { childList: true });
+    return L;
   };
   /* 내용 길이에 맞춰 늘어나는 위젯(옛 탭 전체 등) — 보기 모드에서만 높이를 맞추고 아래 위젯을 밂(저장 안 함) */
   function autoH(v, pg) {
@@ -140,6 +151,8 @@
         <label class="u2-lab">글꼴 <select class="u2-in" data-font>${Object.entries(U2.theme.FONTS).map(([k, f]) => `<option value="${k}" ${U2.site.theme.font === k ? 'selected' : ''}>${esc(f.name)}</option>`).join('')}</select></label>
         <label class="u2-lab">기본 테마 <select class="u2-in" data-def>${Object.entries(U2.theme.THEMES).map(([k, t]) => `<option value="${k}" ${U2.site.theme.def === k ? 'selected' : ''}>${esc(t.name)}</option>`).join('')}</select></label></div>
         <button type="button" class="u2-btn u2-pri" data-m="savetheme">공용 모양 저장</button> <span class="u2-hint" data-contrast></span></div>` : ''}
+      <div class="u2-sec"><b>⭐ 저장한 보기</b><div class="u2-row">${U2.data.views().map((v) => `<button type="button" class="u2-btn" data-view="${esc(v.name)}">${esc(v.name)} <small class="u2-sub">${esc(v.scope)}</small></button>`).join('') || '<span class="u2-sub">없음</span>'}</div>
+        <div class="u2-row"><input class="u2-in" style="width:160px" data-vname placeholder="지금 보기 이름" aria-label="지금 보기 이름"><button type="button" class="u2-btn" data-m="vsave">이 기기에 저장</button>${adm ? '<button type="button" class="u2-btn" data-m="vsavepub">공용으로 저장</button>' : ''}</div></div>
       <button type="button" class="u2-btn" data-m="perm">🔒 쓰기 허락 (위젯마다 · 기본 모두 꺼짐)</button>
       <button type="button" class="u2-btn" data-m="mine">📱 이 기기 화면 꾸미기 (개인 배치)</button>
       ${pg._mine ? '<button type="button" class="u2-btn" data-m="unmine">↩ 이 페이지 개인 배치 끄고 공용으로</button>' : ''}
@@ -155,6 +168,9 @@
     const prev = () => { const th = readT(); U2.theme.site = th; U2.theme.apply(U2.theme.cur); const r = U2.theme.contrast(th.tokens['--cloth'], U2.theme.LIGHT['--paper']); const o = L.querySelector('[data-contrast]'); if (o) o.textContent = '강조 색·흰 바탕 대비 ' + r.toFixed(2) + ':1' + (r < 4.5 ? ' ⚠ 4.5 아래 — 글자가 잘 안 보일 수 있음' : ' ✓'); };
     L.querySelectorAll('[data-st],[data-sh],[data-font],[data-def]').forEach((x) => x.addEventListener('input', prev));
     m('savetheme', (e) => U2.twice(e.currentTarget, '모든 기기 기본 모양 바꿈', async () => { U2.site.theme = readT(); await U2.store.set('ui2_site', 'main', { theme: U2.site.theme }, true); U2.toast('공용 모양 저장'); }));
+    L.querySelectorAll('[data-view]').forEach((b) => (b.onclick = () => { L.remove(); U2.data.openView(b.dataset.view).catch((e) => U2.toast(e.message, 1)); }));
+    const vs = (pub) => () => U2.data.saveView(L.querySelector('[data-vname]').value, pub).then((v) => { U2.toast('보기 저장: ' + v.name); L.remove(); }).catch((e) => U2.toast(e.message, 1));
+    m('vsave', vs(false)); m('vsavepub', vs(true));
     m('perm', () => { L.remove(); U2.permScreen(); }); m('mine', () => { L.remove(); U2.openEditor('mine'); });
     m('unmine', (e) => U2.twice(e.currentTarget, '개인 배치 끔(공용 배치로)', async () => { delete U2.prefs.pages[U2.cur]; await U2.savePrefs(); L.remove(); U2.render({ reset: true }); U2.toast('공용 배치로 돌아감'); }));
     m('export', () => U2.exportJson()); m('import', (e) => { const f = e.target.files[0]; if (f) U2.importJson(f).then(() => L.remove()); });

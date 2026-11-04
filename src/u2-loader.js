@@ -59,7 +59,7 @@
     window.renderMain = function () {
       let tab = null; try { tab = S.tab; } catch (e) {}
       if (L.shellDone && tab && tab !== L.lastTab) { L.lastTab = tab; const pid = U2.pageForTab && U2.pageForTab(tab); if (pid && pid !== U2.cur) { U2.go(pid); return; } }
-      L.refreshCards();
+      L.refreshCards(); if (U2.data) U2.data.bump(); /* 식이 든 위젯도 0.7초 모아 */
       if (!L.tabMounted) { L.dirty = true; return; } /* 이 페이지에 옛 탭이 없으면 그리지 않음(가벼움) */
       return L.oRender.apply(this, arguments);
     };

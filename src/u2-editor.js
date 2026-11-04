@@ -16,6 +16,7 @@
     const base = scope === 'mine' ? U2.effective(E.id) : U2.pages[E.id] || U2.defaultPage(E.id);
     E.saved = U2.clone(base); E.draft = U2.clone(opt.load || base); E.draft.id = E.id; E.draft.grid = Object.assign({ rowH: 16, half: false, compact: false }, E.draft.grid || {});
     E.draft.layouts = Object.assign({ pc: [], tab: null, sm: null, phone: null }, E.draft.layouts || {});
+    E.saved.grid = Object.assign({ rowH: 16, half: false, compact: false }, E.saved.grid || {}); E.saved.layouts = Object.assign({ pc: [], tab: null, sm: null, phone: null }, E.saved.layouts || {}); /* 같은 모양으로 맞춰 둠(열자마자 '고침 있음'이 되지 않게) */
     const dk = E.dkey(); const dr = U2.ls.get(dk, null);
     if (!opt.load && dr && dr.snap && dr.snap !== snapOf(E.draft)) { Object.assign(E.draft, JSON.parse(dr.snap)); E.fromDraft = dr.at; }
     if (opt.load) E.note = opt.note;
@@ -169,6 +170,7 @@
   /* ── 넣기·지우기·복사 ── */
   Editor.prototype.add = function (type, props, at) {
     const E = this, d = W.defs[type]; if (!d) return;
+    if (d.adminOnly && !U2.isAdmin()) return U2.toast(d.name + ' — 관리자 기기만 만들 수 있습니다', 1);
     if (d.one && Object.values(E.draft.widgets).some((w) => w.type === type && (!props || !props.ref || (w.props || {}).ref === props.ref))) return U2.toast('이 페이지에 이미 있음 — 옛 기능 위젯은 한 페이지에 하나', 1);
     if (type === 'legacy.tab' && Object.values(E.draft.widgets).some((w) => w.type === 'legacy.tab')) return U2.toast('옛 탭 전체 위젯은 한 페이지에 하나만(옛 화면 id가 겹침)', 1);
     const id = U2.uid('w'); const cols = E.bpo().cols;
@@ -273,6 +275,9 @@
           <label class="u2-chk"><input type="checkbox" data-flag="lock" ${it.lock ? 'checked' : ''}> 🔒 못 움직이게</label> <label class="u2-chk"><input type="checkbox" data-flag="float" ${it.float ? 'checked' : ''}> 겹쳐 놓기 허락</label>
           <div>이 폭에서 숨김: ${G.BPS.map((b) => `<label class="u2-chk"><input type="checkbox" data-hide="${b.k}" ${(w.hide || {})[b.k] ? 'checked' : ''}> ${esc(b.name)}</label>`).join(' ')}</div></details>
         <details class="u2-drg"><summary>모양</summary>${W.STYLE.map((f) => field(f, p[f.k] == null ? '' : p[f.k])).join('')}</details>
+        <details class="u2-drg" ${p.showIf || p.devOnly || p.night ? 'open' : ''}><summary>조건(언제 보일지)</summary>${U2.data.COND.map((f) => field(f, p[f.k] == null ? '' : p[f.k])).join('')}<p class="u2-hint" data-condchk></p></details>
+        ${p.key && U2.actions.keyOk(p.key) ? `<p class="u2-banner u2-warn">⌨ ${esc(U2.actions.keyOk(p.key))}</p>` : ''}
+        <p class="u2-hint">💡 글 칸에 <b>=식</b>(예 =주문.전체수) 또는 <b>{{식}}</b>을 쓰면 보기 모드에서 값으로 바뀜 · 쓸 수 있는 이름: ${U2.data.ALIAS.map((a) => esc(a[0])).join(' · ')}</p>
         ${E.bp !== 'pc' && E.ovIds().has(id) ? '<div class="u2-row"><span class="u2-hint">이 폭에서 따로 고친 자리</span><button type="button" class="u2-btn" data-a="follow">↩ 이 위젯은 PC를 따름</button></div>' : ''}<div class="u2-row"><button type="button" class="u2-btn" data-a="dup">⧉ 복제 (Ctrl+D)</button><button type="button" class="u2-btn u2-red" data-a="del">🗑 지우기 (Delete)</button></div>`;
     } else if (ids.length > 1) {
       h = `<div class="u2-prh"><b>${ids.length}개 고름</b></div><div class="u2-row"><button type="button" class="u2-btn" data-al="left">⇤ 왼쪽 맞춤</button><button type="button" class="u2-btn" data-al="top">⤒ 위 맞춤</button><button type="button" class="u2-btn" data-al="w">↔ 같은 폭</button><button type="button" class="u2-btn" data-al="h">↕ 같은 높이</button><button type="button" class="u2-btn" data-al="space">┅ 같은 간격</button></div><div class="u2-row"><button type="button" class="u2-btn u2-red" data-a="del">🗑 모두 지우기</button></div>`;
@@ -290,6 +295,7 @@
     pr.innerHTML = h + tree + '<datalist id="u2-icons">' + U2.theme.ICONS.map((i) => `<option value="${i}">`).join('') + '</datalist>';
     /* 고치기: 글자를 치는 동안은 한 걸음으로 묶음(칸에 들어갈 때 한 번 기록) */
     const one = ids.length === 1 ? ids[0] : null;
+    const cc = pr.querySelector('[data-condchk]'); const condUpd = () => { if (!cc || !one) return; const si = (E.draft.widgets[one].props || {}).showIf; if (!si) { cc.textContent = ''; return; } const r = U2.data.eval(si); cc.textContent = r.err ? '⚠ 식 오류: ' + r.err + ' (틀리면 늘 보임)' : '지금 값: ' + U2Expr.show(r.v) + ' → ' + (U2Expr.truthy(r.v) ? '보임' : '숨김'); }; condUpd();
     pr.querySelectorAll('[data-k]').forEach((el) => {
       el.addEventListener('focus', () => { el._pushed = false; });
       const apply = () => {
@@ -297,7 +303,7 @@
         const v = el.type === 'checkbox' ? el.checked : el.type === 'number' ? (el.value === '' ? '' : +el.value) : el.value;
         if (one) { const w = E.draft.widgets[one]; w.props = Object.assign({}, w.props, { [el.dataset.k]: v }); E.remount(one); }
         else { E.draft[el.dataset.k] = v; }
-        E.saveDraft(); if (!one) U2.drawBar();
+        E.saveDraft(); if (!one) U2.drawBar(); if (el.dataset.k === 'showIf') condUpd();
       };
       el.addEventListener(el.tagName === 'SELECT' || el.type === 'checkbox' ? 'change' : 'input', apply);
       el.addEventListener('blur', () => { el._pushed = false; if (one) E.drawTreeOnly(); });
@@ -324,6 +330,9 @@
     G.BPS.forEach((b) => { const o = G.hasOverlap(U2.layoutFor(E.draft, b)); if (o) out.push(b.name + ' 폭에서 겹침: ' + o.join(' · ')); });
     if (!ws.length) out.push('빈 페이지');
     const nav = new Set((U2.site.nav || []).map((n) => n.id)); ws.forEach(([id, w]) => { const p = w.props || {}; if (p.act === 'page' && p.arg && !nav.has(p.arg)) out.push('없는 페이지로 가는 단추: ' + id + ' → ' + p.arg); });
+    const bud = U2.data.pageBudget(E.draft); if (bud > U2.data.PAGE_MAX) out.push('Firestore 질의 합 ' + bud + '문서 — 한 페이지 ' + U2.data.PAGE_MAX + '문서까지(게시 막힘)');
+    ws.forEach(([id, w]) => { const p = w.props || {}; if (w.type === 'query') { const b = U2.data.qOk(p); if (b) out.push('질의 위젯 ' + id + ': ' + b); } if (p.key) { const b = U2.actions.keyOk(p.key); if (b) out.push('단축키 ' + id + ': ' + b); } if (p.showIf) { const r = U2Expr.eval(p.showIf, U2.data.ctx()); if (r.err && /모르는 함수|남은 글|필요함|덜 끝남|모르는 글자/.test(r.err)) out.push('보이기 조건 식 오류 ' + id + ': ' + r.err); } });
+    const keys = ws.map(([, w]) => (w.props || {}).key).filter(Boolean).map((k) => k.toUpperCase()); const dupK = keys.filter((k, i) => keys.indexOf(k) !== i); if (dupK.length) out.push('같은 단축키를 둘 이상: ' + [...new Set(dupK)].join(', '));
     const fabs = ws.filter(([, w]) => w.type === 'fab').length; if (fabs > 1) out.push('떠 있는 단추가 ' + fabs + '개 — 서로 겹침');
     return out;
   };
@@ -341,6 +350,8 @@
     const hz = E.health(); const d = E.diff(); const lbl = `${E.scope === 'mine' ? '이 기기에 저장' : '모든 기기에 게시'} (위젯 +${d.add} −${d.del} · 옮김 ${d.moved} · 속성 ${d.props})${hz.length ? ' ⚠ 검사 ' + hz.length + '건' : ''}`;
     if (hz.length && !btn._u2arm) U2.toast('⚠ 배치 검사: ' + hz.join(' / '), 1, 6000);
     if (E.scope === 'pub' && !U2.isAdmin()) return U2.toast('공용 배치는 관리자 기기에서만 게시합니다', 1);
+    if (U2.data.pageBudget(E.draft) > U2.data.PAGE_MAX) return U2.toast('Firestore 질의가 한 페이지 ' + U2.data.PAGE_MAX + '문서를 넘어 게시할 수 없습니다', 1);
+    if (Object.values(E.draft.widgets).some((w) => w.type === 'query') && !U2.isAdmin()) return U2.toast('Firestore 질의 위젯은 관리자 기기만 둘 수 있습니다', 1);
     if (E.scope === 'pub' && E.lockedBy) return U2.toast(E.lockedBy + '가 편집 중이라 게시를 막았습니다', 1);
     U2.twice(btn, lbl, () => E.doPublish());
   };

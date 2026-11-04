@@ -46,12 +46,12 @@
 ## 시험 돌리기
 ```
 cd <저장소>  &&  python3 -m http.server 8810        # 따로 켜 둠
-NODE_PATH=<playwright가 있는 node_modules> node ui2/tests/t_grid_unit.js
-NODE_PATH=... node ui2/tests/t_load.js      # 단계 1
-NODE_PATH=... node ui2/tests/t_editor.js    # 단계 2·3
-NODE_PATH=... node ui2/tests/t_widgets.js   # 단계 4
-NODE_PATH=... node ui2/tests/t_perm.js      # 쓰기 허락(Q3)
-NODE_PATH=... node ui2/tests/t_mem.js       # 메모리 예산(설계안 8-1)
+NODE_PATH=<playwright가 있는 node_modules> node tests/t_grid_unit.js
+NODE_PATH=... node tests/t_load.js      # 단계 1
+NODE_PATH=... node tests/t_editor.js    # 단계 2·3
+NODE_PATH=... node tests/t_widgets.js   # 단계 4
+NODE_PATH=... node tests/t_perm.js      # 쓰기 허락(Q3)
+NODE_PATH=... node tests/t_mem.js       # 메모리 예산(설계안 8-1)
 ```
 - 인터넷의 지금 웹앱은 받지 않습니다 — `U2_BASE`로 가는 요청을 기기 안 배포본 사본(`U2_TEST_OUT`, 기본 `/home/user/w/out`)에서 돌려줍니다.
 - Firebase는 가짜(`tests/fbstub2.js`)입니다.

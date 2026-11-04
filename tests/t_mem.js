@@ -21,7 +21,7 @@ async function measure(b, url, phone) {
   const b = await chromium.launch();
   for (const phone of [false, true]) {
     const classic = await measure(b, 'https://jerrycson.github.io/readnow-scripts/app/index.html', phone);
-    const ui2 = await measure(b, 'http://localhost:' + PORT + (process.env.U2_PATH || '/ui2/') + 'index.html?p=home', phone);
+    const ui2 = await measure(b, 'http://localhost:' + PORT + (process.env.U2_PATH || '/') + 'index.html?p=home', phone);
     const d = Math.round((ui2.mb - classic.mb) * 10) / 10; const lim = phone ? 20 : 30; const nm = phone ? '휴대폰' : 'PC';
     ok(d <= lim, `${nm}: 새 웹앱 틀만의 메모리 더함 ${lim}MB 안`, `지금 웹앱 ${classic.mb}MB → 새 웹앱 ${ui2.mb}MB (더함 ${d}MB) · DOM ${classic.dom} → ${ui2.dom}`);
     ok(ui2.lt <= (phone ? 5 : 3), `${nm}: 첫 10초 긴 멈춤(200ms 넘음) ${phone ? 5 : 3}번 안`, `지금 웹앱 ${classic.lt}번 · 새 웹앱 ${ui2.lt}번`);

@@ -28,7 +28,7 @@ async function open(opt) {
   });
   if (opt.init) await p.addInitScript(opt.init);
   if (opt.seed) await p.addInitScript((s) => { window.__FS_SEED = s; }, opt.seed);
-  const url = 'http://localhost:' + PORT + (process.env.U2_PATH || '/ui2/') + 'index.html' + (opt.q || ''); /* 저장소 맨 위에 놓으면 U2_PATH=/ */
+  const url = 'http://localhost:' + PORT + (process.env.U2_PATH || '/') + 'index.html' + (opt.q || ''); /* 저장소 맨 위에 놓으면 U2_PATH=/ */
   await p.goto(url);
   if (opt.wait !== false) { await p.waitForFunction(() => window.U2 && (window.U2.legacy.ready && window.U2.legacy.shellDone || window.U2.safe), null, { timeout: 90000 }).catch(() => {}); await p.waitForTimeout(opt.settle || 1500); }
   return { b, ctx, p, errs, dialogs, close: async () => { if (!opt.browser) await b.close(); else await ctx.close(); } };

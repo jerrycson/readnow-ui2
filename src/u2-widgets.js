@@ -13,24 +13,13 @@
   const lines = (t) => String(t || '').split('\n').map((s) => s.trim()).filter(Boolean);
   const num = (v) => { const n = parseFloat(String(v).replace(/[^0-9.\-]/g, '')); return isFinite(n) ? n : 0; };
   /* 행동(설계안 5-4 일부): 페이지로·링크·알림·복사·옛 기능 실행·옛 화면 열기 — 확인이 필요하면 두 번 누르기 */
-  W.ACTS = { none: '없음', page: '페이지로', link: '바깥 주소', toast: '짧은 알림', copy: '글 복사', feat: '지금 웹앱 기능 실행', screen: '지금 웹앱 화면 열기' };
-  U2.act = (a, el, ctx) => {
-    a = a || {}; const run = () => {
-      if (a.do === 'page') return U2.go && U2.go(a.arg);
-      if (a.do === 'toast') return U2.toast(a.arg || '');
-      if (a.do === 'copy') { try { navigator.clipboard.writeText(a.arg || ''); U2.toast('복사함'); } catch (e) { U2.toast('복사 못 함', 1); } return; }
-      if (a.do === 'feat') return U2.legacy && U2.legacy.feat(a.arg, ctx);
-      if (a.do === 'screen') return U2.legacy && U2.legacy.screen(a.arg, ctx);
-    };
-    if (a.do === 'link') return; /* 링크는 <a>로 그림(브라우저 팝업 창 안 씀) */
-    if (a.confirm && el) return U2.twice(el, a.confirmLabel || (W.ACTS[a.do] || '실행'), run);
-    return run();
-  };
-  const ACT_PROPS = [{ k: 'act', label: '누르면', type: 'select', opts: W.ACTS, def: 'none' }, { k: 'arg', label: '대상(페이지 id·주소·글·기능 이름)', type: 'text', def: '' }, { k: 'confirm', label: '두 번 눌러 확인', type: 'check', def: false }];
+  /* 행동은 u2-actions.js(단계 5) — 여기서는 속성 칸만 가져옴 */
+  W.ACTS = U2.actions.opts();
+  const ACT_PROPS = U2.actions.PROPS();
   const actOf = (p) => ({ do: p.act, arg: p.arg, confirm: p.confirm });
   const linkAttr = (p) => (p.act === 'link' && /^https?:\/\//.test(p.arg || '') ? ` href="${esc(p.arg)}" target="${p.newTab ? '_blank' : '_self'}" rel="noopener"` : '');
   const btnHtml = (p, cls) => (p.act === 'link' ? `<a class="u2-btn ${cls || ''}"${linkAttr(p)}>${esc(p.icon || '')} ${esc(p.label || '')}</a>` : `<button type="button" class="u2-btn ${cls || ''}">${esc(p.icon || '')} ${esc(p.label || '')}</button>`);
-  const wireBtn = (body, p, ctx) => { body.querySelectorAll('button.u2-btn').forEach((b) => (b.onclick = () => !ctx.edit && U2.act(actOf(p), b, ctx))); };
+  const wireBtn = (body, p, ctx) => { body.querySelectorAll('button.u2-btn').forEach((b) => (b.onclick = () => !ctx.edit && U2.actions.fire(p, b, ctx))); };
 
   /* ═══ 글·그림 (10) ═══ */
   W.def('heading', { name: '제목', group: '글·그림', icon: '🔠', w: 12, h: 3, props: [{ k: 'text', label: '글', type: 'text', def: '제목' }, { k: 'size', label: '크기', type: 'select', opts: { s: '작게', m: '보통', l: '크게', xl: '아주 크게' }, def: 'l' }, { k: 'align', label: '맞춤', type: 'select', opts: { left: '왼쪽', center: '가운데', right: '오른쪽' }, def: 'left' }],
@@ -159,6 +148,19 @@
   W.def('repeat', { name: '반복', group: '기타', icon: '🔁', w: 12, h: 8, props: [{ k: 'items', label: '줄마다 자료(| 로 칸)', type: 'area', def: '로거 | 켜짐\nJS-MAIN | 켜짐' }, { k: 'tpl', label: '모양({1} {2} = 칸)', type: 'text', def: '💻 {1} — {2}' }],
     render(b, p) { b.innerHTML = `<div class="u2-gal">${lines(p.items).map((l) => { const c = l.split('|').map((s) => s.trim()); return `<div class="u2-gcard">${esc(String(p.tpl || '').replace(/\{(\d)\}/g, (m, i) => c[+i - 1] || ''))}</div>`; }).join('')}</div>`; } });
   W.def('recent', { name: '최근 연 페이지', group: '기타', icon: '🕘', w: 6, h: 6, props: [], render(b, p, ctx) { const r = U2.ls.get('recent', []) || []; b.innerHTML = r.length ? `<div class="u2-col">${r.slice(0, 8).map((id) => { const n = navList().find((x) => x.id === id) || { title: id }; return `<button type="button" class="u2-btn" data-pg="${esc(id)}">${esc(n.icon || '')} ${esc(n.title)}</button>`; }).join('')}</div>` : '<div class="u2-empty">아직 없음</div>'; wirePg(b, ctx); } });
+
+  /* ═══ 자료·계산(단계 5) ═══ */
+  W.def('calc', { name: '계산 카드', group: '자료 보기', icon: '🧮', w: 5, h: 5, props: [{ k: 'label', label: '이름', type: 'text', def: '계산' }, { k: 'expr', label: '식(예 퍼센트(연결확정.수, 주문.전체수))', type: 'text', def: '주문.전체수' }, { k: 'unit', label: '단위', type: 'text', def: '' }, { k: 'warnIf', label: '빨강 조건(식 · 값은 이름 값)', type: 'text', def: '' }],
+    render(b, p) { const r = U2.data.eval(p.expr); let warn = false; if (p.warnIf) { const w = U2Expr.eval(p.warnIf, U2.data.ctx({ 값: r.v })); warn = !w.err && U2Expr.truthy(w.v); } b.innerHTML = `<div class="u2-kpi ${warn ? 'u2-warn' : ''}"><small>${esc(p.label)}</small><b>${r.err ? '<span class="u2-t-red" style="font-size:13px">⚠ ' + esc(r.err) + '</span>' : esc(U2Expr.show(r.v))}<span class="u2-unit">${esc(p.unit)}</span></b></div>`; return { dyn: true }; } });
+  W.def('query', { name: 'Firestore 질의 목록(읽기만)', group: '자료 보기', icon: '🗃', w: 12, h: 12, adminOnly: true, props: [{ k: 'col', label: '칸 이름(예 ui2_pages)', type: 'text', def: 'ui2_pages' }, { k: 'where', label: "조건(칸 == 값 · 비우면 없음)", type: 'text', def: '' }, { k: 'order', label: '정렬 칸', type: 'text', def: '' }, { k: 'desc', label: '큰 것부터', type: 'check', def: false }, { k: 'limit', label: '몇 문서(200까지)', type: 'number', def: 20 }, { k: 'fields', label: '보일 칸(쉼표 · 비우면 id만)', type: 'text', def: 'title' }],
+    render(b, p, ctx) { if (ctx.edit) { b.innerHTML = `<div class="u2-empty">🗃 ${esc(p.col)} 에서 ${Math.min(200, +p.limit || 20)}문서 읽음(보기 모드에서)</div>`; return; } b.innerHTML = '<div class="u2-empty">⏳ 읽는 중…</div>'; let dead = false;
+      U2.data.query(p).then((rows) => { if (dead) return; const f = String(p.fields || '').split(',').map((s) => s.trim()).filter(Boolean); b.innerHTML = `<div class="u2-tblw"><table class="u2-tbl"><thead><tr><th>id</th>${f.map((k) => `<th>${esc(k)}</th>`).join('')}</tr></thead><tbody>${rows.map((r) => `<tr><td>${esc(r._id)}</td>${f.map((k) => `<td>${esc(typeof r[k] === 'object' ? JSON.stringify(r[k]).slice(0, 60) : r[k])}</td>`).join('')}</tr>`).join('') || `<tr><td colspan="${f.length + 1}">없음</td></tr>`}</tbody></table></div>`; }).catch((e) => { if (!dead) b.innerHTML = `<div class="u2-empty">⚠ ${esc(e.message)}</div>`; });
+      return () => { dead = true; }; } });
+  W.def('views', { name: '저장한 보기', group: '기타', icon: '⭐', w: 12, h: 4, props: [{ k: 'save', label: "'지금 보기 저장' 칸 보이기", type: 'check', def: true }],
+    render(b, p, ctx) { const draw = () => { const vs = U2.data.views(); b.innerHTML = `<div class="u2-row">${vs.map((v) => `<button type="button" class="u2-btn" data-v="${esc(v.name)}">⭐ ${esc(v.name)} <small class="u2-sub">${esc(v.scope)}</small></button>`).join('') || '<span class="u2-sub">저장한 보기가 없음</span>'}${p.save && !ctx.edit ? '<input class="u2-in" style="width:140px" placeholder="보기 이름" aria-label="보기 이름"><button type="button" class="u2-btn u2-pri" data-sv>지금 보기 저장</button>' : ''}</div>`;
+        b.querySelectorAll('[data-v]').forEach((x) => (x.onclick = () => !ctx.edit && U2.data.openView(x.dataset.v).catch((e) => U2.toast(e.message, 1))));
+        const sv = b.querySelector('[data-sv]'); if (sv) sv.onclick = () => { const n = b.querySelector('input').value; U2.data.saveView(n, false).then(() => U2.toast('보기 저장: ' + n)).catch((e) => U2.toast(e.message, 1)); }; };
+      draw(); return U2.on('views', draw); } });
 
   /* ═══ 리드나우 기능(옛 화면 그대로 — 어댑터 첫 묶음 · 나머지는 6단계) ═══ */
   const legacyOk = () => U2.legacy && U2.legacy.ready;

@@ -183,3 +183,4 @@ body.u2-editing .u2-page { margin-left: 260px; margin-right: 300px; padding-bott
   .u2-bar { padding: 4px 8px 0; } .u2-nav { margin: 4px -8px 0; padding: 0 8px; }
   .u2-xywh label { width: calc(50% - 4px); }
 }
+.u2-folded .u2-b { display: none; } .u2-folded .u2-wf { height: auto; } /* 행동 "다른 위젯 접기/펴기" */

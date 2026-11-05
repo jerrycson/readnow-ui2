@@ -12,6 +12,9 @@
   U2.defaultSite = () => ({ ver: 1, rev: 0, nav: Object.entries(TABS).map(([id, [icon, title]]) => ({ id, title, icon })).concat([{ id: 'inbox', title: '할 일', icon: '📥' }]), theme: {}, writeOk: {}, lockAll: false }); /* 📥 할 일 받은편지함(N3 ★)은 맨 끝에 더함 — 지금 웹앱과 같은 10페이지는 그대로 */
   U2.defaultPage = (id) => {
     const t = TABS[id] || U2.EXTRA_TABS[id];
+    if (t && id === 'projects') return { id, title: t[1], icon: t[0], grid: { rowH: 16, half: false, compact: false }, rev: 0, /* 🧪 프로젝트 = 지금 웹앱과 같게 + 맨 위 '🗓 새 웹앱 일정' 한 줄(11/05) */
+      widgets: { hdr: { type: 'legacy.header', props: {} }, plan: { type: 'u2plan', props: {} }, main: { type: 'legacy.tab', props: { ref: id } } },
+      layouts: { pc: [{ id: 'hdr', x: 0, y: 0, w: 24, h: 8 }, { id: 'plan', x: 0, y: 8, w: 24, h: 5 }, { id: 'main', x: 0, y: 13, w: 24, h: 40 }], tab: null, sm: null, phone: null } };
     if (t) return { id, title: t[1], icon: t[0], grid: { rowH: 16, half: false, compact: false }, rev: 0,
       widgets: { hdr: { type: 'legacy.header', props: {} }, main: { type: 'legacy.tab', props: { ref: id } } },
       layouts: { pc: [{ id: 'hdr', x: 0, y: 0, w: 24, h: 8 }, { id: 'main', x: 0, y: 8, w: 24, h: 40 }], tab: null, sm: null, phone: null } };
@@ -130,8 +133,11 @@
   U2.go = async (id, o) => {
     o = o || {}; if (!id) return; if (U2.edit && !o.force) { U2.toast('편집 중 — 먼저 ◀ 보기로'); return; }
     U2.cur = id; if (!U2.pages[id]) { const pg = await U2.loadPage(id); if (U2.cur !== id) return; U2.pages[id] = pg; }
+    /* 페이지 맞춤(11/05): 사람이 고른 페이지면 옛 상세 층(등록·출고 등)·점수 창을 닫고 그 페이지의 옛 탭으로 — 옛 코드가 탭을 바꿔 따라온 것(fromLegacy)은 연 층을 그대로 둠 */
+    const stale = !!(history.state && !history.state.u2); /* 옛 화면이 쌓은 뒤로 가기 칸({reg:1} 등) 위면 그 칸을 새 페이지로 덮음(뒤로 가기에 닫힌 층이 남지 않게) */
+    if (U2.legacy && U2.legacy.syncTo) U2.legacy.syncTo(id, { keepOverlay: !!(o.fromLegacy || o.pop) });
     const url = '?p=' + encodeURIComponent(id) + location.hash;
-    try { if (o.replace) history.replaceState({ u2: 1, p: id }, '', url); else if (!o.pop) history.pushState({ u2: 1, p: id }, '', url); } catch (e) {}
+    try { if (o.replace || (stale && !o.pop && !o.fromLegacy)) history.replaceState({ u2: 1, p: id }, '', url); else if (!o.pop) history.pushState({ u2: 1, p: id }, '', url); } catch (e) {}
     const r = (U2.ls.get('recent', []) || []).filter((x) => x !== id); r.unshift(id); U2.ls.set('recent', r.slice(0, 12));
     U2.render({ reset: true }); try { window.scrollTo(0, 0); } catch (e) {}
   };
@@ -187,6 +193,7 @@
       <label class="u2-btn u2-file">⬆ 배치 가져오기 <input type="file" accept="application/json" data-m="import" hidden></label>
       <button type="button" class="u2-btn" data-m="watch">🩺 충돌 감시 보기</button>
       <button type="button" class="u2-btn" data-m="track">🔁 따라잡기 표</button>
+      <button type="button" class="u2-btn" data-m="plan">🗓 전체 일정·진행(설계안 단계 0~13)</button>
       <a class="u2-btn" href="${esc(U2.base)}">↩ 지금 웹앱으로 가기</a>
       <p class="u2-hint">이 기기: <b>${esc(U2.dev())}</b> · ${adm ? '관리자 기기(공용 배치 게시 가능)' : '관리자 기기 아님(개인 배치만)'} · 지금 웹앱 ${esc(U2.legacy.appVer || '불러오지 못함')} · 새 웹앱 ${esc(U2.ver)}</p></div>`);
     L.querySelectorAll('[data-th]').forEach((b) => (b.onclick = () => { U2.theme.choose(b.dataset.th); L.remove(); U2.render({ reset: true }); }));
@@ -201,7 +208,7 @@
     m('perm', () => { L.remove(); U2.permScreen(); }); m('mine', () => { L.remove(); U2.openEditor('mine'); });
     m('unmine', (e) => U2.twice(e.currentTarget, '개인 배치 끔(공용 배치로)', async () => { delete U2.prefs.pages[U2.cur]; await U2.savePrefs(); L.remove(); U2.render({ reset: true }); U2.toast('공용 배치로 돌아감'); }));
     m('export', () => U2.exportJson()); m('import', (e) => { const f = e.target.files[0]; if (f) U2.importJson(f).then(() => L.remove()); });
-    m('watch', () => { L.remove(); U2.watchScreen(); }); m('track', () => { L.remove(); U2.trackScreen(); });
+    m('watch', () => { L.remove(); U2.watchScreen(); }); m('track', () => { L.remove(); U2.trackScreen(); }); m('plan', () => { L.remove(); U2.planScreen(); });
   };
   U2.savePrefs = async () => { U2.prefs = U2.prefs || { pages: {} }; U2.prefs.at = U2.now(); U2.prefs.dev = U2.dev(); await U2.store.set('ui2_prefs', U2.devKey(), U2.prefs); };
 
@@ -233,6 +240,27 @@
     U2.panel('🔁 따라잡기 표', `<p class="u2-hint">지금 웹앱 판마다 새 웹앱에 반영할 것(tools/track.js가 저절로 · 마지막 ${U2.esc((J && J.at || '').slice(0, 16).replace('T', ' '))}) — ⬜ 할 일 ${cnt('⬜')} · ❌ 계약 깨짐 ${cnt('❌')} · ✅ 반영 ${cnt('✅')} · ➖ ${cnt('➖')}</p>${bad}
       ${rows.length ? `<div class="u2-tblw"><table class="u2-tbl u2-track"><thead><tr><th>판</th><th>날짜</th><th>바뀐 것</th><th>새로 생김</th><th>계약</th><th>반영</th></tr></thead><tbody>${rows.slice(0, 80).map((r) => `<tr><td>${U2.esc(r.app)}</td><td>${U2.esc(r.date || r.at)}</td><td>${U2.esc(r.change)}</td><td>${U2.esc(it(r.newItems))}</td><td>${r.contract === 'ok' ? '✅' : '❌ ' + U2.esc([].concat(r.contract).join(', '))}</td><td>${U2.esc(r.state)}</td></tr>`).join('')}</tbody></table></div>` : '<p class="u2-hint">표를 받지 못함</p>'}`);
   };
+  /* ── 🗓 전체 일정·진행(설계안 단계 0~13) — TRACK.json의 plan(30분마다 track 가지) → 없으면 이 판 PLAN.json · 진행 중 단계(시범 운행 14일)는 지금 시각으로 셈 ── */
+  U2.loadPlan = async () => { for (const u of ['https://raw.githubusercontent.com/jerrycson/readnow-ui2/track/TRACK.json', 'TRACK.json', 'PLAN.json']) { try { const r = await fetch(u, { cache: 'no-cache' }); if (!r.ok) continue; const j = await r.json(); const P = j && (j.kind === 'readnow-ui2-plan' ? j : j.plan); if (P && P.stages) return (U2._plan = P); } catch (e) {} } return null; };
+  const PST = { done: ['✅', '끝', 'u2-pl-done'], doing: ['⏳', '진행 중', 'u2-pl-doing'], boss: ['🙋', '정범님 필요', 'u2-pl-boss'], todo: ['⬜', '아직', 'u2-pl-todo'] };
+  U2.planPct = (s, now) => { if (s.state === 'done' || s.state === 'boss') return 100; if (s.state === 'todo') return 0; if (s.pct != null) return Math.max(0, Math.min(100, +s.pct)); if (s.days && s.start) return Math.max(0, Math.min(99, Math.round(((now - Date.parse(s.start)) / 864e5 / s.days) * 100))); return 0; };
+  U2.planSum = (P, now) => { now = now || Date.now(); const S0 = (P && P.stages) || []; const est = S0.reduce((a, s) => a + (+s.estH || 0), 0); const dh = S0.reduce((a, s) => a + (+s.estH || 0) * U2.planPct(s, now) / 100, 0); const g = {}; S0.forEach((s) => { if (s.group && s.start && s.end) g[s.group] = Math.round((Date.parse(s.end) - Date.parse(s.start)) / 6e4); }); const act = S0.reduce((a, s) => a + (s.group ? 0 : +s.actMin || 0), 0) + Object.values(g).reduce((a, b) => a + b, 0); const cnt = {}; Object.keys(PST).forEach((k) => (cnt[k] = S0.filter((s) => s.state === k).length)); const cur = S0.find((s) => s.state === 'doing') || S0.find((s) => s.state === 'todo') || null; return { est, doneH: Math.round(dh * 10) / 10, pct: est ? Math.round((dh / est) * 100) : 0, act, g, cnt, n: S0.length, cur }; };
+  const hmin = (m) => (m == null ? '—' : m >= 60 ? Math.floor(m / 60) + '시간 ' + (m % 60) + '분' : m + '분');
+  const kst = (iso) => (iso ? new Date(Date.parse(iso) + 9 * 3600e3).toISOString().slice(5, 16).replace('T', ' ') : '');
+  U2.planHtml = (P, now) => {
+    now = now || Date.now(); if (!P || !P.stages) return '<p class="u2-hint">일정 표(PLAN.json)를 받지 못함</p>';
+    const T = U2.planSum(P, now); const seen = new Set(); const maxH = Math.max(...P.stages.map((s) => +s.estH || 0), 1);
+    const act = (s) => { if (s.group) { if (seen.has(s.group)) return '<span class="u2-sub">위와 함께</span>'; seen.add(s.group); return hmin(T.g[s.group]) + ' <small class="u2-sub">(' + esc(s.group) + ' 합)</small>'; } if (s.state === 'doing' && s.days && s.start) return Math.floor((now - Date.parse(s.start)) / 864e5) + '일째 / ' + s.days + '일'; return hmin(s.actMin); };
+    const rows = P.stages.map((s) => { const pc = U2.planPct(s, now); const st = PST[s.state] || ['', s.state, '']; return `<tr class="${st[2]}" data-stage="${s.n}"><td><b>${s.n}</b></td><td>${esc(s.name)}<br><small class="u2-sub">${esc(s.goal || '')}</small></td><td><span class="u2-pl-st">${st[0]} ${st[1]}</span></td>
+      <td class="u2-pl-bars"><div class="u2-pl-bar" title="진행 ${pc}%"><i style="width:${pc}%"></i></div><small>${pc}%</small><div class="u2-pl-est" title="예상 ${s.estH}시간"><i style="width:${Math.round((+s.estH || 0) / maxH * 100)}%"></i></div></td>
+      <td>${s.estH}시간</td><td>${act(s)}</td><td><small>${esc(kst(s.start))}${s.end ? ' ~ ' + esc(kst(s.end)) : s.start ? ' ~' : ''}</small></td><td><small>${esc(s.boss || '')}${s.note ? (s.boss ? '<br>' : '') + '<span class="u2-sub">' + esc(s.note) + '</span>' : ''}</small></td></tr>`; }).join('');
+    return `<div class="u2-plan"><div class="u2-pl-top"><b>만들기(코드) ${T.pct}%</b> <span class="u2-sub">어림 ${T.est}시간 중 ${T.doneH}시간어치 · 실제 걸린 시간 합 ${hmin(T.act)}</span>
+      <div class="u2-pl-bar u2-pl-big" role="progressbar" aria-valuenow="${T.pct}" aria-valuemin="0" aria-valuemax="100"><i style="width:${T.pct}%"></i></div>
+      <div class="u2-row"><span class="u2-chip">정범님 확인까지 끝 ${T.cnt.done}/${T.n}</span><span class="u2-chip">🙋 정범님 필요 ${T.cnt.boss}</span><span class="u2-chip">⏳ 진행 중 ${T.cnt.doing}</span><span class="u2-chip">⬜ 아직 ${T.cnt.todo}</span>${T.cur ? `<span class="u2-chip">지금: ${T.cur.n} ${esc(T.cur.name)}</span>` : ''}</div></div>
+      <div class="u2-tblw"><table class="u2-tbl u2-pl-tbl"><thead><tr><th>단계</th><th>이름</th><th>상태</th><th>진행 · 예상 길이</th><th>예상</th><th>실제</th><th>시작~끝(한국 시각)</th><th>정범님 할 일 · 메모</th></tr></thead><tbody>${rows}</tbody></table></div>
+      <p class="u2-hint">🙋 = 코드는 끝, 정범님 확인이 남음 · 진행 중 단계는 지금 시각으로 셈(시범 운행 = 지난 날 ÷ 14일) · 표는 PLAN.json(설계안 readnow-chats reports/2026-11-04_custom_app_plan.md 11장) · ${esc((P.updated || '').replace('T', ' ').slice(0, 16))} 고침</p></div>`;
+  };
+  U2.planScreen = async () => { const L = U2.panel('🗓 전체 일정·진행', '<p class="u2-hint">⏳ 일정 표를 받는 중…</p>', 'u2-planp'); const P = U2._plan || (await U2.loadPlan()); const body = L.querySelector('.u2-lbody'); const draw = () => { if (L.isConnected) body.innerHTML = U2.planHtml(P); }; draw(); const iv = setInterval(() => { if (!L.isConnected) return clearInterval(iv); draw(); }, 60e3); return L; };
   /* ── 내보내기/가져오기(E5 ★) — 브라우저 팝업 없이 내려받기 링크 ── */
   U2.exportJson = () => { const data = { kind: 'readnow-ui2-layout', ver: U2.ver, at: U2.now(), dev: U2.dev(), site: { nav: U2.site.nav, theme: U2.site.theme }, pages: U2.pages, prefs: U2.prefs }; const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 1)], { type: 'application/json' })); a.download = 'readnow2-배치-' + U2.today() + '.json'; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000); U2.toast('배치 파일을 내려받음'); };
   U2.importJson = async (file) => { try { const d = JSON.parse(await file.text()); if (d.kind !== 'readnow-ui2-layout' || !d.pages) throw new Error('리드나우 2 배치 파일이 아님'); const id = U2.cur; const pg = d.pages[id]; if (!pg) throw new Error('이 페이지(' + id + ') 배치가 파일에 없음'); U2.openEditor(U2.isAdmin() ? 'pub' : 'mine', { load: pg, note: '가져온 파일' }); U2.toast('가져온 배치를 편집기에 열었습니다 — 게시해야 반영'); } catch (e) { U2.toast('가져오기 실패: ' + e.message, 1); } };

@@ -8,6 +8,12 @@ body.u2-body { margin: 0; padding: 0 !important; background: var(--bg, #F3F5F4);
 /* 옛 뼈대: 머리줄·탭 줄·#main은 위젯이 데려갈 때만 보임 · 상세 층(#sheet)·#modal·토스트는 그대로 */
 body.u2-body #app > header.top, body.u2-body #app > #main, body.u2-body #app > #tabs, body.u2-body #app > #rank, body.u2-body #app > .tabs { display: none !important; }
 .u2-lg header.top { display: block !important; position: static !important; }
+/* 옛 상세 층(#sheet — 등록·출고·고객 상세 등)은 새 웹앱 머리(+알림 띠) 아래에서 시작 — 머리가 층 맨 위를 덮지 않게 · 머리의 페이지 단추는 늘 누를 수 있음(누르면 층을 닫고 그 페이지로) · --u2-top은 u2-loader가 잼 */
+body.u2-body #sheet.sheet { top: var(--u2-top, 0px) !important; }
+body.u2-body #sheet .mnv-side { top: var(--u2-top, 0px) !important; }
+/* 지금 웹앱 '새 판으로 바뀜' 띠(.verbar — body 맨 앞에 붙고 sticky top:0 · z-index 50)는 새 웹앱 머리·화면 안 층(z 40)을 덮음 → 새 웹앱에선 흐름대로 맨 위에 한 번(내리면 사라짐) */
+body.u2-body > .verbar:not(.mini) { position: relative !important; top: auto !important; z-index: 1 !important; }
+body.u2-body #rn-off, body.u2-body #netwarn { top: calc(var(--u2-top, 0px) + 4px) !important; }
 .u2-lg #main { display: block !important; max-width: none; padding-bottom: 8px; }
 /* 머리줄 */
 .u2-bar { position: sticky; top: 0; z-index: 12; background: var(--paper); border-bottom: 1px solid var(--line); padding: 6px 12px 0; }
@@ -193,3 +199,15 @@ body.u2-editing .u2-page { margin-left: 260px; margin-right: 300px; padding-bott
 .u2-scanmsg { margin: 6px 0; padding: 8px; border-radius: 8px; background: var(--soft); font-weight: 700; } .u2-scanmsg.u2-ok { background: var(--soft); color: var(--cloth); } .u2-scanmsg.u2-bad { background: var(--redSoft); color: var(--red); } .u2-scanv { width: 100%; max-height: 40vh; border-radius: 8px; }
 .u2-cell.u2-lazy { background: transparent; } /* 아직 안 그린 칸(보일 때 그림) */
 .u2-perf { position: absolute; right: 4px; bottom: 2px; font-size: 10px; color: var(--sub); background: var(--paper); border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; pointer-events: none; }
+
+/* 🗓 전체 일정·진행 */
+.u2-pl-bar { display: block; flex: none; height: 10px; border-radius: 6px; background: var(--soft); overflow: hidden; min-width: 60px; }
+.u2-pl-bar > i { display: block; height: 100%; background: var(--cloth); border-radius: 6px; }
+.u2-pl-big { height: 16px; margin: 6px 0; }
+.u2-pl-est { height: 4px; margin-top: 3px; background: transparent; }
+.u2-pl-est > i { display: block; height: 100%; background: var(--line); border-radius: 2px; }
+.u2-pl-bars { min-width: 120px; } .u2-pl-bars small { font-size: 11px; }
+.u2-pl-boss .u2-pl-bar > i { background: var(--amber, #C9A227); } .u2-pl-doing .u2-pl-bar > i { background: var(--blue, #1F5FAF); } .u2-pl-todo td { color: var(--sub); }
+.u2-pl-st { white-space: nowrap; }
+.u2-pl-mini { display: flex; flex-direction: column; gap: 4px; width: 100%; height: 100%; text-align: left; border: 0; background: transparent; color: inherit; font: inherit; cursor: pointer; padding: 2px 4px; }
+.u2-planp .u2-lbody { max-width: min(1100px, 96vw); }

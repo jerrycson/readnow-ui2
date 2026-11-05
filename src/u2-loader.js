@@ -55,19 +55,74 @@
     const miss = ['shell', 'renderMain'].filter((n) => typeof window[n] !== 'function');
     if (miss.length) throw new Error('계약 함수가 없음: ' + miss.join(', '));
     const oShell = window.shell; L.oRender = window.renderMain;
-    window.shell = function () { const r = oShell.apply(this, arguments); L.shellDone = true; try { L.lastTab = S.tab; } catch (e) {} /* 여는 순간의 옛 탭은 따라가지 않음(옛 코드가 '그 자리 되살리기'로 탭을 정해도 새 웹앱 페이지는 주소 ?p= 그대로) */ document.body.classList.add('u2-legacy-on'); U2.emit('legacyShell'); return r; };
+    window.shell = function () { const r = oShell.apply(this, arguments); L.shellDone = true; L.shellAt = performance.now(); L.watchSheet(); try { L.lastTab = S.tab; } catch (e) {} /* 여는 순간의 옛 탭은 따라가지 않음(옛 코드가 '그 자리 되살리기'로 탭을 정해도 새 웹앱 페이지는 주소 ?p= 그대로) */ document.body.classList.add('u2-legacy-on'); U2.emit('legacyShell'); return r; };
     window.renderMain = function () {
       if (U2.adapters && U2.adapters.rendering) return; /* 섹션 위젯을 그리는 동안 옛 코드가 부른 다시 그리기는 무시(탭을 잠깐 바꿔 두었으므로) */
       let tab = null; try { tab = S.tab; } catch (e) {}
-      if (L.shellDone && tab && tab !== L.lastTab) { L.lastTab = tab; const pid = U2.pageForTab && U2.pageForTab(tab); if (pid && pid !== U2.cur) { U2.go(pid); return; } }
+      if (L.shellDone && tab && tab !== L.lastTab) { L.lastTab = tab; const pid = U2.pageForTab && U2.pageForTab(tab); if (pid && pid !== U2.cur) { U2.go(pid, { fromLegacy: true }); return; } }
       L.refreshCards(); if (U2.data) U2.data.bump(); if (U2.adapters) U2.adapters.refresh(); /* 식이 든 위젯도 0.7초 모아 */
       if (!L.tabMounted) { L.dirty = true; return; } /* 이 페이지에 옛 탭이 없으면 그리지 않음(가벼움) */
       return L.oRender.apply(this, arguments);
     };
+    L.attachAt = performance.now(); L.wrapBoot();
     L.ready = true;
     setTimeout(() => { try { U2.adapters && U2.adapters.check(); } catch (e) {} }, 0); /* 계약 검사 */
     try { firebase.auth().onAuthStateChanged((u) => { U2.authed = !!u; U2.emit('auth', u); }); } catch (e) {}
   };
+  /* ── 페이지 맞춤(정범님 11/05 '어느 페이지를 골라도 같은 등록 화면') ──
+   * 까닭: 새 웹앱(…/readnow-ui2/)과 지금 웹앱(…/readnow-scripts/app/)은 같은 주소 공간(jerrycson.github.io)이라 기기 저장소를 함께 씀
+   *   → 지금 웹앱이 연 지 0.9초 뒤 '하던 상품 등록 화면 다시 엶'(localStorage rn-reg-ui)·'새로고침 전 자리'(sessionStorage rn-place)를 되살림
+   *   → 옛 상세 층 #sheet(position:fixed · 화면 전체 · z-index 10)가 켜진 채로 남아, 새 웹앱 페이지를 바꿔도(탭은 바뀌지만) 그 층이 늘 위를 덮음
+   * 고침(지금 웹앱 코드는 그대로 · 바깥에서 그 전역 함수만 감쌈):
+   *   ① 여는 동안(옛 화면 틀이 선 뒤 12초 · 사람이 아무것도 누르기 전)은 '저절로 되살리기'를 하지 않음 — placeRead → 없음 · openRegister → 건너뜀(기록만)
+   *      그 사이 다른 길로 저절로 열린 상세 층도 닫음(주소 #c= 같은 링크로 연 것은 그대로)
+   *   ② 사람이 새 웹앱 페이지를 고르면(U2.go) 옛 상세 층·점수 창을 닫고(지금 웹앱 closeDetail·closeModal) 그 페이지의 옛 탭(맞춤표 L.tabFor)으로 옮김
+   *   ③ 옛 상세 층은 새 웹앱 머리 아래에서 시작(--u2-top · 머리 높이·알림 띠·화면 폭이 바뀌면 다시 잼) */
+  L.userAt = 0; L.suppressed = [];
+  ['pointerdown', 'keydown', 'touchstart'].forEach((ev) => document.addEventListener(ev, (e) => { if (e.isTrusted !== false) L.userAt = performance.now(); }, { capture: true, passive: true }));
+  const LINK_HASH = /^#(c|open|man|upd)=/; /* 지금 웹앱 주소 링크로 일부러 여는 것 — 막지 않음 */
+  L.bootGate = () => !(L.userAt > (L.attachAt || 0)) && (!L.shellAt || performance.now() - L.shellAt < 12000) && !LINK_HASH.test(location.hash || '');
+  L.wrapBoot = function () {
+    const wrap = (n, alt) => { const o = window[n]; if (typeof o !== 'function' || o._u2) return; const f = function () { if (L.bootGate()) { L.suppressed.push({ n, at: Math.round(performance.now()) }); return alt; } return o.apply(this, arguments); }; f._u2 = 1; f._orig = o; window[n] = f; };
+    wrap('placeRead', null); /* 새로고침 전 자리(탭·상세 화면) — 새 웹앱은 주소 ?p= 가 자리 */
+    wrap('openRegister', undefined); /* 하던 상품 등록 다시 엶(rn-reg-ui) — 사람이 누른 뒤에는 그대로 열림 */
+  };
+  L.closeOverlays = function (why) {
+    const out = [];
+    try { const md = document.getElementById('modal'); if (md && md.classList.contains('on') && typeof closeModal === 'function') { closeModal(); out.push('modal'); } } catch (e) {}
+    try { const sh = document.getElementById('sheet'); if (sh && (sh.classList.contains('on') || (typeof S !== 'undefined' && S.detail))) { if (typeof closeDetail === 'function') closeDetail(); else { sh.classList.remove('on'); document.body.style.overflow = ''; } out.push('sheet'); } } catch (e) { console.warn('[u2] 옛 상세 층 닫기', e); }
+    if (out.length) L.closed = (L.closed || []).concat([{ why, out, at: Math.round(performance.now()) }]).slice(-20);
+    return out;
+  };
+  /* 새 웹앱 페이지 → 옛 탭 맞춤표(페이지 안 '지금 웹앱 탭 전체' 위젯이 가리키는 탭 · 없으면 같은 이름 탭 · 그래도 없으면 없음) */
+  L.tabFor = function (pid) {
+    try { const pg = U2.effective ? U2.effective(pid) : null; const w = pg && Object.values(pg.widgets || {}).find((x) => x.type === 'legacy.tab'); if (w && w.props && w.props.ref) return w.props.ref; } catch (e) {}
+    return (U2W && U2W.TABS && U2W.TABS[pid]) || (U2.EXTRA_TABS && U2.EXTRA_TABS[pid]) ? pid : null;
+  };
+  L.syncTo = function (pid, o) {
+    o = o || {}; if (!L.ready) return [];
+    const out = o.keepOverlay ? [] : L.closeOverlays('page:' + pid);
+    const tab = L.tabFor(pid); if (tab) { try { if (S.tab !== tab) { S.tab = tab; S.limit = 30; } L.lastTab = tab; } catch (e) {} }
+    return out;
+  };
+  /* 상세 층·머리 높이 */
+  L.measureTop = function () {
+    const bar = document.getElementById('u2-bar'); if (!bar) return;
+    const ed = document.querySelector('.u2-edtop'); const r = (ed || bar).getBoundingClientRect(); const top = Math.max(0, Math.round(r.bottom));
+    if (top !== L._top) { L._top = top; document.documentElement.style.setProperty('--u2-top', top + 'px'); }
+  };
+  L.watchSheet = function () {
+    const sh = document.getElementById('sheet'); if (!sh || sh._u2w) return; sh._u2w = 1;
+    let iv = null;
+    const on = () => {
+      const isOn = sh.classList.contains('on'); document.body.classList.toggle('u2-sheet-on', isOn);
+      if (isOn) { L.measureTop(); if (!iv) iv = setInterval(L.measureTop, 600); if (L.bootGate()) { L.suppressed.push({ n: 'sheet', at: Math.round(performance.now()) }); setTimeout(() => { if (L.bootGate() && sh.classList.contains('on')) L.closeOverlays('boot'); }, 0); } }
+      else if (iv) { clearInterval(iv); iv = null; }
+    };
+    new MutationObserver(on).observe(sh, { attributes: true, attributeFilter: ['class'] }); on();
+  };
+  addEventListener('resize', () => L.measureTop && L.measureTop(), { passive: true });
+  addEventListener('scroll', () => { if (document.body.classList.contains('u2-sheet-on')) L.measureTop(); }, { passive: true });
   const home = () => document.getElementById('app');
   /* T1 탭 위젯: 옛 #main을 이 칸으로 옮기고 그 탭을 그림(한 페이지에 하나) */
   L.mountTab = function (b, ref) {
@@ -102,9 +157,9 @@
   const GL = { FEAT: () => (typeof FEAT !== 'undefined' ? FEAT : null), PG_SCR: () => (typeof PG_SCR !== 'undefined' ? PG_SCR : null), WIDGETS: () => (typeof WIDGETS !== 'undefined' ? WIDGETS : null), W_DESC: () => (typeof W_DESC !== 'undefined' ? W_DESC : null) };
   L.list = (n) => { try { return GL[n] ? GL[n]() : null; } catch (e) { return null; } };
   L.findFeat = (q) => { const F = L.list('FEAT'); if (!F || !q) return null; return F.find((f) => f.t === q) || F.find((f) => String(f.t).indexOf(q) >= 0) || null; };
-  L.feat = (q) => { const f = L.findFeat(q); if (!f) return U2.toast('기능을 찾지 못함: ' + q, 1); U2.setCtx('feat:' + q); try { return typeof featGo === 'function' ? featGo(f) : f.go && f.go.fn && f.go.fn(); } catch (e) { U2.toast('기능 실행 중 오류: ' + e.message, 1); } };
+  L.feat = (q) => { const f = L.findFeat(q); if (!f) return U2.toast('기능을 찾지 못함: ' + q, 1); L.userAt = performance.now(); /* 새 웹앱에서 일부러 연 것 = 여는 동안 막이를 끝냄 */ U2.setCtx('feat:' + q); try { return typeof featGo === 'function' ? featGo(f) : f.go && f.go.fn && f.go.fn(); } catch (e) { U2.toast('기능 실행 중 오류: ' + e.message, 1); } };
   L.findScreen = (k) => { const P = L.list('PG_SCR'); if (!P) return null; return P.find((r) => r[0] === k) || null; };
-  L.screen = (k) => { const r = L.findScreen(k); const fn = r && window[r[3]]; if (typeof fn !== 'function') return U2.toast('화면을 열 수 없음: ' + k, 1); U2.setCtx('screen:' + k); try { return fn(); } catch (e) { U2.toast('화면을 여는 중 오류: ' + e.message, 1); } };
+  L.screen = (k) => { const r = L.findScreen(k); const fn = r && window[r[3]]; if (typeof fn !== 'function') return U2.toast('화면을 열 수 없음: ' + k, 1); L.userAt = performance.now(); U2.setCtx('screen:' + k); try { return fn(); } catch (e) { U2.toast('화면을 여는 중 오류: ' + e.message, 1); } };
   /* 서랍에 보일 옛 기능 목록 — 실행 중에 지금 웹앱 목록에서 저절로(설계안 6-3 첫 단계) */
   L.catalog = () => {
     const out = { screens: [], feats: [], home: [] };

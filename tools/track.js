@@ -41,13 +41,46 @@ const changelog = (t, ver) => { if (!ver) return ''; const b = between(t, "  '" 
 const dateOf = (t, ver) => (new RegExp("'" + String(ver).replace(/\./g, '\\.') + "': '(\\d{4}-\\d{2}-\\d{2})'").exec(between(t, 'const UPDATE_DATES = {', '};')) || [])[1] || '';
 const cmpVer = (a, b) => { const x = String(a || '0').split('.').map(Number), y = String(b || '0').split('.').map(Number); for (let i = 0; i < 3; i++) { if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) - (y[i] || 0); } return 0; };
 const diff = (a, b) => ({ add: b.filter((x) => !a.includes(x)), del: a.filter((x) => !b.includes(x)) });
+/* ── 전체 일정(PLAN.json · 단계 0~13) — TRACK.json plan · TRACK.md 맨 위 '전체 일정 요약' ── */
+const ST = { done: '✅ 끝', doing: '⏳ 진행 중', boss: '🙋 정범님 필요', todo: '⬜ 아직' };
+function readPlan() { try { return JSON.parse(fs.readFileSync(path.join(ROOT, 'PLAN.json'), 'utf8')); } catch (e) { return null; } }
+/* 단계 진행도(%): 끝·정범님 필요(코드는 끝, 정범님 확인만 남음) 100 · 진행 중 = 적은 pct 또는 달력 날수(지난 날 ÷ days) · 아직 0 */
+function stagePct(s, now) { if (s.state === 'done' || s.state === 'boss') return 100; if (s.state === 'todo') return 0; if (s.pct != null) return Math.max(0, Math.min(100, +s.pct)); if (s.days && s.start) return Math.max(0, Math.min(99, Math.round(((now - Date.parse(s.start)) / 864e5 / s.days) * 100))); return 0; }
+function planSum(P, now) {
+  now = now || Date.now(); const S = (P && P.stages) || []; const est = S.reduce((a, s) => a + (+s.estH || 0), 0);
+  const doneH = S.reduce((a, s) => a + (+s.estH || 0) * stagePct(s, now) / 100, 0);
+  const groups = {}; S.forEach((s) => { if (s.group && s.start && s.end) groups[s.group] = Math.round((Date.parse(s.end) - Date.parse(s.start)) / 6e4); });
+  const actMin = S.reduce((a, s) => a + (s.group ? 0 : +s.actMin || 0), 0) + Object.values(groups).reduce((a, b) => a + b, 0);
+  return { est, doneH: Math.round(doneH * 10) / 10, pct: est ? Math.round((doneH / est) * 100) : 0, actMin, groups, n: S.length, cnt: Object.fromEntries(Object.keys(ST).map((k) => [k, S.filter((s) => s.state === k).length])) };
+}
+const bar = (pct, n) => { n = n || 20; const f = Math.round((pct / 100) * n); return '█'.repeat(f) + '░'.repeat(n - f); };
+const hm = (m) => (m == null ? '—' : m >= 60 ? Math.floor(m / 60) + '시간 ' + (m % 60) + '분' : m + '분');
+function planMd(P, now) {
+  if (!P || !P.stages) return '';
+  now = now || Date.now(); const T = planSum(P, now); const esc = (s) => String(s || '').replace(/\|/g, '／').replace(/\n/g, ' ');
+  const kst = (iso) => (iso ? new Date(Date.parse(iso) + 9 * 3600e3).toISOString().slice(5, 16).replace('T', ' ') : '');
+  const seenG = new Set();
+  const act = (s) => { if (s.group) { if (seenG.has(s.group)) return '↑'; seenG.add(s.group); return hm(T.groups[s.group]) + '(' + s.group + ' 합)'; } if (s.state === 'doing' && s.days && s.start) return Math.floor((now - Date.parse(s.start)) / 864e5) + '일째 / ' + s.days + '일'; return hm(s.actMin); };
+  return `## 🗓 전체 일정 요약 (설계안 단계 0~13)
+
+만들기(코드) **${T.pct}%** \`${bar(T.pct, 30)}\` · 어림 ${T.est}시간 중 ${T.doneH}시간어치 · 실제 걸린 시간 합 ${hm(T.actMin)} · **정범님 확인까지 끝난 단계 ${T.cnt.done}/${T.n}** · ✅ 끝 ${T.cnt.done} · 🙋 정범님 필요 ${T.cnt.boss} · ⏳ 진행 중 ${T.cnt.doing} · ⬜ 아직 ${T.cnt.todo}
+(손으로 고치는 \`PLAN.json\` → 이 표 · 새 웹앱 ☰ 메뉴·🧪 프로젝트 페이지 '🗓 전체 일정'에서 막대로 · 🙋 = 코드는 끝, 정범님 확인이 남음)
+
+| 단계 | 이름 | 상태 | 진행 | 예상 | 실제 | 시작~끝(한국 시각) | 정범님 할 일 |
+|---|---|---|---|---|---|---|---|
+${P.stages.map((s) => { const pc = stagePct(s, now); return `| ${s.n} | ${esc(s.name)} | ${ST[s.state] || s.state} | \`${bar(pc, 10)}\` ${pc}% | ${s.estH}시간 | ${act(s)} | ${kst(s.start)}${s.end ? ' ~ ' + kst(s.end) : s.start ? ' ~' : ''} | ${esc(s.boss || '')} |`; }).join('\n')}
+
+`;
+}
+function writePlan(out) { const jf = path.join(out, 'TRACK.json'); const J = JSON.parse(fs.readFileSync(jf, 'utf8')); J.plan = readPlan(); fs.writeFileSync(jf, JSON.stringify(J, null, 1) + '\n'); fs.writeFileSync(path.join(out, 'TRACK.md'), md(J)); return J; }
 function run(opt) {
   const repo = path.resolve(opt.repo); const git = (args) => cp.execFileSync('git', ['-C', repo].concat(args), { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
   const contract = JSON.parse(fs.readFileSync(path.join(ROOT, 'u2-contract.json'), 'utf8'));
   const jf = path.join(opt.out, 'TRACK.json'); let J = { kind: 'readnow-ui2-track', rows: [] }; try { J = JSON.parse(fs.readFileSync(jf, 'utf8')); } catch (e) {}
+  J.plan = readPlan(); /* 전체 일정 — 늘 이 판의 PLAN.json으로 */
   J.rows = (J.rows || []).filter((r) => r.sha); const have = new Set(J.rows.map((r) => r.sha.slice(0, 9)));
   const log = git(['log', '--since=' + opt.since + '.days', '--format=%H|%cI|%s', '--reverse', '--', 'src/app.html']).trim().split('\n').filter(Boolean).slice(-opt.max);
-  if (!log.length) { if (!opt.quiet) console.log('바뀐 판 없음'); return { J, added: 0, todo: 0, bad: 0 }; }
+  if (!log.length) { fs.writeFileSync(jf, JSON.stringify(J, null, 1) + '\n'); fs.writeFileSync(path.join(opt.out, 'TRACK.md'), md(J)); if (!opt.quiet) console.log('바뀐 판 없음'); return { J, added: 0, todo: 0, bad: 0 }; }
   /* 앞 판 = 그 커밋의 첫 부모(가지가 섞인 log 차례로 견주면 판이 오락가락함) */
   const memo = new Map(); const ex = (sha) => { if (memo.has(sha)) return memo.get(sha); let v = null; try { v = extract(git(['show', sha + ':src/app.html']), contract); } catch (e) {} memo.set(sha, v); if (memo.size > 40) memo.delete(memo.keys().next().value); return v; };
   let added = 0; const t0 = Date.now();
@@ -78,6 +111,8 @@ function md(J) {
   const rows = J.rows.slice().reverse();
   return `# 🔁 따라잡기 표 (지금 웹앱 판 → 새 웹앱 반영)
 
+${planMd(J.plan)}## 판마다 따라잡기
+
 \`tools/track.js\`가 저절로 채웁니다(지금 웹앱 저장소를 읽기만 함). 마지막: ${J.at || ''} · 마지막 커밋 ${J.lastSha || ''}
 읽는 법: ⬜ 할 일(새 탭·섹션·화면·기능이 생김 — 분류·설명·기본 자리 확인) · ⏳ 하는 중 · ✅ 반영 · ➖ 반영할 것 없음(내부만 바뀜) · ❌ 계약(새 웹앱이 부르는 옛 함수) 깨짐 — 어댑터를 고쳐야 함
 
@@ -89,11 +124,12 @@ ${rows.map((r) => `| ${esc(r.app)} | ${esc(r.date || r.at)} | ${esc(r.sha)} | ${
 ${(J.contract || []).map((c) => '`' + c + '`').join(' · ')}
 `;
 }
-module.exports = { cmpVer, extract, changelog, dateOf, run, md };
+module.exports = { cmpVer, extract, changelog, dateOf, run, md, readPlan, planSum, planMd, stagePct, writePlan };
 /* 손으로 반영 표시: node tools/track.js --mark <커밋 앞 9자리|전부⬜> <✅|⏳|➖|⬜> "<메모(새 웹앱 판 등)>" */
 function mark(out, who, st, note) { const jf = path.join(out, 'TRACK.json'); const J = JSON.parse(fs.readFileSync(jf, 'utf8')); let n = 0; J.rows.forEach((r) => { if (r.sha === who || (who === '전부⬜' && r.state === '⬜')) { r.state = st; r.ui2 = note || ''; r.by = 'ui2 세션'; r.markedAt = new Date().toISOString(); n++; } }); fs.writeFileSync(jf, JSON.stringify(J, null, 1) + '\n'); fs.writeFileSync(path.join(out, 'TRACK.md'), md(J)); return n; }
 module.exports.mark = mark;
-if (require.main === module && process.argv.includes('--mark')) { const i = process.argv.indexOf('--mark'); const n = mark(path.resolve(arg('out', ROOT)), process.argv[i + 1], process.argv[i + 2], process.argv[i + 3]); console.log('표시함 ' + n + '줄'); }
+if (require.main === module && process.argv.includes('--plan')) { const J = writePlan(path.resolve(arg('out', ROOT))); const T = planSum(J.plan); console.log('전체 일정: ' + T.pct + '% · 단계 ' + T.n + ' · 어림 ' + T.est + '시간'); } /* node tools/track.js --plan — PLAN.json만 표에 옮김(git 안 읽음) */
+else if (require.main === module && process.argv.includes('--mark')) { const i = process.argv.indexOf('--mark'); const n = mark(path.resolve(arg('out', ROOT)), process.argv[i + 1], process.argv[i + 2], process.argv[i + 3]); console.log('표시함 ' + n + '줄'); }
 else if (require.main === module) {
   const r = run({ repo: arg('repo', path.join(ROOT, '..', 'readnow-scripts')), since: +arg('since', 7), max: +arg('max', 400), out: path.resolve(arg('out', ROOT)), quiet: process.argv.includes('--quiet') });
   process.exitCode = r.bad || r.added && r.todo ? 1 : 0;

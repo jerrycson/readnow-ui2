@@ -100,6 +100,14 @@
 
 
 
+  W.def('u2plan', { name: '새 웹앱 전체 일정', group: '자료 보기', icon: '🗓', w: 24, h: 5, minW: 6, minH: 3, props: [],
+    render(b) { /* 설계안 단계 0~13 한 줄 막대 — 누르면 단계마다 예상·실제 시간과 진행 막대(U2.planScreen) */
+      b.innerHTML = '<div class="u2-empty">🗓 일정 받는 중…</div>'; let dead = false;
+      const draw = (P) => { if (dead) return; if (!P || !P.stages) { b.innerHTML = '<div class="u2-empty">일정 표를 받지 못함</div>'; return; } const T = U2.planSum(P); b.innerHTML = `<button type="button" class="u2-pl-mini" data-plan><span>🗓 <b>새 웹앱 일정</b> ${T.pct}% · 끝 ${T.cnt.done}/${T.n} · 🙋 정범님 필요 ${T.cnt.boss}${T.cur ? ' · 지금 ' + T.cur.n + '단계 ' + esc(T.cur.name) : ''}</span><span class="u2-pl-bar"><i style="width:${T.pct}%"></i></span><small class="u2-sub">눌러서 단계마다 보기 ›</small></button>`; b.querySelector('[data-plan]').onclick = () => U2.planScreen && U2.planScreen(); };
+      const go = () => (U2._plan ? Promise.resolve(U2._plan) : U2.loadPlan ? U2.loadPlan() : Promise.resolve(null)).then(draw).catch(() => draw(null));
+      go(); const iv = setInterval(() => { if (U2._plan) draw(U2._plan); }, 60e3);
+      return () => { dead = true; clearInterval(iv); };
+    } });
   W.def('progress', { name: '진행 막대', group: '자료 보기', icon: '⏳', w: 8, h: 3, props: [{ k: 'label', label: '이름', type: 'text', def: '오늘 출고' }, { k: 'value', label: '값', type: 'number', def: 3 }, { k: 'max', label: '전체', type: 'number', def: 10 }],
     render(b, p) { const f = Math.max(0, Math.min(1, num(p.value) / (num(p.max) || 1))); b.innerHTML = `<div class="u2-prog"><small>${esc(p.label)} ${num(p.value)} / ${num(p.max)}</small><div class="u2-pbar" role="progressbar" aria-valuenow="${num(p.value)}" aria-valuemax="${num(p.max)}"><i style="width:${(f * 100).toFixed(1)}%"></i></div></div>`; } });
   W.def('meter', { name: '계기판', group: '자료 보기', icon: '🎛', w: 8, h: 4, props: [{ k: 'label', label: '이름', type: 'text', def: '재고 건강' }, { k: 'value', label: '값(0~100)', type: 'number', def: 62 }, { k: 'warn', label: '주의 아래', type: 'number', def: 40 }, { k: 'bad', label: '나쁨 아래', type: 'number', def: 20 }],

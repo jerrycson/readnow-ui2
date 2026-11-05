@@ -7,7 +7,7 @@ set -u; cd "$(dirname "$0")/.."
 if [ "${1:-}" = install ]; then printf '#!/usr/bin/env bash\nexec bash "$(git rev-parse --show-toplevel)/tools/ship-check2.sh"\n' > .git/hooks/pre-push && chmod +x .git/hooks/pre-push && echo "설치함: git push 전에 검사"; exit 0; fi
 bad=0; say() { echo "$1"; }; fail() { echo "❌ $1"; bad=1; }
 for f in u2-config.js sw.js src/*.js tools/*.js tests/*.js; do node --check "$f" 2>/dev/null || fail "문법 오류: $f"; done; say "① 문법 검사 끝"
-for f in u2-contract.json TRACK.json m/*.webmanifest; do node -e "JSON.parse(require('fs').readFileSync('$f','utf8'))" 2>/dev/null || fail "JSON 오류: $f"; done; say "② JSON 검사 끝"
+for f in u2-contract.json TRACK.json PLAN.json m/*.webmanifest; do node -e "JSON.parse(require('fs').readFileSync('$f','utf8'))" 2>/dev/null || fail "JSON 오류: $f"; done; say "② JSON 검사 끝"
 grep -qE "U2_VER = '[0-9]+\.[0-9]+\.[0-9]+'" u2-config.js || fail "U2_VER 모양이 틀림"; say "③ 판 번호 $(grep -oE "U2_VER = '[^']+'" u2-config.js)"
 pop=$(node -e "const fs=require('fs');const out=[];for(const f of fs.readdirSync('src').filter(x=>x.endsWith('.js'))){const t=fs.readFileSync('src/'+f,'utf8').replace(/\/\*[\s\S]*?\*\//g,'').replace(/\/\/.*$/gm,'');for(const m of t.matchAll(/(?<![.\w])(alert|confirm|prompt)\s*\(|window\.open\s*\(/g))out.push(f+': '+m[0])}console.log(out.join('\n'))")
 [ -n "$pop" ] && fail "브라우저 팝업을 부름:\n$pop"; say "④ 팝업 검사 끝"

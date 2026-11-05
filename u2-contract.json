@@ -118,6 +118,26 @@
    "thinMB",
    1,
    []
+  ],
+  [
+   "closeDetail",
+   0,
+   []
+  ],
+  [
+   "closeModal",
+   0,
+   []
+  ],
+  [
+   "openRegister",
+   0,
+   []
+  ],
+  [
+   "placeRead",
+   0,
+   []
   ]
  ],
  "vals": [

@@ -134,14 +134,15 @@
     o = o || {}; if (!id) return; if (U2.edit && !o.force) { U2.toast('편집 중 — 먼저 ◀ 보기로'); return; }
     U2.cur = id; if (!U2.pages[id]) { const pg = await U2.loadPage(id); if (U2.cur !== id) return; U2.pages[id] = pg; }
     /* 페이지 맞춤(11/05): 사람이 고른 페이지면 옛 상세 층(등록·출고 등)·점수 창을 닫고 그 페이지의 옛 탭으로 — 옛 코드가 탭을 바꿔 따라온 것(fromLegacy)은 연 층을 그대로 둠 */
-    const stale = !!(history.state && !history.state.u2); /* 옛 화면이 쌓은 뒤로 가기 칸({reg:1} 등) 위면 그 칸을 새 페이지로 덮음(뒤로 가기에 닫힌 층이 남지 않게) */
+    const shOn = !!(document.getElementById('sheet') && document.getElementById('sheet').classList.contains('on'));
+    const stale = !!(history.state && !history.state.u2) && !(shOn && U2.dock && U2.dock.keep()); /* 옛 화면을 두는 설정이면 그 뒤로 가기 칸을 덮지 않음(뒤로 가기 = 먼저 옛 화면을 닫음) ·  옛 화면이 쌓은 뒤로 가기 칸({reg:1} 등) 위면 그 칸을 새 페이지로 덮음(뒤로 가기에 닫힌 층이 남지 않게) */
     if (U2.legacy && U2.legacy.syncTo) U2.legacy.syncTo(id, { keepOverlay: !!(o.fromLegacy || o.pop) });
     const url = '?p=' + encodeURIComponent(id) + location.hash;
-    try { if (o.replace || (stale && !o.pop && !o.fromLegacy)) history.replaceState({ u2: 1, p: id }, '', url); else if (!o.pop) history.pushState({ u2: 1, p: id }, '', url); } catch (e) {}
+    try { if (o.replace || (stale && !o.pop && !o.fromLegacy)) history.replaceState({ u2: 1, p: id }, '', url); else if (!o.pop) (shOn ? History.prototype.pushState : history.pushState).call(history, { u2: 1, p: id }, '', url); } catch (e) {} /* 옛 화면이 열린 채면 지금 웹앱이 감싼 pushState(= '상세 안에서 다른 상세를 엶'으로 보고 옛 화면 내용을 떼어 쌓음)를 건너뜀 — 떼면 함께 쓰던 등록 화면이 빈 화면이 됨(11/05 t_dual에서 찾음) */
     const r = (U2.ls.get('recent', []) || []).filter((x) => x !== id); r.unshift(id); U2.ls.set('recent', r.slice(0, 12));
     U2.render({ reset: true }); try { window.scrollTo(0, 0); } catch (e) {}
   };
-  addEventListener('popstate', (e) => { const st = e.state; if (st && st.u2 && st.p && st.p !== U2.cur) { const sh = document.getElementById('sheet'); if (sh && sh.classList.contains('on')) return; U2.go(st.p, { pop: true, force: true }); } });
+  addEventListener('popstate', (e) => { const st = e.state; if (!(st && st.u2) && U2.cur && new URLSearchParams(location.search).get('p') !== U2.cur) { try { history.replaceState({ u2: 1, p: U2.cur }, '', '?p=' + encodeURIComponent(U2.cur) + location.hash); } catch (x) {} return; } /* 옛 화면 뒤로 가기 칸(그 화면을 연 페이지 주소)으로 돌아옴 = 옛 화면만 닫히고 지금 페이지는 그대로 → 주소를 지금 페이지로 맞춤 */ if (st && st.u2 && st.p && st.p !== U2.cur) { const sh = document.getElementById('sheet'); if (sh && sh.classList.contains('on')) { if (U2.dock && U2.dock.keep()) { try { History.prototype.pushState.call(history, { u2: 1, p: U2.cur }, '', '?p=' + encodeURIComponent(U2.cur) + location.hash); } catch (x) {} } return; } /* 옛 화면이 열린 채 뒤로 가기 = 지금 웹앱이 옛 화면을 닫거나(쌓인 앞 화면으로) — 함께 쓰는 중이면 페이지는 그대로 두고 주소·뒤로 가기 칸을 지금 페이지로 되돌림 */ U2.go(st.p, { pop: true, force: true }); } });
 
   /* ── 불러오기(읽기: 전체 설정 1 + 페이지 1 + 이 기기 1 = 3문서) ── */
   U2.loadPage = async (id) => (await U2.store.get('ui2_pages', id)) || U2.defaultPage(id);
@@ -178,6 +179,10 @@
     const adm = U2.isAdmin(); const pg = U2.effective(U2.cur);
     const L = U2.panel('메뉴', `<div class="u2-col">
       <div class="u2-sec"><b>테마(이 기기)</b><div class="u2-row">${Object.entries(U2.theme.THEMES).map(([k, t]) => `<button type="button" class="u2-btn ${U2.theme.cur === k ? 'u2-pri' : ''}" data-th="${k}">${esc(t.name)}</button>`).join('')}</div></div>
+      ${U2.dock ? (() => { const c = U2.dock.cfg(); const B = (k, v, t) => `<button type="button" class="u2-btn ${c[k] === v ? 'u2-pri' : ''}" data-dkset="${k}:${v}" aria-pressed="${c[k] === v}">${t}</button>`; return `<div class="u2-sec" data-dksec><b>🪟 옛 화면(등록·출고 등 · 이 기기)</b>
+        <div class="u2-row"><span class="u2-sub">페이지 바꿀 때</span>${B('keep', 'keep', '두기 — 페이지와 함께 씀')}${B('keep', 'close', '닫기')}</div>
+        <div class="u2-row"><span class="u2-sub">넓은 화면 자리</span>${B('pos', 'side', '◫ 오른쪽 나란히')}${B('pos', 'full', '⤢ 전체(머리 아래)')}<span class="u2-sub">폭 ${Math.round((+c.w || 0.5) * 100)}%</span><button type="button" class="u2-btn" data-dkset="w:0.5">반반으로</button></div>
+        <p class="u2-hint">옛 화면은 한 번에 하나입니다(지금 웹앱이 상세 화면을 한 층에만 그림 — 등록 화면을 연 채 출고를 열면 등록 화면이 출고로 바뀜). 그 하나를 새 웹앱 페이지와 함께 씁니다: 넓은 화면(${U2.dock.MIN_W}px 넘음)은 오른쪽 나란히(가운데 손잡이를 끌어 폭 조절 · 기억), 휴대폰은 페이지를 바꾸면 접히고 아래 '▸ 펼치기'로 다시. 페이지에 '🪟 옛 화면 자리' 위젯을 두면 그 칸 안에 열립니다. ✕ 닫기·Esc·뒤로 가기로 닫음.</p></div>`; })() : ''}
       ${adm ? `<div class="u2-sec"><b>공용 모양(관리자 · 모든 기기 기본)</b><div class="u2-row">
         <label class="u2-lab">강조 색 <input type="color" class="u2-in" data-st="--cloth" value="${esc((U2.site.theme.tokens || {})['--cloth'] || U2.theme.LIGHT['--cloth'])}"></label>
         <label class="u2-lab">둥근 정도(px) <input type="number" class="u2-in" data-sh="--u2-radius" min="0" max="24" value="${parseInt((U2.site.theme.shape || {})['--u2-radius'] || '10', 10)}"></label>
@@ -196,6 +201,7 @@
       <button type="button" class="u2-btn" data-m="plan">🗓 전체 일정·진행(설계안 단계 0~13)</button>
       <a class="u2-btn" href="${esc(U2.base)}">↩ 지금 웹앱으로 가기</a>
       <p class="u2-hint">이 기기: <b>${esc(U2.dev())}</b> · ${adm ? '관리자 기기(공용 배치 게시 가능)' : '관리자 기기 아님(개인 배치만)'} · 지금 웹앱 ${esc(U2.legacy.appVer || '불러오지 못함')} · 새 웹앱 ${esc(U2.ver)}</p></div>`);
+    L.querySelectorAll('[data-dkset]').forEach((b) => (b.onclick = () => { const [k, v] = b.dataset.dkset.split(':'); U2.dock.set({ [k]: k === 'w' ? +v : v }); L.remove(); U2.menu(); U2.toast(k === 'keep' ? (v === 'keep' ? '페이지를 바꿔도 옛 화면을 둠' : '페이지를 바꾸면 옛 화면을 닫음') : k === 'pos' ? (v === 'side' ? '옛 화면을 오른쪽 나란히' : '옛 화면을 전체로') : '옛 화면 폭 반반'); }));
     L.querySelectorAll('[data-th]').forEach((b) => (b.onclick = () => { U2.theme.choose(b.dataset.th); L.remove(); U2.render({ reset: true }); }));
     const m = (k, f) => { const b = L.querySelector('[data-m="' + k + '"]'); if (b) b[k === 'import' ? 'onchange' : 'onclick'] = (e) => { f(e); }; };
     const readT = () => { const th = U2.clone(U2.site.theme || {}); const c = L.querySelector('[data-st]'); if (!c) return th; th.tokens = Object.assign({}, th.tokens, { '--cloth': c.value }); th.shape = Object.assign({}, th.shape, { '--u2-radius': (+L.querySelector('[data-sh]').value || 0) + 'px' }); th.font = L.querySelector('[data-font]').value; th.def = L.querySelector('[data-def]').value; return th; };

@@ -62,6 +62,7 @@
       if (L.shellDone && tab && tab !== L.lastTab) { L.lastTab = tab; const pid = U2.pageForTab && U2.pageForTab(tab); if (pid && pid !== U2.cur) { U2.go(pid, { fromLegacy: true }); return; } }
       L.refreshCards(); if (U2.data) U2.data.bump(); if (U2.adapters) U2.adapters.refresh(); /* 식이 든 위젯도 0.7초 모아 */
       if (!L.tabMounted) { L.dirty = true; return; } /* 이 페이지에 옛 탭이 없으면 그리지 않음(가벼움) */
+      if (U2.dock && U2.dock.renderNow()) { let u0; try { u0 = S._userAt; S._userAt = Date.now(); } catch (e) {} try { return L.oRender.apply(this, arguments); } finally { try { S._userAt = u0; } catch (e) {} } } /* 옛 화면과 함께 쓰는 중: 지금 웹앱이 '상세가 열려 있으면 뒤 탭 다시 그리기를 미룸' → 페이지의 옛 탭이 낡지 않게 그때만 '방금 누름'으로 쳐서 그림(u2-dock) */
       return L.oRender.apply(this, arguments);
     };
     L.attachAt = performance.now(); L.wrapBoot();
@@ -87,10 +88,10 @@
     wrap('placeRead', null); /* 새로고침 전 자리(탭·상세 화면) — 새 웹앱은 주소 ?p= 가 자리 */
     wrap('openRegister', undefined); /* 하던 상품 등록 다시 엶(rn-reg-ui) — 사람이 누른 뒤에는 그대로 열림 */
   };
-  L.closeOverlays = function (why) {
-    const out = [];
+  L.closeOverlays = function (why, o) {
+    o = o || {}; const out = [];
     try { const md = document.getElementById('modal'); if (md && md.classList.contains('on') && typeof closeModal === 'function') { closeModal(); out.push('modal'); } } catch (e) {}
-    try { const sh = document.getElementById('sheet'); if (sh && (sh.classList.contains('on') || (typeof S !== 'undefined' && S.detail))) { if (typeof closeDetail === 'function') closeDetail(); else { sh.classList.remove('on'); document.body.style.overflow = ''; } out.push('sheet'); } } catch (e) { console.warn('[u2] 옛 상세 층 닫기', e); }
+    if (o.sheet !== false) try { const sh = document.getElementById('sheet'); if (sh && (sh.classList.contains('on') || (typeof S !== 'undefined' && S.detail))) { if (typeof closeDetail === 'function') closeDetail(); else { sh.classList.remove('on'); document.body.style.overflow = ''; } out.push('sheet'); } } catch (e) { console.warn('[u2] 옛 상세 층 닫기', e); }
     if (out.length) L.closed = (L.closed || []).concat([{ why, out, at: Math.round(performance.now()) }]).slice(-20);
     return out;
   };
@@ -101,7 +102,10 @@
   };
   L.syncTo = function (pid, o) {
     o = o || {}; if (!L.ready) return [];
-    const out = o.keepOverlay ? [] : L.closeOverlays('page:' + pid);
+    /* 11/05 동시에 쓰기: 설정 '페이지 바꿀 때 옛 화면 두기'(기본)면 옛 상세 층은 닫지 않고 나란히 창·화면 위젯 칸으로(u2-dock) · 점수 창(#modal)만 닫음 */
+    const keepSheet = !o.keepOverlay && U2.dock && U2.dock.keep();
+    const out = o.keepOverlay ? [] : L.closeOverlays('page:' + pid, { sheet: !keepSheet });
+    if (U2.dock) U2.dock.onPage(!o.keepOverlay);
     const tab = L.tabFor(pid); if (tab) { try { if (S.tab !== tab) { S.tab = tab; S.limit = 30; } L.lastTab = tab; } catch (e) {} }
     return out;
   };
@@ -115,7 +119,7 @@
     const sh = document.getElementById('sheet'); if (!sh || sh._u2w) return; sh._u2w = 1;
     let iv = null;
     const on = () => {
-      const isOn = sh.classList.contains('on'); document.body.classList.toggle('u2-sheet-on', isOn);
+      const isOn = sh.classList.contains('on'); document.body.classList.toggle('u2-sheet-on', isOn); if (U2.dock) U2.dock.sync();
       if (isOn) { L.measureTop(); if (!iv) iv = setInterval(L.measureTop, 600); if (L.bootGate()) { L.suppressed.push({ n: 'sheet', at: Math.round(performance.now()) }); setTimeout(() => { if (L.bootGate() && sh.classList.contains('on')) L.closeOverlays('boot'); }, 0); } }
       else if (iv) { clearInterval(iv); iv = null; }
     };
@@ -158,12 +162,15 @@
   L.list = (n) => { try { return GL[n] ? GL[n]() : null; } catch (e) { return null; } };
   L.findFeat = (q) => { const F = L.list('FEAT'); if (!F || !q) return null; return F.find((f) => f.t === q) || F.find((f) => String(f.t).indexOf(q) >= 0) || null; };
   L.feat = (q) => { const f = L.findFeat(q); if (!f) return U2.toast('기능을 찾지 못함: ' + q, 1); L.userAt = performance.now(); /* 새 웹앱에서 일부러 연 것 = 여는 동안 막이를 끝냄 */ U2.setCtx('feat:' + q); try { return typeof featGo === 'function' ? featGo(f) : f.go && f.go.fn && f.go.fn(); } catch (e) { U2.toast('기능 실행 중 오류: ' + e.message, 1); } };
+  /* 대상이 있어야 열리는 화면 — 지금 웹앱은 상세 화면 함수를 '화면 쌓기'(navWrap)로 감싸 인자 수(fn.length)가 늘 0으로 보임 → 11/05 실화면 점검에서 대상 없이 열면 오류 난 8개 + 열어 보다 오류가 난 것(이 기기에 기억 rn2-scrArg) */
+  L.ARG_SCR = new Set(['shipDay', 'invMatch', 'shipCost', 'book', 'cashForm', 'purEntry', 'sellerCount', 'listView']);
+  L.needsArg = (k) => { const fn = (L.findScreen(k) || [])[3]; if (L.ARG_SCR.has(k) || (U2.ls.get('scrArg', []) || []).indexOf(k) >= 0) return true; const f = fn && window[fn]; return !!(f && f.length > 0); };
   L.findScreen = (k) => { const P = L.list('PG_SCR'); if (!P) return null; return P.find((r) => r[0] === k) || null; };
-  L.screen = (k) => { const r = L.findScreen(k); const fn = r && window[r[3]]; if (typeof fn !== 'function') return U2.toast('화면을 열 수 없음: ' + k, 1); L.userAt = performance.now(); U2.setCtx('screen:' + k); try { return fn(); } catch (e) { U2.toast('화면을 여는 중 오류: ' + e.message, 1); } };
+  L.screen = (k) => { const r = L.findScreen(k); const fn = r && window[r[3]]; if (typeof fn !== 'function') return U2.toast('화면을 열 수 없음: ' + k, 1); if (L.needsArg(k)) return U2.toast("'" + String(r[1]) + "'은(는) 대상(주문·상품·날짜 등)이 있어야 열립니다 — 그 대상의 상세 화면 안에서 여세요", 1, 4000); L.userAt = performance.now(); U2.setCtx('screen:' + k); try { return fn(); } catch (e) { const a = U2.ls.get('scrArg', []) || []; if (a.indexOf(k) < 0) U2.ls.set('scrArg', a.concat([k]).slice(-40)); U2.toast("'" + String(r[1]) + "'은(는) 대상 없이 열 수 없어 서랍에서 뺐습니다(" + e.message + ')', 1, 4000); } };
   /* 서랍에 보일 옛 기능 목록 — 실행 중에 지금 웹앱 목록에서 저절로(설계안 6-3 첫 단계) */
   L.catalog = () => {
     const out = { screens: [], feats: [], home: [] };
-    const P = L.list('PG_SCR'); if (P) P.forEach((r) => { if (typeof window[r[3]] === 'function' && window[r[3]].length === 0) out.screens.push({ k: r[0], t: r[1] }); });
+    const P = L.list('PG_SCR'); if (P) P.forEach((r) => { if (typeof window[r[3]] === 'function' && !L.needsArg(r[0])) out.screens.push({ k: r[0], t: r[1] }); });
     const F = L.list('FEAT'); if (F) F.forEach((f) => out.feats.push({ t: f.t, k: f.k || '' }));
     const Wd = L.list('WIDGETS'), D = L.list('W_DESC') || {}; if (Wd) Object.keys(Wd).forEach((k) => out.home.push({ k, t: Wd[k][0], d: D[k] || '' }));
     return out;

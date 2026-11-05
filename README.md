@@ -36,6 +36,7 @@
 | `src/u2-expr.js` | 계산식(eval 없음 · 한국어 함수 합·평균·원·퍼센트·만약 …) |
 | `src/u2-data.js` | 자료 연결 — 지금 웹앱 상태 한국어 별칭(읽기만) · 변수 · =식/{{식}} · 보이기 조건 · 저장한 보기 · Firestore 질의 예산 |
 | `src/u2-actions.js` | 행동 16가지 · 차례 실행 · 두 번 누르기 · 단축키(옛 단축키와 겹침 막음) |
+| `src/u2-dock.js` | 옛 화면(등록·출고 등 #sheet)과 새 웹앱 페이지 함께 쓰기 — 오른쪽 나란히 창(폭 끌기·기억)·전체(휴대폰은 페이지를 바꾸면 접힘)·🪟 옛 화면 자리 위젯(페이지로 박기) · 설정 '페이지 바꿀 때 두기(기본)/닫기' · 한 번에 하나(지금 웹앱 한계) |
 | `src/u2-catalog.js` | 위젯 목록을 지금 웹앱에서 실행 중에 뽑음(탭·섹션·홈 칸·화면·기능 찾기) · 분류 12 · ≈MB · 🆕 · 메모리 예산 |
 | `src/u2-adapters.js` | 섹션 위젯(T2 — 같은 탭은 한 번 그려 나눠 줌) · 계약 검사 |
 | `u2-contract.json` | 새 웹앱이 기대는 옛 함수·값·화면 id(계약 목록) |
@@ -45,6 +46,7 @@
 | `src/u2-shell.js` | 머리줄·페이지·주소 길·메뉴·쓰기 허락·견본·내보내기/가져오기 |
 | `src/u2.css` | 모양(모두 `.u2-` 머리) |
 | `PLAN.json` | 🗓 전체 일정(설계안 단계 0~13 · 예상·실제 시간·상태 끝/진행 중/정범님 필요) — 손으로 고침 → `node tools/track.js --plan`이 TRACK.json `plan`·TRACK.md 맨 위 '전체 일정 요약'으로 · 새 웹앱 ☰ 메뉴·🧪 프로젝트 페이지 '🗓 새 웹앱 일정'에서 막대로 |
+| `MOVE.md` | 13단계 이전 준비 문서(들어가기 전 조건·정범님이 정할 것·이전 날 차례·되돌리기) — 실제 이전은 정범님과 함께 |
 | `TRACK.md` · `TRACK.json` | 지금 웹앱 따라잡기 표 — `node tools/track.js --repo ../readnow-scripts`(읽기만) · 손으로 반영 표시 `--mark <커밋> ✅ "메모"` |
 | `tools/track.js` | 따라잡기 자동 검사(판마다 새 탭·섹션·화면·기능·홈 칸 · 계약 · CHANGELOG·날짜) |
 | `tools/ship-check2.sh` | 올리기 전 검사(문법·JSON·판 번호·팝업·개인 정보·따라잡기 ❌) · `install`로 push 전에 저절로 |
@@ -96,6 +98,8 @@ NODE_PATH=... node tests/t_pairs.js      # H-02·03·04
 NODE_PATH=... node tests/t_coexist.js    # H-06·07·08·12
 NODE_PATH=... node tests/t_soak.js       # H-14·15
 NODE_PATH=... node tests/t_perf.js       # 단계 11 숫자(U2_PERF_OUT·U2_PERF_BEFORE로 전/후)
+NODE_PATH=... node tests/t_dual.js       # 동시에 쓰기(11/05) — 나란히 창·폭 끌기·접기·뒤로 가기·설정 두기/닫기/전체·휴대폰·🪟 옛 화면 자리 위젯 (U2_SHOT_DIR=사진 폴더)
+NODE_PATH=... node tests/t_real.js       # 실화면 점검(단계 12 준비) — 모든 페이지·모든 위젯·옛 화면 전부 × PC·휴대폰(U2_SHOT_DIR=사진 폴더 → 사람이 눈으로)
 NODE_PATH=... node tests/t_sync.js       # 페이지 맞춤(11/05) — 옛 등록 화면·옛 자리 되살리기 막음 · 페이지마다 다른 화면 · 옛 상세 층이 머리 아래 · 휴대폰 · 🗓 전체 일정
 ```
 - 인터넷의 지금 웹앱은 받지 않습니다 — `U2_BASE`로 가는 요청을 기기 안 배포본 사본(`U2_TEST_OUT`, 기본 `/home/user/w/out`)에서 돌려줍니다.

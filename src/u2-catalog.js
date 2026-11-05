@@ -28,6 +28,7 @@
     const out = new Map(); const add = (it) => { const k = it.kind + ':' + it.key; const o = out.get(k); if (o) { o.words = (o.words + ' ' + (it.words || '')).slice(0, 600); return o; } it.words = it.words || ''; it.cat = catOf(it.key, it.title, it.tab); out.set(k, it); return it; };
     const TABS = (window.U2W && U2W.TABS) || {};
     Object.entries(TABS).forEach(([k, v]) => add({ kind: 'tab', key: k, tab: k, title: '탭 전체 — ' + v[1], icon: v[0], type: 'legacy.tab', props: { ref: k }, perm: 'tab:' + k }));
+    add({ kind: 'dock', key: 'sheet', tab: '', title: '🪟 옛 화면 자리 — 등록·출고 등을 이 칸 안에(페이지로 박기)', desc: '옛 상세 화면이 이 칸 안에 열림 · 한 번에 하나', icon: '🪟', type: 'legacy.dock', props: { title: '옛 화면 자리', scrs: 'register,ship' }, perm: '', phone: false });
     const secAdd = (id, title, tab, desc) => { if (!id || id === 'all' || id === 'prod') return; const m = memOf(tab, id); add({ kind: 'sec', key: id, tab, title: strip(title), desc: strip(desc), icon: '🧩', type: 'legacy.sec', props: { ref: id, tab }, perm: 'sec:' + id, mem: m, phone: !!(m && m.mb === 0) }); };
     const TS = g('THIN_SEC') || (typeof THIN_SEC !== 'undefined' ? THIN_SEC : null); if (TS) Object.entries(TS).forEach(([tab, T]) => (T.secs || []).forEach((x) => secAdd(x[0], x[1], tab, x[2])));
     try { if (typeof PT_SECS !== 'undefined') PT_SECS.forEach((x) => secAdd(x[0], x[1], 'products', x[2])); } catch (e) {}
@@ -35,7 +36,7 @@
     const learned = U2.ls.get('seccat', {}) || {}; Object.entries(learned).forEach(([id, v]) => secAdd(id, v.t, v.tab, '화면에서 찾은 섹션'));
     const Wd = g('WIDGETS'), D = g('W_DESC') || {};
     if (Wd) Object.keys(Wd).forEach((k) => add({ kind: 'home', key: k, tab: 'home', title: strip(Wd[k][0]), desc: D[k] || '', icon: '🏠', type: 'legacy.homecard', props: { ref: k }, perm: 'home:' + k, phone: true }));
-    const P = g('PG_SCR'); if (P) P.forEach((r) => { const fn = window[r[3]]; if (typeof fn !== 'function') return; add({ kind: 'screen', key: r[0], tab: '', title: strip(r[1]), desc: fn.length ? '열려면 대상이 필요함(상세 화면 안에서만)' : '상세 화면 열기', icon: '🪟', type: 'legacy.screen', props: { scr: r[0] }, perm: 'screen:' + r[0], needsArg: fn.length > 0, phone: true }); });
+    const P = g('PG_SCR'); if (P) P.forEach((r) => { const fn = window[r[3]]; if (typeof fn !== 'function') return; add({ kind: 'screen', key: r[0], tab: '', title: strip(r[1]), desc: (U2.legacy.needsArg ? U2.legacy.needsArg(r[0]) : fn.length) ? '열려면 대상이 필요함(상세 화면 안에서만)' : '상세 화면 열기', icon: '🪟', type: 'legacy.screen', props: { scr: r[0] }, perm: 'screen:' + r[0], needsArg: U2.legacy.needsArg ? U2.legacy.needsArg(r[0]) : fn.length > 0, phone: true }); });
     /* 기능 찾기 — 섹션·홈 칸·화면을 가리키면 그 위젯의 별칭(찾을 낱말)으로, 아니면 기능 단추 */
     const scrByFn = new Map((P || []).map((r) => [r[3], r[0]]));
     if (FI) FI.forEach((f) => {

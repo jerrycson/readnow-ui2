@@ -4,9 +4,9 @@
 설계안: readnow-chats `reports/2026-11-04_custom_app_plan.md` (단계 0~13).
 
 ## 지금 자리
-- 별도 저장소 `jerrycson/readnow-ui2`(정범님 Q1 B)를 만들 권한이 이 작업 환경에 없어, 우선 `readnow-scripts`의 **이 `ui2/` 폴더 하나에만** 만듭니다.
-- 이 폴더 안 경로는 모두 **상대 경로**입니다. 저장소를 만들면 이 폴더를 통째로 옮기면 됩니다(바꿀 것은 없음).
-- 지금 웹앱을 불러올 곳은 [`u2-config.js`](u2-config.js)의 한 줄 `U2_BASE` 뿐입니다.
+- 별도 저장소 `jerrycson/readnow-ui2` · 시범 주소 **https://jerrycson.github.io/readnow-ui2/** (11/05부터 · 처음엔 `readnow-scripts/ui2/` 폴더에서 만들어 통째로 옮김).
+- 이 저장소 안 경로는 모두 **상대 경로**입니다. 지금 웹앱을 불러올 곳은 [`u2-config.js`](u2-config.js)의 한 줄 `U2_BASE` 뿐입니다.
+- **단계 12 시범 운행 — 정범님 체크리스트·정할 것: [`STEP12.md`](STEP12.md)** · 단계 13 이전 준비: [`MOVE.md`](MOVE.md)
 
 ## 정범님이 고른 답(설계안 0장)
 | 물음 | 답 | 이 폴더에서 |
@@ -46,6 +46,7 @@
 | `src/u2-shell.js` | 머리줄·페이지·주소 길·메뉴·쓰기 허락·견본·내보내기/가져오기 |
 | `src/u2.css` | 모양(모두 `.u2-` 머리) |
 | `PLAN.json` | 🗓 전체 일정(설계안 단계 0~13 · 예상·실제 시간·상태 끝/진행 중/정범님 필요) — 손으로 고침 → `node tools/track.js --plan`이 TRACK.json `plan`·TRACK.md 맨 위 '전체 일정 요약'으로 · 새 웹앱 ☰ 메뉴·🧪 프로젝트 페이지 '🗓 새 웹앱 일정'에서 막대로 |
+| `STEP12.md` | 12단계 시범 운행 — 정범님이 정할 것(맨 위) · 체크리스트(어느 주소·무엇을 눌러·무엇이 보이면 통과) |
 | `MOVE.md` | 13단계 이전 준비 문서(들어가기 전 조건·정범님이 정할 것·이전 날 차례·되돌리기) — 실제 이전은 정범님과 함께 |
 | `TRACK.md` · `TRACK.json` | 지금 웹앱 따라잡기 표 — `node tools/track.js --repo ../readnow-scripts`(읽기만) · 손으로 반영 표시 `--mark <커밋> ✅ "메모"` |
 | `tools/track.js` | 따라잡기 자동 검사(판마다 새 탭·섹션·화면·기능·홈 칸 · 계약 · CHANGELOG·날짜) |
@@ -104,6 +105,11 @@ NODE_PATH=... node tests/t_sync.js       # 페이지 맞춤(11/05) — 옛 등�
 ```
 - 인터넷의 지금 웹앱은 받지 않습니다 — `U2_BASE`로 가는 요청을 기기 안 배포본 사본(`U2_TEST_OUT`, 기본 `/home/user/w/out`)에서 돌려줍니다.
 - Firebase는 가짜(`tests/fbstub2.js`)입니다.
+
+### 마지막 결과 (11/09 · 새 웹앱 0.4.1 · 지금 웹앱 1.78.425 배포본)
+시험 21묶음 모두 돌림 — t_grid_unit 23 · t_expr_unit 203 · t_load 21 · t_editor 46 · t_widgets 29 · t_perm 14 · t_mem 6 · t_actions 25 · t_adapters 23 · t_track 16 · t_new 9 · t_money 4 · t_feats · t_tabswap · t_coexist 12 · t_dual 43 · t_sync 26 · t_real 17 · t_pairs 9 · t_soak 8 · t_perf 4 모두 통과.
+- t_real: 휴대폰 🧪 프로젝트 페이지에서 지금 웹앱 새 '☰ 떠 있는 단추 모음'(rnfab · 오른쪽 아래)이 칸 끝을 덮음 → 지금 웹앱에서도 같은 자리라 '옛 떠 있는 것 몫'(H-06)으로 시험에서 뺌.
+- ⚠ t_default 8/9 — 홈 '매출 페이스' 칸의 기간 단추 7개(1주~전체)가 새 웹앱에선 '주문 기록을 받는 중'에 머묾(4번 중 3번 · 가짜 빈 자료). 한 번은 100% 통과. 0.4.0(지금 웹앱 1.78.371)에선 통과 — 그 뒤 지금 웹앱 다시 그리기 미룸 규칙과 시험 시각이 엇갈리는 것으로 보임 · 기기 저장 공간이 다 차 끝까지 확인 못 함(다음 판에서).
 
 ## 지킬 것
 한국어 화면 글 · 브라우저 팝업 금지(화면 안 확인·두 번 누르기) · 손님 개인 정보 금지(견본은 '손님A') · 외부 라이브러리 없음(격자·차트 직접) · 기기 저장 열쇠 `rn2-` · Firestore 쓰기 `ui2_*`만

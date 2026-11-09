@@ -44,9 +44,11 @@
       const ids = [...new Set(items.map((i) => i.id))]; const got = A.renderSecs(tab, ids, 'only');
       let miss = ids.filter((id) => !got[id]); if (miss.length) { const f = A.renderSecs(tab, miss, 'full'); miss.forEach((id) => { if (f[id]) got[id] = f[id]; }); } /* 고른 것만 그리기가 안 되는 탭(설정 등)은 탭 전체에서 떼어 냄 */
       miss = ids.filter((id) => !got[id]); miss.forEach((id) => { const w = A.renderSecs(tab, [id], 'whole'); if (w[id]) got[id] = w[id]; }); /* 카드형(매입·상품) — 휴대폰 화면 그대로 */
-      items.forEach((it) => { const n = got[it.id]; if (n) { if (n.tagName === 'DETAILS') n.open = true; A.dedupe(n, it.b); it.b.replaceChildren(n); got[it.id] = null; A.retry(it); } else it.b.innerHTML = `<div class="u2-empty">이 섹션은 지금 비어 있거나 이 기기에서 보이지 않음 (${U2.esc(it.id)})</div>`; });
+      items.forEach((it) => { const n = got[it.id]; if (n) { if (n.tagName === 'DETAILS') n.open = true; A.dedupe(n, it.b); it.b.replaceChildren(n); got[it.id] = null; A.retry(it); } else { const mv = A.MOVED[it.id]; it.b.innerHTML = mv ? `<div class="u2-empty">이 섹션은 지금 웹앱에서 옮겨짐 — ${U2.esc(mv)} (${U2.esc(it.id)}) · ✏ 꾸미기에서 이 칸을 지우고 그 화면 위젯을 놓으세요</div>` : `<div class="u2-empty">이 섹션은 지금 비어 있거나 이 기기에서 보이지 않음 (${U2.esc(it.id)})</div>`; } });
     });
   };
+  /* 지금 웹앱이 다른 곳으로 옮긴 섹션(예전 배치에 남은 칸 안내) — 1.78.37x: ⚙ 설정 탭 → 🧭 관리도구 화면 */
+  A.MOVED = { set_night: '🧭 관리도구 화면 › 🌙 야간 운영(mg_night)', set_devops: '🧭 관리도구 화면 › 🖥 기기 운영 보고(mg_devops)' };
   A.mountSec = (b, tab, id) => {
     b.classList.add('u2-lg'); b.innerHTML = '<div class="u2-empty">⏳ 그리는 중…</div>';
     const it = { b, tab, id, dead: false }; A.secs.add(it);

@@ -170,6 +170,7 @@
     U2.$('#u2-mode').onclick = () => U2.permScreen();
     if (U2._both) U2.$('#u2-both').hidden = false;
     const pg = U2.cur && U2.effective(U2.cur); U2.$('#u2-mine').hidden = !(pg && pg._mine);
+    if (U2.pilotBar) U2.pilotBar(); /* 맨 위 시범 띠 + ✅ 체크리스트 열기(u2-check.js) */
   };
   U2.banner = (id, html, tone) => { let b = document.getElementById(id); if (!html) { if (b) b.remove(); return; } if (!b) { b = document.createElement('div'); b.id = id; b.className = 'u2-banner ' + (tone || ''); U2.$('#u2-banners').appendChild(b); } b.innerHTML = html; return b; };
 
@@ -178,6 +179,7 @@
   U2.menu = () => {
     const adm = U2.isAdmin(); const pg = U2.effective(U2.cur);
     const L = U2.panel('메뉴', `<div class="u2-col">
+      ${U2.checkScreen ? (() => { const s = U2.check.sum(); return `<button type="button" class="u2-btn u2-pri" data-m="check">✅ 시범 체크리스트 (단계 12 · ✓ ${s.ok}/${s.total}${s.no ? ' · ✕ ' + s.no : ''})</button>`; })() : ''}
       <div class="u2-sec"><b>테마(이 기기)</b><div class="u2-row">${Object.entries(U2.theme.THEMES).map(([k, t]) => `<button type="button" class="u2-btn ${U2.theme.cur === k ? 'u2-pri' : ''}" data-th="${k}">${esc(t.name)}</button>`).join('')}</div></div>
       ${U2.dock ? (() => { const c = U2.dock.cfg(); const B = (k, v, t) => `<button type="button" class="u2-btn ${c[k] === v ? 'u2-pri' : ''}" data-dkset="${k}:${v}" aria-pressed="${c[k] === v}">${t}</button>`; return `<div class="u2-sec" data-dksec><b>🪟 옛 화면(등록·출고 등 · 이 기기)</b>
         <div class="u2-row"><span class="u2-sub">페이지 바꿀 때</span>${B('keep', 'keep', '두기 — 페이지와 함께 씀')}${B('keep', 'close', '닫기')}</div>
@@ -214,7 +216,7 @@
     m('perm', () => { L.remove(); U2.permScreen(); }); m('mine', () => { L.remove(); U2.openEditor('mine'); });
     m('unmine', (e) => U2.twice(e.currentTarget, '개인 배치 끔(공용 배치로)', async () => { delete U2.prefs.pages[U2.cur]; await U2.savePrefs(); L.remove(); U2.render({ reset: true }); U2.toast('공용 배치로 돌아감'); }));
     m('export', () => U2.exportJson()); m('import', (e) => { const f = e.target.files[0]; if (f) U2.importJson(f).then(() => L.remove()); });
-    m('watch', () => { L.remove(); U2.watchScreen(); }); m('track', () => { L.remove(); U2.trackScreen(); }); m('plan', () => { L.remove(); U2.planScreen(); });
+    m('watch', () => { L.remove(); U2.watchScreen(); }); m('track', () => { L.remove(); U2.trackScreen(); }); m('plan', () => { L.remove(); U2.planScreen(); }); m('check', () => { L.remove(); U2.checkScreen(); });
   };
   U2.savePrefs = async () => { U2.prefs = U2.prefs || { pages: {} }; U2.prefs.at = U2.now(); U2.prefs.dev = U2.dev(); await U2.store.set('ui2_prefs', U2.devKey(), U2.prefs); };
 

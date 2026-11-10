@@ -241,3 +241,19 @@ body.u2-body .u2-dockcell #sheet.sheet { position: absolute !important; inset: 0
 .u2-dockui[data-m="side"]:not(.fold) .u2-dockpill { left: auto; transform: none; right: calc(var(--u2-dockw, 50vw) + 14px); }
 .u2-docktt { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 220px; font-weight: 700; color: var(--cloth, #2F5D50); }
 body.u2-dockdrag { user-select: none; cursor: col-resize; } body.u2-dockdrag #sheet { pointer-events: none; }
+/* ✅ 단계 12 시범 체크리스트(u2-check.js) · 맨 위 시범 띠 */
+.u2-banner.u2-pilot { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 5px 10px; }
+.u2-pilott { font-weight: 600; }
+.u2-banner.u2-pilot .u2-btn { margin-left: auto; padding: 3px 10px; }
+.u2-ckp .u2-lbox { max-width: 860px; }
+.u2-ck { display: flex; flex-direction: column; gap: 8px; }
+.u2-ck-row { border: 1px solid var(--line); border-left: 4px solid var(--line); border-radius: 8px; padding: 8px 10px; display: flex; flex-direction: column; gap: 4px; background: var(--paper); }
+.u2-ck-row.u2-ck-ok { border-left-color: var(--cloth); background: var(--soft); }
+.u2-ck-row.u2-ck-no { border-left-color: var(--red); background: var(--redSoft); }
+.u2-ck-row.u2-ck-focus { outline: 2px solid var(--tap); }
+.u2-ck-h { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.u2-ck-n { display: inline-flex; align-items: center; justify-content: center; min-width: 24px; height: 24px; border-radius: 12px; background: var(--cloth); color: var(--paper); font-size: 12px; }
+.u2-ck .u2-sub { margin-right: 4px; }
+.u2-ck .u2-btn.u2-ck-nob { background: var(--red); border-color: var(--red); }
+.u2-ck-memo { flex: 1; min-width: 160px; }
+.u2-ck code { font-size: 12px; word-break: break-all; }

@@ -6,7 +6,7 @@
 ## 지금 자리
 - 별도 저장소 `jerrycson/readnow-ui2` · 시범 주소 **https://jerrycson.github.io/readnow-ui2/** (11/05부터 · 처음엔 `readnow-scripts/ui2/` 폴더에서 만들어 통째로 옮김).
 - 이 저장소 안 경로는 모두 **상대 경로**입니다. 지금 웹앱을 불러올 곳은 [`u2-config.js`](u2-config.js)의 한 줄 `U2_BASE` 뿐입니다.
-- **단계 12 시범 운행 — 정범님 체크리스트·정할 것: [`STEP12.md`](STEP12.md)** · 단계 13 이전 준비: [`MOVE.md`](MOVE.md)
+- **단계 12 시범 운행 — 정범님 체크리스트는 화면 안에서: https://jerrycson.github.io/readnow-ui2/?check=1** (맨 위 띠 '✅ 체크리스트 열기' · ☰ 메뉴 '✅ 시범 체크리스트') · 같은 표·정할 것: [`STEP12.md`](STEP12.md) · 단계 13 이전 준비: [`MOVE.md`](MOVE.md)
 
 ## 정범님이 고른 답(설계안 0장)
 | 물음 | 답 | 이 폴더에서 |
@@ -43,6 +43,7 @@
 | `src/u2-widgets.js` | 기본 UI 위젯 58종(계산 카드·질의·저장한 보기·📥 할 일·🔎 스캔 검수 포함) + 리드나우 기능 위젯 6종(탭·섹션·머리줄·홈 칸·화면·기능) |
 | `src/u2-widgets-extra.js` | 덜 쓰는 무거운 위젯 10종(카드 목록·보드·달력·타임라인·차트·바깥 페이지·변수 바·반복·질의·스캔 검수) — 첫 화면 뒤 쉬는 때·처음 놓일 때 받음 |
 | `src/u2-theme.js` | 색 토큰·밝음/어두움/높은 대비·모양·무늬 6·글꼴·아이콘 |
+| `src/u2-check.js` | ✅ 단계 12 시범 체크리스트(STEP12.md 표와 같은 줄 · 줄마다 그 자리로 가는 단추 · 통과/안 됨/메모 → 기기 rn2-check12 + ui2_checks/<기기>) · 맨 위 시범 띠 '🔒 리드나우 2 시범 중 — 읽기만 · ✅ 체크리스트 열기' · 주소 ?check=1 |
 | `src/u2-shell.js` | 머리줄·페이지·주소 길·메뉴·쓰기 허락·견본·내보내기/가져오기 |
 | `src/u2.css` | 모양(모두 `.u2-` 머리) |
 | `PLAN.json` | 🗓 전체 일정(설계안 단계 0~13 · 예상·실제 시간·상태 끝/진행 중/정범님 필요) — 손으로 고침 → `node tools/track.js --plan`이 TRACK.json `plan`·TRACK.md 맨 위 '전체 일정 요약'으로 · 새 웹앱 ☰ 메뉴·🧪 프로젝트 페이지 '🗓 새 웹앱 일정'에서 막대로 |
@@ -75,7 +76,7 @@
 | H-16 | 개인 정보 | tools/ship-check2.sh |
 
 ## Firebase 칸(새 웹앱만 씀)
-`ui2_site/main`(전체 설정·메뉴·쓰기 허락) · `ui2_pages/<페이지>`(공용 배치) · `ui2_versions/<페이지>_<판>`(게시 기록) · `ui2_prefs/<기기>`(개인 배치) · `ui2_locks/<페이지>`(편집 잠금) · `ui2_blocked/<기기>_<날짜>`(막은 쓰기 — 칸 이름만) · `ui2_perf/<기기>_<날짜>`(충돌 감시 요약)
+`ui2_site/main`(전체 설정·메뉴·쓰기 허락) · `ui2_pages/<페이지>`(공용 배치) · `ui2_versions/<페이지>_<판>`(게시 기록) · `ui2_prefs/<기기>`(개인 배치) · `ui2_locks/<페이지>`(편집 잠금) · `ui2_blocked/<기기>_<날짜>`(막은 쓰기 — 칸 이름만) · `ui2_perf/<기기>_<날짜>`(충돌 감시 요약) · `ui2_checks/<기기>`(단계 12 체크리스트 결과 — kind 'step12' · 줄마다 통과/안 됨/메모)
 
 ## 시험 돌리기
 ```
@@ -101,15 +102,17 @@ NODE_PATH=... node tests/t_soak.js       # H-14·15
 NODE_PATH=... node tests/t_perf.js       # 단계 11 숫자(U2_PERF_OUT·U2_PERF_BEFORE로 전/후)
 NODE_PATH=... node tests/t_dual.js       # 동시에 쓰기(11/05) — 나란히 창·폭 끌기·접기·뒤로 가기·설정 두기/닫기/전체·휴대폰·🪟 옛 화면 자리 위젯 (U2_SHOT_DIR=사진 폴더)
 NODE_PATH=... node tests/t_real.js       # 실화면 점검(단계 12 준비) — 모든 페이지·모든 위젯·옛 화면 전부 × PC·휴대폰(U2_SHOT_DIR=사진 폴더 → 사람이 눈으로)
+NODE_PATH=... node tests/t_check.js      # ✅ 단계 12 시범 체크리스트(11/10) — 띠·메뉴·?check=1 · 통과/안 됨/메모 저장 · STEP12.md와 같은 줄 · 휴대폰
 NODE_PATH=... node tests/t_sync.js       # 페이지 맞춤(11/05) — 옛 등록 화면·옛 자리 되살리기 막음 · 페이지마다 다른 화면 · 옛 상세 층이 머리 아래 · 휴대폰 · 🗓 전체 일정
 ```
 - 인터넷의 지금 웹앱은 받지 않습니다 — `U2_BASE`로 가는 요청을 기기 안 배포본 사본(`U2_TEST_OUT`, 기본 `/home/user/w/out`)에서 돌려줍니다.
 - Firebase는 가짜(`tests/fbstub2.js`)입니다.
 
-### 마지막 결과 (11/09 · 새 웹앱 0.4.1 · 지금 웹앱 1.78.425 배포본)
-시험 21묶음 모두 돌림 — t_grid_unit 23 · t_expr_unit 203 · t_load 21 · t_editor 46 · t_widgets 29 · t_perm 14 · t_mem 6 · t_actions 25 · t_adapters 23 · t_track 16 · t_new 9 · t_money 4 · t_feats · t_tabswap · t_coexist 12 · t_dual 43 · t_sync 26 · t_real 17 · t_pairs 9 · t_soak 8 · t_perf 4 모두 통과.
-- t_real: 휴대폰 🧪 프로젝트 페이지에서 지금 웹앱 새 '☰ 떠 있는 단추 모음'(rnfab · 오른쪽 아래)이 칸 끝을 덮음 → 지금 웹앱에서도 같은 자리라 '옛 떠 있는 것 몫'(H-06)으로 시험에서 뺌.
-- ⚠ t_default 8/9 — 홈 '매출 페이스' 칸의 기간 단추 7개(1주~전체)가 새 웹앱에선 '주문 기록을 받는 중'에 머묾(4번 중 3번 · 가짜 빈 자료). 한 번은 100% 통과. 0.4.0(지금 웹앱 1.78.371)에선 통과 — 그 뒤 지금 웹앱 다시 그리기 미룸 규칙과 시험 시각이 엇갈리는 것으로 보임 · 기기 저장 공간이 다 차 끝까지 확인 못 함(다음 판에서).
+### 마지막 결과 (11/10 · 새 웹앱 0.4.2 · 지금 웹앱 1.78.453 배포본)
+시험 23묶음 모두 통과 — t_grid_unit 23 · t_expr_unit 203 · t_load 21 · t_editor 46 · t_widgets 29 · t_perm 14 · t_mem 6 · t_actions 25 · t_adapters 23 · t_track 16 · t_default 9 · t_new 9 · t_money 4 · t_feats 7 · t_tabswap 7 · t_coexist 12 · t_dual 43 · t_sync 26 · t_real 17 · t_pairs 9 · t_soak 8 · t_perf 4 · t_check 17.
+- 0.4.1에서 남았던 t_default 8/9(홈 '매출 페이스' 칸)는 1.78.453 배포본에서 9/9.
+- t_sync: 맨 위 시범 띠(0.4.2)를 새 웹앱 자리로 봄 · t_real: 지금 웹앱 1.78.453 새 '💰 매입가' 떠 있는 단추(#buyp_fab · 휴대폰 왼쪽 아래)는 지금 웹앱에서도 같은 자리라 '옛 떠 있는 것 몫'(H-06)으로 뺌.
+- t_adapters '가만히 두면 다시 그리지 않음'은 시험 둘을 함께 돌렸을 때 한 번 2번(흔들림) — 혼자 돌리면 세 번 다 통과.
 
 ## 지킬 것
 한국어 화면 글 · 브라우저 팝업 금지(화면 안 확인·두 번 누르기) · 손님 개인 정보 금지(견본은 '손님A') · 외부 라이브러리 없음(격자·차트 직접) · 기기 저장 열쇠 `rn2-` · Firestore 쓰기 `ui2_*`만

@@ -109,7 +109,13 @@ NODE_PATH=... node tests/t_sync.js       # 페이지 맞춤(11/05) — 옛 등�
 - 인터넷의 지금 웹앱은 받지 않습니다 — `U2_BASE`로 가는 요청을 기기 안 배포본 사본(`U2_TEST_OUT`, 기본 `/home/user/w/out`)에서 돌려줍니다.
 - Firebase는 가짜(`tests/fbstub2.js`)입니다.
 
-### 마지막 결과 (11/10 · 새 웹앱 0.4.3 · 지금 웹앱 1.78.458 배포본)
+### 마지막 결과 (11/10 · 새 웹앱 0.4.4 · 지금 웹앱 1.78.466 배포본)
+시험 24묶음 모두 통과 — t_actions 25 · t_adapters 23 · t_check 17 · t_coexist 12 · t_default 9 · t_dual 45 · t_editor 46 · t_expr_unit 203 · t_feats 8 · t_grid_unit 23 · t_load 21 · t_mem 6 · t_money 4 · t_new 9 · t_pairs 9 · t_parity 18 · t_perf 4 · t_perm 14 · t_real 17 · t_soak 8 · t_sync 26 · t_tabswap 7 · t_track 18 · t_widgets 29.
+- t_dual 7개 실패의 원인: 지금 웹앱 1.78.4xx 등록 화면에 딸린 떠 있는 판(👁 살핀 상품 · 💰 매입가 기입 `#seenp` — body에 바로 붙음)이 💰 구획으로 커져 오른쪽 점검 점을 덮음(시험이 'SUMMARY'로 봄 — 옛 화면 위라 사람에겐 맞는 모습). → `U2.dock.FLOATS`(떠 있는 판 목록 · 계약 `floats`와 같음)를 옛 화면 몫으로 봄 · 모르는 떠 있는 것은 그 id로 보여 줌 · 🪟 옛 화면 자리 위젯 칸에 열면 그 판도 칸 안(오른쪽 아래)으로(새 시험 2줄).
+- t_real 2개(1.78.463 배포본에서 새로): '오늘 출고' 기능 단추가 목록 앞에 새로 생긴 '🔎 오늘 출고 검색창 — …'으로 잡혀 긴 이름이 칸 밖으로 → 기능 이름 일부로 찾기 = 같은 이름 → 그림 글자 뗀 이름 → 가장 짧은 이름 · 단추 글 넘침 막음(t_feats 1줄 더함).
+- 앞으로 덜 깨지게: 떠 있는 판 이름이 바뀌면 따라잡기(t_track·tools/track.js)가 '❌ #seenp 떠 있는 판 없음'으로 알림 · 🧱 칸 열쇠는 지금 웹앱 tobAlias + 같은 규칙(A.BLK_ALIAS)으로 맞춤(가격 감시 칸 b:가격감시판정엔진… → #p_watch).
+
+### 그 전 결과 (11/10 · 새 웹앱 0.4.3 · 지금 웹앱 1.78.458 배포본)
 t_parity 17/17(새) · t_actions 25 · t_adapters 23 · t_check 17 · t_coexist 12 · t_default 9 · t_editor 46 · t_expr_unit 203 · t_feats 7 · t_grid_unit 23 · t_load 21 · t_mem 6 · t_money 4 · t_new 9 · t_pairs 9 · t_perf 4 · t_perm 14 · t_real 17 · t_soak 8 · t_sync 26 · t_tabswap 7 · t_track 16 · t_widgets 29 모두 통과.
 - t_dual 36/43 — 0.4.2 코드에서도 1.78.458 배포본이면 똑같이 7개 실패(1.78.424 배포본에서는 0.4.2·0.4.3 모두 43/43) → 지금 웹앱 1.78.425~458 사이 등록 화면 바뀜(오른쪽 창이 'SUMMARY'로 잡힘)을 따라잡을 일 · 이번 고침과 무관.
 

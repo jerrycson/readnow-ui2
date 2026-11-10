@@ -61,7 +61,7 @@ body.u2-body.withrank .u2-lg #main { padding-left: max(12px, calc((100% - 1100px
 .u2-btn.u2-armed { background: var(--red); border-color: var(--red); color: #fff; }
 .u2-btn.u2-round { border-radius: 50%; width: 40px; height: 40px; padding: 0; font-size: 18px; }
 .u2-fill { height: 100%; display: flex; align-items: center; justify-content: center; }
-.u2-fill > .u2-btn { width: 100%; height: 100%; }
+.u2-fill > .u2-btn { width: 100%; height: 100%; overflow: hidden; overflow-wrap: anywhere; } /* 지금 웹앱 기능·화면 이름이 길어져도 칸 밖으로 넘치지 않게(11/10 — 1.78.463 긴 기능 이름) · 전체 이름은 title */
 .u2-cardbtn { flex-direction: column; width: 100%; height: 100%; gap: 2px; }
 .u2-cb-i { font-size: 28px; }
 .u2-cardbtn small { color: var(--sub); }
@@ -227,6 +227,8 @@ body.u2-body.u2-dside #sheet .mnv-side, body.u2-body.u2-dcell #sheet .mnv-side {
 body.u2-body.u2-dfold #sheet.sheet { visibility: hidden !important; pointer-events: none !important; transform: translateX(110%) !important; }
 /* 옛 화면에 딸린 떠 있는 판(등록 화면 '살핀 상품 일괄 처리' #seenp — body에 붙고 z 18)은 접으면 함께 숨김(접은 뒤 새 페이지·▸ 펼치기 단추를 덮었음 — 11/05 t_dual 휴대폰에서 찾음) · 작은 단추 줄은 그 판보다 위(z 19) */
 body.u2-dfold #seenp { display: none !important; }
+/* 위젯 칸 안에 열면 그 판을 칸의 보이는 오른쪽 아래로(u2-dock.js fitFloats가 --u2-fr·fb·fw·fh) — 끄는 중엔 지금 웹앱 그대로 */
+body.u2-dcell #seenp:not(.drag) { left: auto !important; top: auto !important; right: var(--u2-fr, 12px) !important; bottom: var(--u2-fb, 16px) !important; max-width: var(--u2-fw, 300px); max-height: var(--u2-fh, calc(100vh - 24px)) !important; }
 /* ③ 화면 위젯 칸(T4 페이지로 박기) */
 .u2-dockcell { position: relative; overflow: hidden; height: 100%; background: var(--paper); border: 1px dashed var(--line); border-radius: var(--u2-radius, 10px); }
 .u2-dockph { padding: 12px; display: flex; flex-direction: column; gap: 6px; font-family: var(--u2-font, system-ui, sans-serif); font-size: 13px; }

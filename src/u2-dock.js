@@ -12,6 +12,11 @@
   const L = U2.legacy;
   const D = (U2.dock = { cell: null, folded: false, moves: 0 });
   const DEF = { keep: 'keep', pos: 'side', w: 0.5 };
+  /* 옛 화면에 딸려 지금 웹앱이 body에 바로 붙이는 떠 있는 판(id) — 등록 화면 '👁 살핀 상품 · 💰 매입가 기입' #seenp(1.78.302~ · 1.78.4xx부터 💰 구획이 들어와 커짐)
+   * 접으면 함께 숨기고(u2.css) · 위젯 칸 안에 열면 그 칸 오른쪽 아래로 붙임(아래 fitFloats) · 시험은 이 목록을 '옛 화면 몫'으로 봄
+   * 지금 웹앱이 새 판을 더하면 여기 id 하나만 더하면 됨 — u2-contract.json 'floats'와 같게(tools/track.js가 판마다 살아 있나 봄) */
+  D.FLOATS = ['seenp'];
+  D.isFloat = (el) => { for (let n = el; n && n !== document.body; n = n.parentElement) { if (n.parentElement === document.body) return D.FLOATS.includes(n.id); } return false; };
   D.MIN_W = 900; /* 이 폭 밑은 나란히 둘 자리가 없음(옛 화면 최소 360 + 페이지 최소 480 + 여유) — 근거: 지금 웹앱 휴대폰 꼴 760px · 설정으로 바꿈 */
   D.cfg = () => Object.assign({}, DEF, U2.ls.get('dock', {}) || {});
   D.set = (o) => { U2.ls.set('dock', Object.assign(D.cfg(), o)); D.sync(); };
@@ -57,7 +62,21 @@
     document.documentElement.style.setProperty('--u2-dockw', w + 'px');
     D.drawUi(on && (m === 'side' || m === 'full'), m, fold);
     if (w !== lastW) { lastW = w; D.relayout(); }
+    D.fitFloats();
   };
+  /* 위젯 칸 안에 열었을 때: 옛 화면의 떠 있는 판(#seenp 등)은 화면 오른쪽 아래(칸 밖 — 다른 위젯 위)에 뜨므로, 칸의 보이는 오른쪽 아래로 붙임
+   * CSS 변수만 고침(지금 웹앱이 그 판에 적는 자리 글은 그대로 · 끄는 중(.drag)엔 손대지 않음) · 페이지를 굴리면 따라감 */
+  D.fitFloats = () => {
+    const R = document.documentElement.style;
+    if (!(D.mode() === 'cell' && isOn())) { R.removeProperty('--u2-fr'); return; }
+    const c = D.cell.getBoundingClientRect();
+    const bot = Math.min(c.bottom, innerHeight), right = Math.min(c.right, innerWidth);
+    R.setProperty('--u2-fr', Math.max(4, Math.round(innerWidth - right + 8)) + 'px');
+    R.setProperty('--u2-fb', Math.max(4, Math.round(innerHeight - bot + 8)) + 'px');
+    R.setProperty('--u2-fw', Math.max(160, Math.round(Math.min(right, innerWidth) - Math.max(c.left, 0) - 16)) + 'px');
+    R.setProperty('--u2-fh', Math.max(120, Math.round(bot - Math.max(c.top, 0) - 16)) + 'px');
+  };
+  addEventListener('scroll', () => { if (!D.cell) return; cancelAnimationFrame(D._fr); D._fr = requestAnimationFrame(D.fitFloats); }, { passive: true, capture: true });
   /* 페이지 폭이 바뀌면 격자 폭 단계(24·12·6·4칸)를 다시 고름 */
   D.relayout = () => { clearTimeout(D._rl); D._rl = setTimeout(() => { try { const host = U2.$('#u2-page'); const G = window.U2Grid; if (U2.edit) return U2.edit.refresh(); if (U2.view && host && G && G.bpOf(host.clientWidth).k !== U2.view._bp) U2.render(); } catch (e) {} }, 60); };
   /* 손잡이·작은 단추 줄 */

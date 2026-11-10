@@ -21,6 +21,9 @@ const { open, seed, ok, done, nonU2Writes } = require('./lib');
     const all = t.errs.slice(e0).filter((e) => !/js-profiling/.test(e)); const ne = all.filter((e) => !/리드나우 2 시범 중 — 읽기만/.test(e)); if (all.length > ne.length) res.blockedLog = (res.blockedLog || 0) + 1; /* 막이에 막힌 쓰기를 옛 코드가 콘솔에 적은 것은 오류가 아님(막힘) */ if (ne.length) res.err.push(f.slice(0, 36) + ' → ' + ne[0].slice(0, 90)); else res.ok++;
   }
   ok(feats.length >= 100, '기능 단추 수', feats.length + '개');
+  /* (11/10) 이름 일부로 찾기 = 가장 맞는 것(같은 이름 → 그림 글자만 뗀 이름 → 가장 짧은 이름) — 지금 웹앱이 목록 앞에 비슷한 긴 기능을 더해도 단추가 바뀌지 않게 */
+  const ff = await p.evaluate(() => { const F = U2.legacy.list('FEAT') || []; const fake = { t: '🔎 오늘 출고 검색창 — 시험용 아주 긴 기능 이름' }; F.unshift(fake); const a = U2.legacy.findFeat('오늘 출고'); const b = U2.legacy.findFeat('오늘 출고 검색창'); F.splice(F.indexOf(fake), 1); return { a: a && a.t, b: b && b.t }; });
+  ok(ff.a === '🚚 오늘 출고' && /검색창/.test(ff.b || ''), "기능 이름 일부로 찾기 = 가장 맞는 것('오늘 출고' → 🚚 오늘 출고 · 앞에 긴 비슷한 기능이 있어도)", JSON.stringify(ff));
   ok(res.err.length === 0, `기능 단추 ${feats.length}개 하나씩 실행 — 오류 0`, res.err.length ? res.err.slice(0, 6).join(' / ') : `문제없음 ${res.ok} · 상세 층을 연 것 ${res.sheet} · 다른 페이지로 간 것 ${res.page}`);
   ok(res.left.length === 0, '새 웹앱 문서를 새로 여는(다시 불러오는) 기능 없음', res.left.join(' / ') || '없음');
   ok(true, '막이에 막혀 옛 코드가 콘솔에 \'읽기만\'을 적은 기능', (res.blockedLog || 0) + '개');

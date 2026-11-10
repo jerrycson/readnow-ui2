@@ -41,12 +41,16 @@
   /* (11/10 정범님 '리드나우2로 옮길 때 기능·정보가 빠지면 곤란') 탭 첫 화면 덩어리 하나(지금 웹앱 ✎ 첫 화면 편집의 줄 — '#p_reg'·'b:🧾주문상품전체보기' 같은 열쇠)를 위젯으로
    *  탭을 통째로 그린 뒤 지금 웹앱 tobBlocks(편집 목록과 같은 함수)로 그 덩어리만 떼어 냄 — 설명 줄 등 붙은 것도 함께 · 옛 열쇠 규칙이 바뀌어도 이쪽은 고칠 것 없음 */
   A.isBlk = (id) => /^(#|b:)/.test(String(id || ''));
+  /* (11/10) 열쇠 맞추기 — 지금 웹앱이 제목 글자 열쇠를 고정 열쇠로 바꾸면(TOB_ALIAS · 예: 상품 탭 가격 감시 칸 'b:가격감시판정엔진…'(엔진 상태 글이 섞여 바뀌던 것) → '#p_watch')
+   *  지금 웹앱의 tobAlias를 그대로 쓰고, 그 전 판에서도 같은 열쇠가 되게 같은 규칙 하나를 여기 둠 → 이미 페이지에 넣은 🧱 칸이 엔진 상태·판이 바뀌어도 이어짐 */
+  A.BLK_ALIAS = [[/^b:가격감시판정엔진.*$/, '#p_watch']];
+  A.blkKey = (k) => { k = String(k || ''); try { if (typeof tobAlias === 'function') k = tobAlias(k); } catch (e) {} for (const [re, to] of A.BLK_ALIAS) if (re.test(k)) return to; return k; };
   A.renderBlk = (tab, ids) => {
     const out = {}; if (typeof tobBlocks !== 'function') return out;
     const box = document.createElement('div'); box.className = 'u2-secbox'; box.style.cssText = 'position:absolute;left:-99999px;top:0;width:1200px;visibility:hidden'; /* 안 보이게(display:none이면 tobBlocks가 모든 칸을 '숨은 것'으로 보고 앞 칸에 붙임) */ (document.getElementById('app') || document.body).appendChild(box);
     const keep = { tab: S.tab, secOnly: S.secOnly, ptOnly: S.ptOnly, mkOnly: S.mkOnly, limit: S.limit }; A.rendering = true;
     try { S.tab = tab; S.secOnly = null; S.ptOnly = null; S.mkOnly = null; A.renders++; (A.RENDER[tab] || (() => { throw new Error('그리기 함수가 없는 탭: ' + tab); }))(box);
-      const B = tobBlocks(box); ids.forEach((id) => { const b = B.find((x) => x.k === id); if (!b) return; const w = document.createElement('div'); w.className = 'u2-seccards'; b.els.forEach((el) => w.appendChild(el)); out[id] = w; }); }
+      const B = tobBlocks(box); ids.forEach((id) => { const b = B.find((x) => x.k === id) || B.find((x) => A.blkKey(x.k) === A.blkKey(id)); if (!b) return; const w = document.createElement('div'); w.className = 'u2-seccards'; b.els.forEach((el) => w.appendChild(el)); out[id] = w; }); }
     catch (e) {} finally { A.rendering = false; S.tab = keep.tab; S.secOnly = keep.secOnly; S.ptOnly = keep.ptOnly; S.mkOnly = keep.mkOnly; S.limit = keep.limit; }
     box.remove(); return out;
   };

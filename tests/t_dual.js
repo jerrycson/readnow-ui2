@@ -11,7 +11,10 @@ const shot = async (p, n) => { if (DIR) await p.screenshot({ path: path.join(DIR
 const NOVER = () => { try { localStorage.setItem('rn-lastver', '1.78.384'); } catch (e) {} };
 const st = (p) => p.evaluate(() => {
   const sh = document.getElementById('sheet'); const r = sh.getBoundingClientRect(); const pg = document.getElementById('u2-page').getBoundingClientRect();
-  const at = (x, y) => { const e = document.elementFromPoint(x, y); return e ? (e.closest('#sheet') ? 'sheet' : e.closest('#u2-page') ? 'page' : e.closest('#u2-bar') ? 'bar' : e.closest('#u2-dockui') ? 'ui' : e.id || e.tagName) : null; };
+  /* 이 점 맨 위에 있는 것 — 옛 화면에 딸린 떠 있는 판(U2.dock.FLOATS · 등록 화면 👁·💰 #seenp)이 옛 화면 층 안에 있으면 옛 화면 몫 · 모르는 것은 body 바로 아래 조상 id로(지금 웹앱이 새 떠 있는 판을 더하면 무엇인지 바로 보이게) */
+  const top = (e) => { let n = e; while (n && n.parentElement && n.parentElement !== document.body) n = n.parentElement; return n; };
+  const inSh = (el) => { const a = el.getBoundingClientRect(); return a.left >= r.left - 1 && a.right <= r.right + 1 && a.top >= r.top - 1 && a.bottom <= r.bottom + 1; };
+  const at = (x, y) => { const e = document.elementFromPoint(x, y); if (!e) return null; if (e.closest('#sheet')) return 'sheet'; if (e.closest('#u2-page')) return 'page'; if (e.closest('#u2-bar')) return 'bar'; if (e.closest('#u2-dockui')) return 'ui'; const t = top(e); if (U2.dock.isFloat(e)) return inSh(t) ? 'sheet' : 'float#' + t.id; return '?' + (t && (t.id ? '#' + t.id : t.tagName + '.' + t.className)) + '>' + e.tagName; };
   const midY = Math.round((r.top + innerHeight) / 2);
   let det = null, tab = null; try { det = S.detail ? Object.keys(S.detail)[0] : null; tab = S.tab; } catch (e) {}
   const ui = document.getElementById('u2-dockui');
@@ -29,6 +32,8 @@ const st = (p) => p.evaluate(() => {
   ok(s.on && s.cls.includes('u2-dside') && s.L > 500 && s.L + s.W >= 1398 && s.pgW <= s.L + 2, '① 등록 화면이 오른쪽 나란히 창으로 열림 · 페이지는 왼쪽(겹치지 않음)', `층 ${s.L}~${s.L + s.W} · 페이지 폭 ${s.pgW}`);
   ok(s.left === 'page' && s.right === 'sheet', '  왼쪽 = 새 웹앱 페이지 · 오른쪽 = 등록 화면', s.left + ' / ' + s.right);
   ok(/상품 등록/.test(s.tt), '  작은 단추 줄에 지금 옛 화면 이름', s.tt);
+  const fs1 = await p.evaluate(() => { const r = document.getElementById('sheet').getBoundingClientRect(); return U2.dock.FLOATS.map((id) => document.getElementById(id)).filter((el) => el && getComputedStyle(el).display !== 'none' && el.offsetWidth).map((el) => { const a = el.getBoundingClientRect(); return { id: el.id, L: Math.round(a.left), inSheet: a.left >= r.left - 1 && a.right <= r.right + 1 }; }); });
+  ok(fs1.every((f) => f.inSheet), '  옛 화면에 딸린 떠 있는 판(👁·💰 #seenp)은 오른쪽 옛 화면 위(왼쪽 페이지를 덮지 않음)', JSON.stringify(fs1));
   await shot(p, '1_reg_products');
   /* 등록 화면 안 글칸에 글을 침 */
   const typed = await p.evaluate(() => { const i = [...document.querySelectorAll('#sheet input[type=text], #sheet input:not([type]), #sheet textarea')].find((x) => x.offsetParent); if (!i) return null; i.focus(); i.value = '시험 글 123'; i.dispatchEvent(new Event('input', { bubbles: true })); i.dataset.u2t = '1'; return i.id || i.name || i.placeholder || 'input'; });
@@ -115,6 +120,9 @@ const st = (p) => p.evaluate(() => {
   const inC = await p.evaluate(() => { const sh = document.getElementById('sheet'); const c = document.querySelector('.u2-dockcell'); const a = sh.getBoundingClientRect(), r = c.getBoundingClientRect(); return { inside: c.contains(sh), fit: a.left >= r.left - 1 && a.right <= r.right + 1 && a.top >= r.top - 1, on: sh.classList.contains('on'), cls: document.body.className, ui: !!document.getElementById('u2-dockui'), leftIs: (() => { const e = document.elementFromPoint(r.left - 60, r.top + 100); return e && e.closest('#u2-page') && !e.closest('.u2-dockcell') ? 'page' : e && (e.id || e.className); })() }; });
   ok(inC.on && inC.inside && inC.fit && /u2-dcell/.test(inC.cls) && !inC.ui, '  화면 단추 → 등록 화면이 그 칸 안에 열림(칸 밖으로 안 나옴 · 나란히 단추 줄 없음)', JSON.stringify(inC));
   ok(inC.leftIs === 'page', '  칸 왼쪽의 옛 탭(주문·매출)은 그대로 보임', inC.leftIs);
+  /* 1.78.4xx 등록 화면 '👁 살핀 상품 · 💰 매입가 기입' 떠 있는 판(#seenp) — 칸 안에 열면 화면 오른쪽 아래(다른 위젯 위)가 아니라 그 칸 안으로 */
+  const fl = await p.evaluate(() => { const c = document.querySelector('.u2-dockcell').getBoundingClientRect(); return U2.dock.FLOATS.map((id) => document.getElementById(id)).filter((el) => el && getComputedStyle(el).display !== 'none' && el.offsetWidth).map((el) => { const a = el.getBoundingClientRect(); return { id: el.id, inside: a.left >= c.left - 1 && a.right <= c.right + 1 && a.bottom <= Math.min(c.bottom, innerHeight) + 1 }; }); });
+  ok(fl.length > 0 && fl.every((f) => f.inside), '  옛 화면에 딸린 떠 있는 판(👁·💰 #seenp)도 그 칸 안(다른 위젯을 덮지 않음)', JSON.stringify(fl));
   await shot(p, '5_cell');
   await p.click('.u2-nav [data-pg="biz"]'); await p.waitForTimeout(1200); s = await st(p);
   ok(s.on && s.det === 'reg' && s.parent === 'app' && s.cls.includes('u2-dside') && s.right === 'sheet', '  위젯이 없는 페이지로 가면 등록 화면은 본래 자리로 돌아와 오른쪽 나란히', JSON.stringify({ parent: s.parent, cls: s.cls }));

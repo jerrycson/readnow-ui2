@@ -31,6 +31,12 @@ const TABS = ['search', 'products', 'sellers', 'orders', 'purchase', 'biz', 'mar
   for (const tab of TABS) ok(r[tab].n > 0 && !r[tab].miss.length, `② ${tab} 탭 첫 화면 칸 ${r[tab].n}줄이 모두 새 웹앱 위젯으로 그려짐`, '🧱 칸 위젯 ' + r[tab].blk + ' · 빠짐 ' + JSON.stringify(r[tab].miss));
   const reg = await p.evaluate(() => { const it = U2.catalog.get().find((i) => i.kind === 'sec' && i.tab === 'products' && /등록/.test(i.title) && /^(pt_reg|#p_reg)$/.test(i.key)); if (!it) return null; const g = U2.adapters.resolve('products', [it.key]); const n = g[it.key]; return { key: it.key, ok: !!n && !!n.querySelector('#reg_open') }; });
   ok(reg && reg.ok, '② 상품 탭 📥 등록 줄이 새 웹앱 위젯으로 있고 등록 단추(#reg_open)가 그려짐', JSON.stringify(reg));
+  /* (11/10) 상품 탭 가격 감시 칸 — 지금 웹앱 예전 열쇠는 제목에 엔진 상태 글(판정 중·A단계/판정 쉼/전체 정지)이 섞여 바뀜 → 새 웹앱은 고정 열쇠 #p_watch 하나로 · 예전 열쇠로 넣은 🧱 칸도 그려짐 */
+  const pw = await p.evaluate(() => { const A = U2.adapters; const ks = ['b:가격감시판정엔진판정중A단계', 'b:가격감시판정엔진엔진판정쉼확', 'b:가격감시판정엔진전체정지판정', '#p_watch'].map(A.blkKey);
+    const its = U2.catalog.get().filter((i) => i.kind === 'sec' && i.tab === 'products' && A.blkKey(i.key) === '#p_watch'); const old = A.resolve('products', ['b:가격감시판정엔진엔진판정쉼확'])['b:가격감시판정엔진엔진판정쉼확'];
+    const sec = U2.catalog.get().some((i) => i.kind === 'sec' && i.tab === 'products' && i.key === 'pt_price'); /* 섹션 위젯(pt_price)이 그 칸을 그리면 🧱는 겹쳐 넣지 않음 */
+    return { same: ks.every((k) => k === '#p_watch'), n: its.length, key: its[0] && its[0].key, sec, old: !!old && /가격 감시/.test(old.textContent) }; });
+  ok(pw.same && (pw.n === 1 ? pw.key === '#p_watch' : pw.n === 0 && pw.sec) && pw.old, '② 상품 탭 가격 감시 칸 = 서랍에 하나(#p_watch 또는 섹션 위젯 · 엔진 상태가 바뀌어도 겹쳐 쌓이지 않음) · 예전 열쇠로 넣은 칸도 그려짐', JSON.stringify(pw));
   /* ③ 홈 칸·화면·휴대폰 섹션·기능 찾기 */
   const st = await p.evaluate(() => { const C = U2.catalog.get(); const has = (kind, key) => C.some((i) => i.kind === kind && i.key === key);
     const home = Object.keys(WIDGETS).filter((k) => !has('home', k)); const scr = PG_SCR.filter((r) => typeof window[r[3]] === 'function' && !has('screen', r[0])).map((r) => r[0]);

@@ -160,7 +160,10 @@
   /* 지금 웹앱 전역 목록(const라 window에 없음 — 이름마다 typeof로 읽음 · eval 안 씀) */
   const GL = { FEAT: () => (typeof FEAT !== 'undefined' ? FEAT : null), PG_SCR: () => (typeof PG_SCR !== 'undefined' ? PG_SCR : null), WIDGETS: () => (typeof WIDGETS !== 'undefined' ? WIDGETS : null), W_DESC: () => (typeof W_DESC !== 'undefined' ? W_DESC : null) };
   L.list = (n) => { try { return GL[n] ? GL[n]() : null; } catch (e) { return null; } };
-  L.findFeat = (q) => { const F = L.list('FEAT'); if (!F || !q) return null; return F.find((f) => f.t === q) || F.find((f) => String(f.t).indexOf(q) >= 0) || null; };
+  /* 기능 찾기 — 같은 이름 → 앞 그림 글자만 뗀 이름이 같음('🚚 오늘 출고' = '오늘 출고') → 그 글을 품은 것 중 가장 짧은 이름
+   * (11/10) 예전엔 '품은 것 중 맨 앞'이라, 지금 웹앱 1.78.463이 목록 앞에 '🔎 오늘 출고 검색창 — …'을 더하자 '오늘 출고' 단추가 그 긴 기능으로 바뀌었음 */
+  L.findFeat = (q) => { const F = L.list('FEAT'); if (!F || !q) return null; const bare = (t) => String(t).replace(/^[^0-9A-Za-z가-힣]+/u, '').trim(); const qb = bare(q);
+    return F.find((f) => f.t === q) || F.find((f) => bare(f.t) === qb) || F.filter((f) => String(f.t).indexOf(q) >= 0).sort((a, b) => String(a.t).length - String(b.t).length)[0] || null; };
   L.feat = (q) => { const f = L.findFeat(q); if (!f) return U2.toast('기능을 찾지 못함: ' + q, 1); L.userAt = performance.now(); /* 새 웹앱에서 일부러 연 것 = 여는 동안 막이를 끝냄 */ U2.setCtx('feat:' + q); try { return typeof featGo === 'function' ? featGo(f) : f.go && f.go.fn && f.go.fn(); } catch (e) { U2.toast('기능 실행 중 오류: ' + e.message, 1); } };
   /* 대상이 있어야 열리는 화면 — 지금 웹앱은 상세 화면 함수를 '화면 쌓기'(navWrap)로 감싸 인자 수(fn.length)가 늘 0으로 보임 → 11/05 실화면 점검에서 대상 없이 열면 오류 난 8개 + 열어 보다 오류가 난 것(이 기기에 기억 rn2-scrArg) */
   L.ARG_SCR = new Set(['shipDay', 'invMatch', 'shipCost', 'book', 'cashForm', 'purEntry', 'sellerCount', 'listView']);

@@ -34,6 +34,7 @@ function extract(t, contract) {
   (contract.fns || []).forEach(([n, a]) => { const r = arity(n); if (r === null) bad.push(n + ' 없음'); else if (a != null && r !== a) bad.push(n + ' 인자 ' + r + '(기대 ' + a + ')'); });
   (contract.vals || []).forEach(([n]) => { if (!new RegExp('(?:const|let|var)\\s+' + n + '\\s*=').test(t)) bad.push(n + ' 없음'); });
   (contract.ids || []).forEach((id) => { if (t.indexOf('id="' + id + '"') < 0) bad.push('#' + id + ' 없음'); });
+  (contract.floats || []).forEach((id) => { if (t.indexOf("id = '" + id + "'") < 0 && t.indexOf('id="' + id + '"') < 0) bad.push('#' + id + ' 떠 있는 판 없음'); });
   o.contractBad = bad;
   return JSON.parse(JSON.stringify(o)); /* 큰 원본 글(1.5MB)의 조각을 붙잡지 않게 새 글로 복사 — 안 하면 판 수백 개에서 메모리가 넘침 */
 }

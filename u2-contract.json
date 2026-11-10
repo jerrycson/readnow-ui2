@@ -198,6 +198,10 @@
   "modal",
   "toast"
  ],
+ "floats": [
+  "seenp"
+ ],
+ "_floats": "옛 화면에 딸려 body에 바로 붙는 떠 있는 판 id(지금 웹앱은 el.id = '…'로 만듦) — src/u2-dock.js D.FLOATS와 같게 · 없어지면 ❌",
  "aliases": [
   "S.orders",
   "S.ordersLoaded",

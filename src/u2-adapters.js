@@ -13,6 +13,8 @@
     home: (m) => fnOf('renderHome') && renderHome(m), orders: (m) => fnOf('renderOrders') && renderOrders(m), products: (m) => fnOf('renderProducts') && renderProducts(m),
     sellers: (m) => fnOf('renderSellers') && renderSellers(m), purchase: (m) => fnOf('renderPurchase') && renderPurchase(m), biz: (m) => fnOf('renderBiz') && renderBiz(m),
     market: (m) => fnOf('renderMarket') && renderMarket(m), projects: (m) => fnOf('renderProjects') && renderProjects(m),
+    /* (11/10) 고객 탭은 지금 웹앱에 따로 그리기 함수가 없음(renderMainNow0 안에서 #main에 바로) → 그리는 동안만 상자를 #main으로 · 몸 class·옛 #main은 되돌림 */
+    search: (m) => { if (!fnOf('renderMainNow0')) return; const real = document.getElementById('main'); const bc = document.body.className; if (real) real.id = 'main__u2'; m.id = 'main'; try { renderMainNow0(); } finally { m.removeAttribute('id'); if (real) real.id = 'main'; document.body.className = bc; } },
     settings: (m) => { if (!fnOf('renderSettings')) return; try { if (fnOf('setUiEnter')) setUiEnter(); } catch (e) {} renderSettings(m); try { if (fnOf('setUiBind')) setUiBind(m); } catch (e) {} },
   };
   const ptIds = () => { try { return new Set(PT_SECS.map((x) => x[0])); } catch (e) { return new Set(); } };
@@ -36,14 +38,32 @@
   };
   /* 같은 탭 머리 부분(소개·묶음 단추 등 id가 있는 것)이 섹션마다 따라 나오면 id가 겹침 → 이미 화면에 있는 id의 요소는 새로 넣는 쪽에서 뺌(옛 코드는 id로 첫 요소만 찾음) */
   A.dedupe = (n, host) => { n.querySelectorAll('[id]').forEach((e) => { const o = document.getElementById(e.id); if (o && !host.contains(o) && !n.contains(o)) e.remove(); }); };
+  /* (11/10 정범님 '리드나우2로 옮길 때 기능·정보가 빠지면 곤란') 탭 첫 화면 덩어리 하나(지금 웹앱 ✎ 첫 화면 편집의 줄 — '#p_reg'·'b:🧾주문상품전체보기' 같은 열쇠)를 위젯으로
+   *  탭을 통째로 그린 뒤 지금 웹앱 tobBlocks(편집 목록과 같은 함수)로 그 덩어리만 떼어 냄 — 설명 줄 등 붙은 것도 함께 · 옛 열쇠 규칙이 바뀌어도 이쪽은 고칠 것 없음 */
+  A.isBlk = (id) => /^(#|b:)/.test(String(id || ''));
+  A.renderBlk = (tab, ids) => {
+    const out = {}; if (typeof tobBlocks !== 'function') return out;
+    const box = document.createElement('div'); box.className = 'u2-secbox'; box.style.cssText = 'position:absolute;left:-99999px;top:0;width:1200px;visibility:hidden'; /* 안 보이게(display:none이면 tobBlocks가 모든 칸을 '숨은 것'으로 보고 앞 칸에 붙임) */ (document.getElementById('app') || document.body).appendChild(box);
+    const keep = { tab: S.tab, secOnly: S.secOnly, ptOnly: S.ptOnly, mkOnly: S.mkOnly, limit: S.limit }; A.rendering = true;
+    try { S.tab = tab; S.secOnly = null; S.ptOnly = null; S.mkOnly = null; A.renders++; (A.RENDER[tab] || (() => { throw new Error('그리기 함수가 없는 탭: ' + tab); }))(box);
+      const B = tobBlocks(box); ids.forEach((id) => { const b = B.find((x) => x.k === id); if (!b) return; const w = document.createElement('div'); w.className = 'u2-seccards'; b.els.forEach((el) => w.appendChild(el)); out[id] = w; }); }
+    catch (e) {} finally { A.rendering = false; S.tab = keep.tab; S.secOnly = keep.secOnly; S.ptOnly = keep.ptOnly; S.mkOnly = keep.mkOnly; S.limit = keep.limit; }
+    box.remove(); return out;
+  };
+  /* 섹션 id(또는 덩어리 열쇠) → 화면 노드 — 고른 것만 → 탭 전체에서 섹션 → 덩어리 → 휴대폰 화면 그대로 차례 */
+  A.resolve = (tab, ids) => {
+    const sx = ids.filter((id) => !A.isBlk(id)); const got = sx.length ? A.renderSecs(tab, sx, 'only') : {};
+    let miss = ids.filter((id) => !got[id] && !A.isBlk(id)); if (miss.length) { const f = A.renderSecs(tab, miss, 'full'); miss.forEach((id) => { if (f[id]) got[id] = f[id]; }); } /* 고른 것만 그리기가 안 되는 탭(설정 등)은 탭 전체에서 떼어 냄 */
+    const bk = ids.filter((id) => A.isBlk(id)); if (bk.length) Object.assign(got, A.renderBlk(tab, bk));
+    miss = ids.filter((id) => !got[id] && !A.isBlk(id)); miss.forEach((id) => { const w = A.renderSecs(tab, [id], 'whole'); if (w[id]) got[id] = w[id]; }); /* 카드형(매입·상품) — 휴대폰 화면 그대로 */
+    return got;
+  };
   /* 모아서 그림: 같은 틱에 놓인 섹션 위젯을 탭마다 한 번에 */
   const flush = () => {
     const q = A.q; A.q = []; A._pend = false; const byTab = new Map();
     q.forEach((it) => { if (!it.b.isConnected || it.dead) return; (byTab.get(it.tab) || byTab.set(it.tab, []).get(it.tab)).push(it); });
     byTab.forEach((items, tab) => {
-      const ids = [...new Set(items.map((i) => i.id))]; const got = A.renderSecs(tab, ids, 'only');
-      let miss = ids.filter((id) => !got[id]); if (miss.length) { const f = A.renderSecs(tab, miss, 'full'); miss.forEach((id) => { if (f[id]) got[id] = f[id]; }); } /* 고른 것만 그리기가 안 되는 탭(설정 등)은 탭 전체에서 떼어 냄 */
-      miss = ids.filter((id) => !got[id]); miss.forEach((id) => { const w = A.renderSecs(tab, [id], 'whole'); if (w[id]) got[id] = w[id]; }); /* 카드형(매입·상품) — 휴대폰 화면 그대로 */
+      const ids = [...new Set(items.map((i) => i.id))]; const got = A.resolve(tab, ids);
       items.forEach((it) => { const n = got[it.id]; if (n) { if (n.tagName === 'DETAILS') n.open = true; A.dedupe(n, it.b); it.b.replaceChildren(n); got[it.id] = null; A.retry(it); } else { const mv = A.MOVED[it.id]; it.b.innerHTML = mv ? `<div class="u2-empty">이 섹션은 지금 웹앱에서 옮겨짐 — ${U2.esc(mv)} (${U2.esc(it.id)}) · ✏ 꾸미기에서 이 칸을 지우고 그 화면 위젯을 놓으세요</div>` : `<div class="u2-empty">이 섹션은 지금 비어 있거나 이 기기에서 보이지 않음 (${U2.esc(it.id)})</div>`; } });
     });
   };

@@ -38,7 +38,7 @@
 | `src/u2-actions.js` | 행동 16가지 · 차례 실행 · 두 번 누르기 · 단축키(옛 단축키와 겹침 막음) |
 | `src/u2-dock.js` | 옛 화면(등록·출고 등 #sheet)과 새 웹앱 페이지 함께 쓰기 — 오른쪽 나란히 창(폭 끌기·기억)·전체(휴대폰은 페이지를 바꾸면 접힘)·🪟 옛 화면 자리 위젯(페이지로 박기) · 설정 '페이지 바꿀 때 두기(기본)/닫기' · 한 번에 하나(지금 웹앱 한계) |
 | `src/u2-catalog.js` | 위젯 목록을 지금 웹앱에서 실행 중에 뽑음(탭·섹션·홈 칸·화면·기능 찾기) · 분류 12 · ≈MB · 🆕 · 메모리 예산 |
-| `src/u2-adapters.js` | 섹션 위젯(T2 — 같은 탭은 한 번 그려 나눠 줌) · 계약 검사 |
+| `src/u2-adapters.js` | 섹션 위젯(T2 — 같은 탭은 한 번 그려 나눠 줌) · 🧱 칸 위젯(탭 첫 화면 칸 하나 — 지금 웹앱 tobBlocks로 떼어 냄 · 11/10) · 계약 검사 |
 | `u2-contract.json` | 새 웹앱이 기대는 옛 함수·값·화면 id(계약 목록) |
 | `src/u2-widgets.js` | 기본 UI 위젯 58종(계산 카드·질의·저장한 보기·📥 할 일·🔎 스캔 검수 포함) + 리드나우 기능 위젯 6종(탭·섹션·머리줄·홈 칸·화면·기능) |
 | `src/u2-widgets-extra.js` | 덜 쓰는 무거운 위젯 10종(카드 목록·보드·달력·타임라인·차트·바깥 페이지·변수 바·반복·질의·스캔 검수) — 첫 화면 뒤 쉬는 때·처음 놓일 때 받음 |
@@ -103,12 +103,17 @@ NODE_PATH=... node tests/t_perf.js       # 단계 11 숫자(U2_PERF_OUT·U2_PERF
 NODE_PATH=... node tests/t_dual.js       # 동시에 쓰기(11/05) — 나란히 창·폭 끌기·접기·뒤로 가기·설정 두기/닫기/전체·휴대폰·🪟 옛 화면 자리 위젯 (U2_SHOT_DIR=사진 폴더)
 NODE_PATH=... node tests/t_real.js       # 실화면 점검(단계 12 준비) — 모든 페이지·모든 위젯·옛 화면 전부 × PC·휴대폰(U2_SHOT_DIR=사진 폴더 → 사람이 눈으로)
 NODE_PATH=... node tests/t_check.js      # ✅ 단계 12 시범 체크리스트(11/10) — 띠·메뉴·?check=1 · 통과/안 됨/메모 저장 · STEP12.md와 같은 줄 · 휴대폰
+NODE_PATH=... node tests/t_parity.js     # 빠짐 대조(11/10) — 지금 웹앱 탭·첫 화면 칸(✎ 첫 화면 편집 줄)·홈 칸·화면·휴대폰 섹션·기능 찾기가 새 웹앱 서랍에 하나도 빠짐없이 · 새 칸은 저절로 🧱
 NODE_PATH=... node tests/t_sync.js       # 페이지 맞춤(11/05) — 옛 등록 화면·옛 자리 되살리기 막음 · 페이지마다 다른 화면 · 옛 상세 층이 머리 아래 · 휴대폰 · 🗓 전체 일정
 ```
 - 인터넷의 지금 웹앱은 받지 않습니다 — `U2_BASE`로 가는 요청을 기기 안 배포본 사본(`U2_TEST_OUT`, 기본 `/home/user/w/out`)에서 돌려줍니다.
 - Firebase는 가짜(`tests/fbstub2.js`)입니다.
 
-### 마지막 결과 (11/10 · 새 웹앱 0.4.2 · 지금 웹앱 1.78.453 배포본)
+### 마지막 결과 (11/10 · 새 웹앱 0.4.3 · 지금 웹앱 1.78.458 배포본)
+t_parity 17/17(새) · t_actions 25 · t_adapters 23 · t_check 17 · t_coexist 12 · t_default 9 · t_editor 46 · t_expr_unit 203 · t_feats 7 · t_grid_unit 23 · t_load 21 · t_mem 6 · t_money 4 · t_new 9 · t_pairs 9 · t_perf 4 · t_perm 14 · t_real 17 · t_soak 8 · t_sync 26 · t_tabswap 7 · t_track 16 · t_widgets 29 모두 통과.
+- t_dual 36/43 — 0.4.2 코드에서도 1.78.458 배포본이면 똑같이 7개 실패(1.78.424 배포본에서는 0.4.2·0.4.3 모두 43/43) → 지금 웹앱 1.78.425~458 사이 등록 화면 바뀜(오른쪽 창이 'SUMMARY'로 잡힘)을 따라잡을 일 · 이번 고침과 무관.
+
+### 그 전 결과 (11/10 · 새 웹앱 0.4.2 · 지금 웹앱 1.78.453 배포본)
 시험 23묶음 모두 통과 — t_grid_unit 23 · t_expr_unit 203 · t_load 21 · t_editor 46 · t_widgets 29 · t_perm 14 · t_mem 6 · t_actions 25 · t_adapters 23 · t_track 16 · t_default 9 · t_new 9 · t_money 4 · t_feats 7 · t_tabswap 7 · t_coexist 12 · t_dual 43 · t_sync 26 · t_real 17 · t_pairs 9 · t_soak 8 · t_perf 4 · t_check 17.
 - 0.4.1에서 남았던 t_default 8/9(홈 '매출 페이스' 칸)는 1.78.453 배포본에서 9/9.
 - t_sync: 맨 위 시범 띠(0.4.2)를 새 웹앱 자리로 봄 · t_real: 지금 웹앱 1.78.453 새 '💰 매입가' 떠 있는 단추(#buyp_fab · 휴대폰 왼쪽 아래)는 지금 웹앱에서도 같은 자리라 '옛 떠 있는 것 몫'(H-06)으로 뺌.

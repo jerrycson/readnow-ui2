@@ -18,6 +18,9 @@
     if (t && U2.SCREEN_TABS && U2.SCREEN_TABS[id]) return { id, title: t[1], icon: t[0], grid: { rowH: 16, half: false, compact: false }, rev: 0,
       widgets: { hdr: { type: 'legacy.header', props: {} }, main: { type: 'legacy.dock', props: { title: t[1], scrs: U2.SCREEN_TABS[id] } } },
       layouts: { pc: [{ id: 'hdr', x: 0, y: 0, w: 24, h: 8 }, { id: 'main', x: 0, y: 8, w: 24, h: 40 }], tab: null, sm: null, phone: null } };
+    if (t && id === 'channels') return { id, title: t[1], icon: t[0], grid: { rowH: 16, half: false, compact: false }, rev: 0, /* (0.4.12 · 통합 솔루션 · 약속 50) 🛒 판매처 = 지금 웹앱 판매처 탭 그대로 + 맨 위에 네 판매처 상황판·상품 하나 카드(읽기만 · 지금 웹앱 화면으로 한 번에) */
+      widgets: { hdr: { type: 'legacy.header', props: {} }, cb: { type: 'chboard', props: {} }, pc: { type: 'prodch', props: {} }, main: { type: 'legacy.tab', props: { ref: id } } },
+      layouts: { pc: [{ id: 'hdr', x: 0, y: 0, w: 24, h: 8 }, { id: 'cb', x: 0, y: 8, w: 24, h: 14 }, { id: 'pc', x: 0, y: 22, w: 24, h: 18 }, { id: 'main', x: 0, y: 40, w: 24, h: 40 }], tab: null, sm: null, phone: null } };
     if (t) return { id, title: t[1], icon: t[0], grid: { rowH: 16, half: false, compact: false }, rev: 0,
       widgets: { hdr: { type: 'legacy.header', props: {} }, main: { type: 'legacy.tab', props: { ref: id } } },
       layouts: { pc: [{ id: 'hdr', x: 0, y: 0, w: 24, h: 8 }, { id: 'main', x: 0, y: 8, w: 24, h: 40 }], tab: null, sm: null, phone: null } };
@@ -53,6 +56,9 @@
     shop: { name: '🛍 우리숍 책장 견본', make: (id) => { const p = U2.TEMPLATES.blank.make(id); const w = mk(p); /* (0.4.9 · 약속 53) 우리숍 블록을 페이지로 — 견본 책(지어낸 제목)으로 미리 보기 · 설정은 블록을 눌러 속성판에서 */
       w('h', 'heading', { text: '📚 우리숍 서가 책장 (미리 보기)', size: 'l', guide: '우리숍 손님 화면의 서가 책장을 그대로 — 블록을 누르고 오른쪽 속성판에서 나무 색·정렬·책등·글꼴·움직임을 바꿔 봄 · 여기서 바꾼 값은 이 페이지 배치에만(우리숍 손님 화면은 그대로)' }, 0, 0, 24, 3);
       w('sh', 'shop.shelf', {}, 0, 3, 24, 44); return p; } },
+    omni: { name: '🛒 통합 판매처 견본', make: (id) => { const p = U2.TEMPLATES.blank.make(id); const w = mk(p); /* (0.4.12 · 통합 솔루션) 네 판매처를 한 화면 흐름으로 — 상황판 → 상품 하나 카드 → 처리할 주문 줄 */
+      w('h', 'heading', { text: '🛒 통합 판매처 — 알라딘·예스24·네이버·우리숍 한 화면', size: 'l', guide: '숫자 칸을 누르면 그 일의 지금 웹앱 화면이 바로 열림 · 이 페이지는 읽기만(고치기는 🛠 처리할 일 화면에서)' }, 0, 0, 24, 3);
+      w('cb', 'chboard', {}, 0, 3, 24, 14); w('sb', 'shipbar', {}, 0, 17, 24, 9); w('pc', 'prodch', {}, 0, 26, 14, 22); w('lt', 'listtabs', { lists: 'ledger, ordAll, y24All, shopAdm' }, 14, 26, 10, 22); return p; } },
     blank: { name: '빈 페이지', make: (id) => { const p = U2.defaultPage(id); p.widgets = {}; p.layouts = { pc: [], tab: null, sm: null, phone: null }; return p; } },
   };
 

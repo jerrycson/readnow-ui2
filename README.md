@@ -41,6 +41,7 @@
 | `src/u2-adapters.js` | 섹션 위젯(T2 — 같은 탭은 한 번 그려 나눠 줌) · 🧱 칸 위젯(탭 첫 화면 칸 하나 — 지금 웹앱 tobBlocks로 떼어 냄 · 11/10) · 계약 검사 |
 | `u2-contract.json` | 새 웹앱이 기대는 옛 함수·값·화면 id(계약 목록) |
 | `src/u2-widgets.js` | 기본 UI 위젯 58종(계산 카드·질의·저장한 보기·📥 할 일·🔎 스캔 검수 포함 · 0.4.9 🚦 처리할 주문 숫자 줄 · 0.4.10 📋 목록 보기 탭 — 지금 웹앱 큰 목록 탭 + ⭐ 저장한 거르기 rn2-listViews) + 리드나우 기능 위젯 6종(탭·섹션·머리줄·홈 칸·화면·기능) |
+| `src/u2-omni.js` | 🛒 통합 판매처(0.4.12 · 통합 솔루션 · 약속 50) — 🛒 판매처 상황판(알라딘·예스24·네이버·우리숍 한 줄씩: 판매중·처리할 주문·진행 주문·🔻 재고 어긋남·30일 주문) · 🔍 상품 하나 · 모든 판매처(네 판매처 값·재고·판매중/중지 한 카드) · 숫자는 지금 웹앱 통합 장부·오늘 출고 셈(ledNow·ledTodoNow·ledOrdRows·shipCnt) 그대로 · 칸 한 번 누름 = 그 판매처로 걸러진 지금 웹앱 화면 · 쓰기 0 · 기기 저장 rn2-prodch · 🛒 판매처 페이지 기본 맨 위 · ✏ 견본 '🛒 통합 판매처' |
 | `src/u2-widgets-extra.js` | 덜 쓰는 무거운 위젯 10종(카드 목록·보드·달력·타임라인·차트·바깥 페이지·변수 바·반복·질의·스캔 검수) — 첫 화면 뒤 쉬는 때·처음 놓일 때 받음 |
 | `src/u2-theme.js` | 색 토큰·밝음/어두움/높은 대비·모양·무늬 6·글꼴·아이콘 |
 | `src/u2-check.js` | ✅ 단계 12 시범 체크리스트(STEP12.md 표와 같은 줄 · 줄마다 그 자리로 가는 단추 · 통과/안 됨/메모 → 기기 rn2-check12 + ui2_checks/<기기>) · 맨 위 시범 띠 '🔒 리드나우 2 시범 중 — 읽기만 · ✅ 체크리스트 열기' · 주소 ?check=1 |
@@ -115,12 +116,19 @@ NODE_PATH=... node tests/t_move.js       # 단계 13 이전 장치(0.4.6) — �
 NODE_PATH=... node tests/t_blocks.js     # 🧩 우리숍 블록(0.4.9) — 📚 서가 책장: 파일 없을 때 알림 · 그려짐 · CSS 안 샘 · 속성판 = 우리숍 설정 틀 · rn2- 열쇠 · 휴대폰 (서가 파일: U2_SHELF_DIR, 기본 <U2_TEST_OUT>/shop-shelf)
 NODE_PATH=... node tests/t_scanlist.js   # 성공 사례 견줌 리드나우 2 빈 곳(0.4.10) — 더블클릭 두 번째 무시·↶ 되돌리기 · 📷 스캔(ISBN) 첫 동작 → 📥 등록에 넣기 · 📋 목록 보기 탭(⭐ 저장한 거르기) · 휴대폰
 NODE_PATH=... node tests/t_chips.js     # 성공 사례 견줌 리드나우 2 빈 곳 다음 차례(0.4.11) — 📋 목록 보기 탭 거르기 칩(× 풀기·＋ 거르기) · 🔎 ⚙ 설정 갈래 목차 · ☰ 메뉴 할 일 갈래·저장한 보기 한 곳 · 휴대폰
+NODE_PATH=... node tests/t_omni.js       # 🛒 통합 판매처(0.4.12) — 상황판 네 줄·숫자 = 지금 웹앱 장부 셈·어긋남 빨강·칸 한 번 → 그 화면 · 상품 하나 카드(네 판매처·내릴 일·값 차이·열기) · 판매처 페이지 기본 · 견본 · 쓰기 0 · 휴대폰
 NODE_PATH=... node tests/t_nav.js        # 메뉴 틀 맞춤(0.4.6) — 지금 웹앱 탭 차례·새 탭(nav1 🛒 판매처·🔬 연구 흉내)이 메뉴에 저절로 · 저장 안 함
 ```
 - 인터넷의 지금 웹앱은 받지 않습니다 — `U2_BASE`로 가는 요청을 기기 안 배포본 사본(`U2_TEST_OUT`, 기본 `/home/user/w/out`)에서 돌려줍니다.
 - Firebase는 가짜(`tests/fbstub2.js`)입니다.
 
-### 마지막 결과 (11/12 · 새 웹앱 0.4.11 · 지금 웹앱 1.78.489 main 배포본 — 우리숍 서가 4차(휴대폰 모양) 들어 있음)
+### 마지막 결과 (11/12 · 새 웹앱 0.4.12 · 지금 웹앱 1.78.490 main 배포본)
+시험 32묶음 모두 통과 — t_grid_unit 23 · t_expr_unit 203 · t_load 21 · t_editor 49 · t_widgets 29 · t_perm 24 · t_mem 6 · t_actions 25 · t_adapters 23 · t_track 18 · t_new 9 · t_feats 8 · t_tabswap 7 · t_pairs 9 · t_coexist 12 · t_soak 8 · t_perf 4 · t_dual 45 · t_real 17 · t_check 17 · t_parity 21 · t_sync 26 · t_bench 32 · t_dev5 37 · t_move 27 · t_nav 13 · t_default 13 · t_money 4 · t_blocks 23 · t_scanlist 20 · t_chips 25 · **t_omni 22(새)**.
+- 시험용 지금 웹앱 = readnow-scripts origin/main(754efc5 · 1.78.490)을 `git archive`로 푼 사본(app·shop·공용 파일) · t_track은 `RN_REPO`를 main을 꺼낸 작업 자리로(다른 가지에 있는 저장소면 옛 판을 읽어 실패함).
+- 계약에 통합 장부 함수 넷(ledNow·openLedger·ledOrdRows·openProduct) · 넷째 칸 = 처음 들어온 판(1.78.450·1.78.481) — 따라잡기 표가 그 전 판을 '깨짐'으로 세지 않음(tools/track.js).
+- t_track 고침: 7일 커밋이 상한 400을 넘을 때(443개) 표 첫 날 다음부터 셈 · 지금 웹앱이 뒤에 UPDATE_DATES 날짜를 고친 판(1.78.487 11/11 → 11/12)은 그 판 마지막 줄로 견줌.
+
+#### 지난 결과 (11/12 · 새 웹앱 0.4.11 · 지금 웹앱 1.78.489 main 배포본 — 우리숍 서가 4차(휴대폰 모양) 들어 있음)
 시험 31묶음 모두 통과 — t_grid_unit 23 · t_expr_unit 203 · t_load 21 · t_editor 49 · t_widgets 29 · t_perm 24 · t_mem 6 · t_actions 25 · t_adapters 23 · t_track 18 · t_new 9 · t_feats 8 · t_tabswap 7 · t_pairs 9 · t_coexist 12 · t_soak 8 · t_perf 4 · t_dual 45 · t_real 17 · t_check 17 · t_parity 21 · t_sync 26 · t_bench 32 · t_dev5 37 · t_move 27 · t_nav 13 · t_default 13 · t_money 4 · t_blocks 23(+2 휴대폰 아래 줄·시트) · t_scanlist 20 · **t_chips 25(새)**.
 - 우리숍 서가 4차가 지금 웹앱 1.78.489에 들어오며 휴대폰 아래 고정 줄(정렬·표지·찜·장바구니)이 블록 칸 밖 화면 맨 아래(다른 위젯 위)에 떠 있었음 → 블록 칸 아래에 붙임(u2.css · 우리숍 파일은 안 고침).
 

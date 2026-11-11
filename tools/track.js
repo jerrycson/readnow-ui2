@@ -31,7 +31,7 @@ function extract(t, contract) {
     if (!m) return null; const ps = m[1].trim(); if (!ps) return 0;
     let n = 0; for (const p of ps.split(',')) { if (/=/.test(p) || /^\s*\.\.\./.test(p)) break; n++; } return n; /* 기본값·나머지 인자 앞까지 = 함수.length와 같음 */
   };
-  (contract.fns || []).forEach(([n, a]) => { const r = arity(n); if (r === null) bad.push(n + ' 없음'); else if (a != null && r !== a) bad.push(n + ' 인자 ' + r + '(기대 ' + a + ')'); });
+  (contract.fns || []).forEach(([n, a, , since]) => { if (since && o.ver && cmpVer(o.ver, since) < 0) return; /* (0.4.12) 넷째 칸 = 그 함수가 처음 들어온 지금 웹앱 판 — 그 전 판은 없는 게 맞음(깨짐 아님) */ const r = arity(n); if (r === null) bad.push(n + ' 없음'); else if (a != null && r !== a) bad.push(n + ' 인자 ' + r + '(기대 ' + a + ')'); });
   (contract.vals || []).forEach(([n]) => { if (!new RegExp('(?:const|let|var)\\s+' + n + '\\s*=').test(t)) bad.push(n + ' 없음'); });
   (contract.ids || []).forEach((id) => { if (t.indexOf('id="' + id + '"') < 0) bad.push('#' + id + ' 없음'); });
   (contract.floats || []).forEach((id) => { if (t.indexOf("id = '" + id + "'") < 0 && t.indexOf('id="' + id + '"') < 0) bad.push('#' + id + ' 떠 있는 판 없음'); });

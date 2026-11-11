@@ -147,8 +147,8 @@
       draw(); return U2.on('views', draw); } });
 
   /* ═══ 📥 할 일 받은편지함(N3 ★) — 흩어진 '안 끝난 것'을 한 목록으로 · 숫자는 지금 웹앱 상태 별칭(읽기만) · 누르면 원래 화면 ═══ */
-  W.INBOX = '🔗 | 연결 확정 기다림 | 연결확정.수 | 지금 웹앱 탭 열기: pending\n💬 | 받은 문의(전체) | 문의.전체수 | 지금 웹앱 기능 실행: 고객 문의 주제\n🔒 | 이 기기에서 막은 쓰기(시범) | 막은쓰기.수 | 짧은 알림: 시범 중에는 지금 웹앱에서 해 주세요\n🔁 | 새 웹앱 따라잡기 할 일 | 따라잡기.할일 | \n⚠ | 계약이 깨진 옛 기능 | 계약.깨짐 | ';
-  W.def('inbox', { name: '할 일 받은편지함', group: '자료 보기', icon: '📥', w: 12, h: 19, props: [{ k: 'items', label: '줄마다: 아이콘 | 이름 | 식(숫자) | 행동: 대상', type: 'area', def: W.INBOX }, { k: 'hideZero', label: '0인 줄은 숨김', type: 'check', def: false }],
+  W.INBOX = '📥 | 등록 진행 중 | 등록.진행 | 지금 웹앱 화면 열기: register\n🚚 | 오늘 출고 남은 일 | 출고.남은 | 지금 웹앱 화면 열기: ship\n🔗 | 연결 확정 기다림 | 연결확정.수 | 지금 웹앱 탭 열기: pending\n💬 | 받은 문의(전체) | 문의.전체수 | 지금 웹앱 기능 실행: 고객 문의 주제\n🔒 | 이 기기에서 막은 쓰기(시범) | 막은쓰기.수 | 새 웹앱 화면 열기: 충돌 감시\n🔁 | 새 웹앱 따라잡기 할 일 | 따라잡기.할일 | 새 웹앱 화면 열기: 따라잡기\n⚠ | 계약이 깨진 옛 기능 | 계약.깨짐 | 새 웹앱 화면 열기: 따라잡기'; /* (0.4.5) 📥 등록·🚚 출고 줄(성공 사례 견줌 ②⑥ — 처리할 일을 숫자로 맨 위에) · 모든 줄이 눌러서 그 화면으로 */
+  W.def('inbox', { name: '할 일 받은편지함', group: '자료 보기', icon: '📥', w: 12, h: 28, props: [{ k: 'items', label: '줄마다: 아이콘 | 이름 | 식(숫자) | 행동: 대상', type: 'area', def: W.INBOX }, { k: 'hideZero', label: '0인 줄은 숨김', type: 'check', def: false }],
     render(b, p, ctx) { const rows = lines(p.items).map((l) => { const [ic, nm, ex, ac] = l.split('|').map((s) => (s || '').trim()); const r = ex ? U2.data.eval(ex) : { v: null }; return { ic, nm, v: r.err ? null : r.v, err: r.err, ac }; }).filter((r) => !(p.hideZero && !r.v));
       const total = rows.reduce((s0, r) => s0 + (typeof r.v === 'number' ? r.v : 0), 0);
       b.innerHTML = `<div class="u2-inbox"><div class="u2-ibh">처리할 것 <b class="${total ? 'u2-t-red' : 'u2-t-cloth'}">${total.toLocaleString()}</b></div>${rows.map((r, i) => `<div class="u2-ibr ${typeof r.v === 'number' && r.v > 0 ? 'u2-ibon' : ''}"><span>${esc(r.ic)}</span><span class="u2-ibn">${esc(r.nm)}</span><b>${r.err ? '—' : esc(U2Expr.show(r.v))}</b>${r.ac ? `<button type="button" class="u2-btn" data-i="${i}">열기 ›</button>` : '<span></span>'}</div>`).join('')}</div>`;

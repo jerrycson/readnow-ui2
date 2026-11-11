@@ -138,6 +138,21 @@
    "placeRead",
    0,
    []
+  ],
+  [
+   "openShipHome",
+   0,
+   []
+  ],
+  [
+   "openPurForm",
+   null,
+   []
+  ],
+  [
+   "shipCnt",
+   null,
+   []
   ]
  ],
  "vals": [

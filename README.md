@@ -105,11 +105,20 @@ NODE_PATH=... node tests/t_real.js       # 실화면 점검(단계 12 준비) �
 NODE_PATH=... node tests/t_check.js      # ✅ 단계 12 시범 체크리스트(11/10) — 띠·메뉴·?check=1 · 통과/안 됨/메모 저장 · STEP12.md와 같은 줄 · 휴대폰
 NODE_PATH=... node tests/t_parity.js     # 빠짐 대조(11/10) — 지금 웹앱 탭·첫 화면 칸(✎ 첫 화면 편집 줄)·홈 칸·화면·휴대폰 섹션·기능 찾기가 새 웹앱 서랍에 하나도 빠짐없이 · 새 칸은 저절로 🧱
 NODE_PATH=... node tests/t_sync.js       # 페이지 맞춤(11/05) — 옛 등록 화면·옛 자리 되살리기 막음 · 페이지마다 다른 화면 · 옛 상세 층이 머리 아래 · 휴대폰 · 🗓 전체 일정
+NODE_PATH=... node tests/t_bench.js      # 단계 9 새 기능(0.4.5 · 성공 사례 견줌 '이어서') — 🔔 알림 한 자리 · 오류 글 한국어 · ⚡ 빠른 작업 · 🔎 어디서나 찾기 Ctrl+K · 받은편지함·스캔 검수를 사람처럼 · 같은 탭 한 번 그리기
+NODE_PATH=... node tests/t_dev5.js       # 단계 10 기기 5가지 모양(PC 1920·1400·노트북 1280·태블릿 820·휴대폰 390) × STEP12 1·2·4·9·10번
 ```
 - 인터넷의 지금 웹앱은 받지 않습니다 — `U2_BASE`로 가는 요청을 기기 안 배포본 사본(`U2_TEST_OUT`, 기본 `/home/user/w/out`)에서 돌려줍니다.
 - Firebase는 가짜(`tests/fbstub2.js`)입니다.
 
-### 마지막 결과 (11/10 · 새 웹앱 0.4.4 · 지금 웹앱 1.78.466 배포본)
+### 마지막 결과 (11/11 · 새 웹앱 0.4.5 · 지금 웹앱 1.78.479 배포본)
+시험 26묶음 모두 통과 — t_grid_unit 23 · t_expr_unit 203 · t_load 21 · t_editor 46 · t_widgets 29 · t_perm 14 · t_mem 6 · t_actions 25 · t_adapters 23 · t_track 18 · t_default 9 · t_new 9 · t_money 4 · t_feats 8 · t_tabswap 7 · t_pairs 9 · t_coexist 12 · t_soak 8 · t_perf 4 · t_dual 45 · t_real 17 · t_check 17 · t_parity 18 · t_sync 26 · t_bench 25(새) · t_dev5 37(새).
+- t_perm(1.78.47x 배포본에서 새로 실패): 허락한 위젯을 누른 1.5초 사이 지금 웹앱이 뒤에서 하는 쓰기(홈 요약 app_summary · 예스24 연결 · 가격 묶음 등)가 그 위젯 몫으로 통과 → 막이: 사람이 실제로 누른 지 1.5초 안 + 뒤에서 도는 함수·문서(G.BG·G.BG_DOCS)는 위젯 몫이 아님. 남은 위험: 이름 없는 새 뒤쪽 쓰기 — 다음 회차 '칸까지 허락'으로 근본 해결.
+- t_parity(1.78.470 배포본에서 새로 실패): 지금 웹앱이 칸에 고정 이름표(data-blk)를 달아 열쇠가 'b:…' → '#c_plat' 같은 것으로 바뀜 — 새 웹앱은 이미 tobAlias로 맞추고 있었고 시험 셈만 맞춤(빠짐 0).
+- t_default·t_sync: 여러 시험을 한꺼번에 돌릴 때 홈 칸이 늦게 채워져 한 번 85%(혼자 돌리면 100%) · 단계표에 🙋 단계가 없어져 기대 글 바꿈.
+- t_real: 📥 받은편지함 줄이 5 → 7이라 기본 높이 19 → 28.
+
+### 그 전 결과 (11/10 · 새 웹앱 0.4.4 · 지금 웹앱 1.78.466 배포본)
 시험 24묶음 모두 통과 — t_actions 25 · t_adapters 23 · t_check 17 · t_coexist 12 · t_default 9 · t_dual 45 · t_editor 46 · t_expr_unit 203 · t_feats 8 · t_grid_unit 23 · t_load 21 · t_mem 6 · t_money 4 · t_new 9 · t_pairs 9 · t_parity 18 · t_perf 4 · t_perm 14 · t_real 17 · t_soak 8 · t_sync 26 · t_tabswap 7 · t_track 18 · t_widgets 29.
 - t_dual 7개 실패의 원인: 지금 웹앱 1.78.4xx 등록 화면에 딸린 떠 있는 판(👁 살핀 상품 · 💰 매입가 기입 `#seenp` — body에 바로 붙음)이 💰 구획으로 커져 오른쪽 점검 점을 덮음(시험이 'SUMMARY'로 봄 — 옛 화면 위라 사람에겐 맞는 모습). → `U2.dock.FLOATS`(떠 있는 판 목록 · 계약 `floats`와 같음)를 옛 화면 몫으로 봄 · 모르는 떠 있는 것은 그 id로 보여 줌 · 🪟 옛 화면 자리 위젯 칸에 열면 그 판도 칸 안(오른쪽 아래)으로(새 시험 2줄).
 - t_real 2개(1.78.463 배포본에서 새로): '오늘 출고' 기능 단추가 목록 앞에 새로 생긴 '🔎 오늘 출고 검색창 — …'으로 잡혀 긴 이름이 칸 밖으로 → 기능 이름 일부로 찾기 = 같은 이름 → 그림 글자 뗀 이름 → 가장 짧은 이름 · 단추 글 넘침 막음(t_feats 1줄 더함).

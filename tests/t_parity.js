@@ -24,8 +24,8 @@ const TABS = ['search', 'products', 'sellers', 'orders', 'purchase', 'biz', 'mar
       S.tab = tab; S.secOnly = null; S.ptOnly = null; S.mkOnly = null; try { A.RENDER[tab](box); } catch (e) {} S.tab = keep.tab; S.secOnly = keep.a; S.ptOnly = keep.b; S.mkOnly = keep.c;
       const full = tobBlocks(box).filter((b) => !/^w:/.test(b.k) && !/#\d+$/.test(b.k)).map((b) => [b.k, tobLabel(b.el)]); box.remove();
       const items = U2.catalog.get().filter((i) => i.kind === 'sec' && i.tab === tab); const cov = {};
-      for (const it of items) { const g = A.resolve(tab, [it.key]); keysOf(g[it.key]).forEach((k) => (cov[k] = cov[k] || []).push(it.key)); }
-      out[tab] = { n: full.length, miss: full.filter(([k]) => !cov[k]).map(([k, l]) => k + ' ' + l.slice(0, 30)), blk: items.filter((i) => i.blk).length };
+      for (const it of items) { const g = A.resolve(tab, [it.key]); keysOf(g[it.key]).forEach((k) => { k = A.blkKey(k); (cov[k] = cov[k] || []).push(it.key); }); /* (0.4.5) 지금 웹앱 1.78.470부터 칸에 고정 이름표(data-blk · TOB_BLK)가 붙어 '#c_plat' 같은 열쇠 — 예전 'b:' 열쇠와 같은 칸으로 맞춰 셈 */ }
+      out[tab] = { n: full.length, miss: full.filter(([k]) => !cov[A.blkKey(k)]).map(([k, l]) => k + ' ' + l.slice(0, 30)), blk: items.filter((i) => i.blk).length };
     }
     return out; }, TABS);
   for (const tab of TABS) ok(r[tab].n > 0 && !r[tab].miss.length, `② ${tab} 탭 첫 화면 칸 ${r[tab].n}줄이 모두 새 웹앱 위젯으로 그려짐`, '🧱 칸 위젯 ' + r[tab].blk + ' · 빠짐 ' + JSON.stringify(r[tab].miss));

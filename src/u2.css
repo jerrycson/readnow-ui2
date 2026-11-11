@@ -146,8 +146,11 @@ body.u2-body.withrank .u2-lg #main { padding-left: max(12px, calc((100% - 1100px
 .u2-sec { border: 1px solid var(--line); border-radius: 10px; padding: 8px; }
 .u2-hint { color: var(--sub); font-size: 12.5px; margin: 6px 0; }
 .u2-file { position: relative; }
-.u2-toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--ink, #1E2B28); color: var(--paper, #fff); padding: 9px 16px; border-radius: 20px; font-size: 13.5px; z-index: 60; opacity: 0; transition: opacity .2s; pointer-events: none; max-width: 92vw; }
-.u2-toast.on { opacity: .96; } .u2-toast.err { background: var(--red, #B0322A); }
+.u2-toast { position: fixed; left: 12px; bottom: calc(12px + env(safe-area-inset-bottom, 0px)); z-index: 60; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; max-width: min(460px, calc(100vw - 24px)); pointer-events: none; } /* 🔔 알림 한 자리(왼쪽 아래 · 0.4.5) */
+.u2-toast:not(.on), .u2-toast:empty { display: none; }
+.u2-note { background: var(--ink, #1E2B28); color: var(--paper, #fff); padding: 8px 14px; border-radius: 14px; font-size: 13.5px; opacity: .96; box-shadow: 0 2px 10px rgba(0,0,0,.18); display: flex; gap: 10px; align-items: center; animation: u2nin .18s ease-out; }
+.u2-note.err { background: var(--red, #B0322A); } .u2-nact { pointer-events: auto; font: inherit; font-weight: 700; color: inherit; background: rgba(255,255,255,.18); border: 1px solid rgba(255,255,255,.5); border-radius: 10px; padding: 3px 10px; cursor: pointer; white-space: nowrap; }
+@keyframes u2nin { from { transform: translateY(6px); opacity: 0; } to { transform: none; opacity: .96; } }
 .u2-ask { position: fixed; inset: 0; z-index: 70; background: rgba(20, 30, 27, .45); display: flex; align-items: center; justify-content: center; padding: 12px; }
 .u2-askbox { background: var(--paper, #fff); color: var(--ink); border: 2px solid var(--red, #B0322A); border-radius: 12px; padding: 12px; max-width: 440px; font-size: 14px; white-space: pre-wrap; }
 .u2-askb { display: flex; gap: 6px; justify-content: flex-end; margin-top: 10px; }
@@ -259,3 +262,20 @@ body.u2-dockdrag { user-select: none; cursor: col-resize; } body.u2-dockdrag #sh
 .u2-ck .u2-btn.u2-ck-nob { background: var(--red); border-color: var(--red); }
 .u2-ck-memo { flex: 1; min-width: 160px; }
 .u2-ck code { font-size: 12px; word-break: break-all; }
+
+/* ⚡ 빠른 작업 · 🔎 어디서나 찾기(0.4.5 · u2-find.js) */
+.u2-qa { display: inline-flex; gap: 4px; flex-wrap: wrap; } .u2-qa[hidden] { display: none; }
+.u2-qa .u2-btn b { display: inline-block; min-width: 1.4em; margin-left: 4px; padding: 0 5px; border-radius: 9px; background: var(--cloth); color: var(--paper); font-size: 11.5px; text-align: center; } .u2-qa .u2-btn b:empty { display: none; }
+#u2-findbtn kbd { font: 11px/1 ui-monospace, monospace; border: 1px solid var(--line); border-radius: 4px; padding: 1px 4px; margin-left: 4px; color: var(--sub); background: var(--paper); }
+.u2-find { position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 70; background: rgba(20,30,28,.32); display: flex; justify-content: center; align-items: flex-start; padding: 8vh 12px 12px; }
+.u2-findbox { width: min(680px, 100%); max-height: 80vh; display: flex; flex-direction: column; background: var(--paper); color: var(--ink); border-radius: 14px; box-shadow: 0 12px 40px rgba(0,0,0,.28); padding: 10px; gap: 8px; font-family: var(--u2-font, system-ui, sans-serif); font-size: var(--u2-fs, 14px); }
+.u2-findtop { display: flex; gap: 6px; } .u2-findtop input { flex: 1; font-size: 16px; padding: 9px 12px; }
+.u2-findsc { display: flex; gap: 4px; flex-wrap: wrap; } .u2-findsc [aria-pressed="true"] { background: var(--cloth); color: var(--paper); border-color: var(--cloth); font-weight: 700; }
+.u2-findres { overflow-y: auto; min-height: 60px; display: flex; flex-direction: column; gap: 2px; }
+.u2-findk2 { font-size: 11.5px; color: var(--sub); font-weight: 700; padding: 6px 6px 2px; }
+.u2-findrow { display: flex; gap: 10px; align-items: flex-start; text-align: left; border: 0; background: transparent; color: inherit; font: inherit; padding: 7px 8px; border-radius: 8px; cursor: pointer; }
+.u2-findrow.on, .u2-findrow:hover { background: var(--soft); outline: 2px solid var(--cloth); outline-offset: -2px; }
+.u2-findi { width: 1.6em; text-align: center; flex: none; } .u2-findt { display: flex; flex-direction: column; min-width: 0; } .u2-findt small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.u2-findhelp { font-size: 11.5px; }
+.u2-flash { outline: 3px solid var(--cloth); outline-offset: 2px; transition: outline-color .4s; }
+@media (max-width: 640px) { .u2-findk { display: none; } .u2-find { padding-top: 10px; } .u2-findbox { max-height: calc(100vh - 20px); } }

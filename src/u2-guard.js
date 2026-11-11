@@ -13,13 +13,20 @@
   const colOf = (path) => String(path || '').split('/')[0];
   const isMine = (path) => /^ui2_/.test(colOf(path));
   G.ctx = null; G.ctxAt = 0;
+  /* 지금 웹앱이 사람 손 없이 뒤에서 도는 쓰기 함수(이름) — 위젯 몫으로 치지 않음. 새로 찾으면 여기 더함(이름이 바뀌어도 '막는 쪽'이라 안전) */
+  G.BG = ['y24oScan', 'y24oAuto', 'aoInfoBackfill', 'Backfill', 'autoSched', 'bcObsSave', 'heartbeat', 'Heartbeat', 'homeSumWrite', 'frwAlPub', 'chkSeed'];
+  /* 지금 웹앱이 뒤에서만 쓰는 문서(이름 없는 함수·거래 안에서 써서 함수 이름으로 못 잡는 것) — 위젯 몫으로 치지 않음 */
+  G.BG_DOCS = [/^app_summary\//, /^app_settings\/(y24_link|y24_ord_state|purchase|bench_obs)$/, /^prd_price_batches\//, /^prd_system\//];
   /* 위젯이 무엇을 누르면 그 위젯 종류를 잠깐 둠 */
   U2.setCtx = (k) => { G.ctx = k; G.ctxAt = Date.now(); };
   G.decide = (path, op) => {
     if (isMine(path)) { G.passed++; return true; }
-    const k = G.ctx && Date.now() - G.ctxAt < ((U2.CFG && U2.CFG.ctxMs) || 1500) ? G.ctx : null;
+    const ms = (U2.CFG && U2.CFG.ctxMs) || 1500; let k = G.ctx && Date.now() - G.ctxAt < ms ? G.ctx : null; let bg = '';
+    /* (0.4.5) 허락한 위젯을 누른 1.5초 사이에 지금 웹앱이 '뒤에서' 하는 쓰기(예스24 응답 풀기·매입 정보 채우기 등 — 시험 t_perm이 1.78.47x에서 찾음)가
+     *  그 위젯 몫으로 새던 것 → ① 사람이 실제로 누른 지(G.userAt) 1.5초 안일 때만 위젯 몫 ② 뒤에서 도는 함수(G.BG)가 부른 쓰기는 위젯 몫이 아님(막음 · 감시에 '뒤에서' 표시) */
+    if (k && G.writeOk[k] && G.writeOk[k].on) { if (Date.now() - (G.userAt || 0) >= ms) k = null; else { try { const st = new Error().stack || ''; const hit = G.BG.find((n) => st.indexOf(n) >= 0) || (G.BG_DOCS.some((re) => re.test(String(path))) ? String(path).split('/').slice(0, 2).join('/') : ''); if (hit) { bg = hit; k = null; } } catch (e) {} } }
     if (!G.lockAll && k && G.writeOk[k] && G.writeOk[k].on) { G.allowed++; return true; }
-    G.blocked.push({ at: Date.now(), col: colOf(path), op, by: k || '' }); if (G.blocked.length > 500) G.blocked.splice(0, G.blocked.length - 500);
+    G.blocked.push({ at: Date.now(), col: colOf(path), op, by: k || (bg ? '뒤에서:' + bg : '') }); if (G.blocked.length > 500) G.blocked.splice(0, G.blocked.length - 500);
     G._dirty = true;
     /* 사람이 방금 누른 것일 때만 알림(웹앱이 뒤에서 하는 쓰기마다 알리면 시끄러움) */
     if (Date.now() - (G.userAt || 0) < 2000 && Date.now() - (G.toastAt || 0) > 3000) { G.toastAt = Date.now(); try { U2.toast('🔒 시범 중 — 이 일은 지금 웹앱에서 해 주세요 (' + colOf(path) + ')', true, 3500); } catch (e) {} }

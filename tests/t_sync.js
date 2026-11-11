@@ -60,7 +60,7 @@ const shot = async (p) => { const bb = await p.evaluate(() => Math.ceil(document
   await p.click('.u2-cell[data-type="u2plan"] [data-plan]'); await p.waitForTimeout(800);
   const pl = await p.evaluate(() => { const rows = [...document.querySelectorAll('.u2-pl-tbl tbody tr')]; return { n: rows.length, ids: rows.map((r) => r.dataset.stage).join(','), bars: document.querySelectorAll('.u2-pl-tbl .u2-pl-bar > i').length, st: rows.map((r) => (r.querySelector('.u2-pl-st') || {}).textContent || '').join('|'), big: !!document.querySelector('.u2-pl-big > i') }; });
   ok(pl.n === 14 && pl.ids === '0,1,2,3,4,5,6,7,8,9,10,11,12,13' && pl.bars === 14 && pl.big, '  누르면 단계 0~13마다 진행 막대·예상·실제 시간 + 전체 막대', pl.n + '줄 · 막대 ' + pl.bars);
-  ok(/끝/.test(pl.st) && /진행 중/.test(pl.st) && /정범님 필요/.test(pl.st), '  단계 상태(끝·진행 중·정범님 필요)가 보임');
+  ok(/끝/.test(pl.st) && /진행 중/.test(pl.st) && /아직/.test(pl.st), '  단계 상태(끝·진행 중·아직)가 보임 — 0.4.5부터 정범님 필요 단계 없음(시험으로 마감)', pl.st);
   await p.evaluate(() => document.querySelectorAll('.u2-layer').forEach((l) => l.remove()));
   await p.click('#u2-menubtn'); await p.waitForTimeout(400); await p.click('.u2-layer [data-m="plan"]'); await p.waitForTimeout(800);
   ok(await p.evaluate(() => document.querySelectorAll('.u2-pl-tbl tbody tr').length === 14), '  ☰ 메뉴 → 🗓 전체 일정·진행에서도 열림');

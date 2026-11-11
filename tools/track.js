@@ -56,6 +56,24 @@ function planSum(P, now) {
 }
 const bar = (pct, n) => { n = n || 20; const f = Math.round((pct / 100) * n); return '█'.repeat(f) + '░'.repeat(n - f); };
 const hm = (m) => (m == null ? '—' : m >= 60 ? Math.floor(m / 60) + '시간 ' + (m % 60) + '분' : m + '분');
+/* 회차 기록(PLAN.json round — 손으로 고침): 이번 회차에 끝낸 것 · 남은 단계 · 다음 회차 할 일 · 이전 가능 시점 어림 */
+function roundMd(R) {
+  if (!R) return ''; const li = (a) => (a || []).map((x) => '- ' + x).join('\n');
+  return `## 🔜 회차 기록 (마지막 ${R.at || ''} · 새 웹앱 ${R.ver || ''})
+
+**이번 회차에 끝낸 것**
+${li(R.done)}
+
+**남은 단계**
+${li(R.left)}
+
+**다음 회차 할 일**
+${li(R.next)}
+
+**이전 가능 시점(어림)** ${R.moveEta || '—'}
+
+`;
+}
 function planMd(P, now) {
   if (!P || !P.stages) return '';
   now = now || Date.now(); const T = planSum(P, now); const esc = (s) => String(s || '').replace(/\|/g, '／').replace(/\n/g, ' ');
@@ -71,7 +89,7 @@ function planMd(P, now) {
 |---|---|---|---|---|---|---|---|
 ${P.stages.map((s) => { const pc = stagePct(s, now); return `| ${s.n} | ${esc(s.name)} | ${ST[s.state] || s.state} | \`${bar(pc, 10)}\` ${pc}% | ${s.estH}시간 | ${act(s)} | ${kst(s.start)}${s.end ? ' ~ ' + kst(s.end) : s.start ? ' ~' : ''} | ${esc(s.boss || '')} |`; }).join('\n')}
 
-`;
+${roundMd(P.round)}`;
 }
 function writePlan(out) { const jf = path.join(out, 'TRACK.json'); const J = JSON.parse(fs.readFileSync(jf, 'utf8')); J.plan = readPlan(); fs.writeFileSync(jf, JSON.stringify(J, null, 1) + '\n'); fs.writeFileSync(path.join(out, 'TRACK.md'), md(J)); return J; }
 function run(opt) {

@@ -45,20 +45,26 @@
    *  지금 웹앱의 tobAlias를 그대로 쓰고, 그 전 판에서도 같은 열쇠가 되게 같은 규칙 하나를 여기 둠 → 이미 페이지에 넣은 🧱 칸이 엔진 상태·판이 바뀌어도 이어짐 */
   A.BLK_ALIAS = [[/^b:가격감시판정엔진.*$/, '#p_watch']];
   A.blkKey = (k) => { k = String(k || ''); try { if (typeof tobAlias === 'function') k = tobAlias(k); } catch (e) {} for (const [re, to] of A.BLK_ALIAS) if (re.test(k)) return to; return k; };
-  A.renderBlk = (tab, ids) => {
-    const out = {}; if (typeof tobBlocks !== 'function') return out;
+  A.renderBlk = (tab, ids, secIds) => {
+    const out = {}; if (typeof tobBlocks !== 'function') return out; secIds = secIds || [];
     const box = document.createElement('div'); box.className = 'u2-secbox'; box.style.cssText = 'position:absolute;left:-99999px;top:0;width:1200px;visibility:hidden'; /* 안 보이게(display:none이면 tobBlocks가 모든 칸을 '숨은 것'으로 보고 앞 칸에 붙임) */ (document.getElementById('app') || document.body).appendChild(box);
     const keep = { tab: S.tab, secOnly: S.secOnly, ptOnly: S.ptOnly, mkOnly: S.mkOnly, limit: S.limit }; A.rendering = true;
     try { S.tab = tab; S.secOnly = null; S.ptOnly = null; S.mkOnly = null; A.renders++; (A.RENDER[tab] || (() => { throw new Error('그리기 함수가 없는 탭: ' + tab); }))(box);
-      const B = tobBlocks(box); ids.forEach((id) => { const b = B.find((x) => x.k === id) || B.find((x) => A.blkKey(x.k) === A.blkKey(id)); if (!b) return; const w = document.createElement('div'); w.className = 'u2-seccards'; b.els.forEach((el) => w.appendChild(el)); out[id] = w; }); }
+      /* (0.4.5 최적화) 같은 탭의 '탭 전체에서 떼어 낼 섹션'도 이 한 번 그린 것에서 — 예전엔 섹션용·덩어리용으로 탭을 두 번 그렸음
+       *  섹션이 고른 덩어리 안에 들어 있으면(같은 노드를 둘이 나눌 수 없음) 그 섹션만 떼지 않고 남겨 둠 → 따로 그림(예전 길) */
+      const B = tobBlocks(box); const pick = ids.map((id) => [id, B.find((x) => x.k === id) || B.find((x) => A.blkKey(x.k) === A.blkKey(id))]);
+      secIds.forEach((id) => { const n = box.querySelector(`details.sec[data-sec="${CSS.escape(id)}"]`); if (!n) return; if (pick.some(([, b]) => b && b.els.some((el) => el === n || el.contains(n)))) return; out['sec:' + id] = n; });
+      Object.keys(out).forEach((k) => out[k].remove());
+      pick.forEach(([id, b]) => { if (!b) return; const w = document.createElement('div'); w.className = 'u2-seccards'; b.els.forEach((el) => w.appendChild(el)); out[id] = w; }); }
     catch (e) {} finally { A.rendering = false; S.tab = keep.tab; S.secOnly = keep.secOnly; S.ptOnly = keep.ptOnly; S.mkOnly = keep.mkOnly; S.limit = keep.limit; }
     box.remove(); return out;
   };
   /* 섹션 id(또는 덩어리 열쇠) → 화면 노드 — 고른 것만 → 탭 전체에서 섹션 → 덩어리 → 휴대폰 화면 그대로 차례 */
   A.resolve = (tab, ids) => {
     const sx = ids.filter((id) => !A.isBlk(id)); const got = sx.length ? A.renderSecs(tab, sx, 'only') : {};
-    let miss = ids.filter((id) => !got[id] && !A.isBlk(id)); if (miss.length) { const f = A.renderSecs(tab, miss, 'full'); miss.forEach((id) => { if (f[id]) got[id] = f[id]; }); } /* 고른 것만 그리기가 안 되는 탭(설정 등)은 탭 전체에서 떼어 냄 */
-    const bk = ids.filter((id) => A.isBlk(id)); if (bk.length) Object.assign(got, A.renderBlk(tab, bk));
+    let miss = ids.filter((id) => !got[id] && !A.isBlk(id)); const bk = ids.filter((id) => A.isBlk(id));
+    if (bk.length) { const r = A.renderBlk(tab, bk, miss); bk.forEach((id) => { if (r[id]) got[id] = r[id]; }); miss.forEach((id) => { if (r['sec:' + id]) got[id] = r['sec:' + id]; }); A.shared = (A.shared || 0) + miss.filter((id) => r['sec:' + id]).length; miss = miss.filter((id) => !got[id]); } /* 덩어리를 그리는 김에 섹션도 */
+    if (miss.length) { const f = A.renderSecs(tab, miss, 'full'); miss.forEach((id) => { if (f[id]) got[id] = f[id]; }); } /* 고른 것만 그리기가 안 되는 탭(설정 등)은 탭 전체에서 떼어 냄 */
     miss = ids.filter((id) => !got[id] && !A.isBlk(id)); miss.forEach((id) => { const w = A.renderSecs(tab, [id], 'whole'); if (w[id]) got[id] = w[id]; }); /* 카드형(매입·상품) — 휴대폰 화면 그대로 */
     return got;
   };

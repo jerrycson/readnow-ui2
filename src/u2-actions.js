@@ -19,6 +19,7 @@
   def('tab', '다른 위젯 탭 바꾸기', '위젯 id:몇째(1부터)', (arg) => { const [id, n] = String(arg).split(':'); const c = U2.view && U2.view.cell(nameOf(id)); const b = c && c.querySelectorAll('.u2-tabh [data-i]')[(+n || 1) - 1]; if (!b) throw new Error('탭을 찾지 못함'); b.click(); });
   def('screen', '지금 웹앱 화면 열기', '화면 이름(예 ship)', (arg, ctx) => U2.legacy.screen(nameOf(arg), ctx));
   def('tabopen', '지금 웹앱 탭 열기', '탭 이름(예 pending · orders) — 그 탭이 있는 페이지로, 없으면 그 탭만 있는 페이지', (arg) => { const t = nameOf(arg); const pid = U2.pageForTab(t) || t; return U2.go(pid); });
+  def('u2', '새 웹앱 화면 열기', '충돌 감시 · 따라잡기 · 일정 · 체크리스트 · 쓰기 허락 · 찾기', (arg) => { const m = { '충돌 감시': 'watchScreen', '감시': 'watchScreen', '따라잡기': 'trackScreen', '일정': 'planScreen', '체크리스트': 'checkScreen', '쓰기 허락': 'permScreen', '찾기': '' }; const k = nameOf(arg); if (k === '찾기') return U2.find && U2.find.open(); const fn = U2[m[k]]; if (typeof fn !== 'function') throw new Error('새 웹앱 화면을 찾지 못함: ' + k); return fn(); }); /* (0.4.5) 받은편지함 줄이 갈 곳 */
   def('feat', '지금 웹앱 기능 실행', '🔍 기능 찾기 이름 일부', (arg, ctx) => U2.legacy.feat(nameOf(arg), ctx));
   def('calc', '계산해서 변수에', '변수 = 식 (예 합계 = 수 × 2)', (arg) => { const [n, e] = splitEq(arg); const r = U2Expr.eval(e, U2.data.ctx()); if (r.err) throw new Error(r.err); U2.data.setVar(n, r.v); });
   def('set', '변수 바꾸기', '변수 = 값', (arg) => { const [n, v] = splitEq(arg); U2.data.setVar(n, v); });

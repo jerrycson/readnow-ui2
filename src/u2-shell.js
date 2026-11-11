@@ -20,7 +20,7 @@
       layouts: { pc: [{ id: 'hdr', x: 0, y: 0, w: 24, h: 8 }, { id: 'main', x: 0, y: 8, w: 24, h: 40 }], tab: null, sm: null, phone: null } };
     if (id === 'inbox') { const p = { id, title: '할 일', icon: '📥', grid: { rowH: 16, half: false, compact: false }, rev: 0, widgets: {}, layouts: { pc: [], tab: null, sm: null, phone: null } }; const w = mk(p);
       w('h', 'heading', { text: '📥 할 일 받은편지함', size: 'l', guide: '흩어져 있던 처리할 일을 한곳에 — 숫자가 0이 아니면 빨강 · 누르면 그 화면으로' }, 0, 0, 24, 3);
-      w('ib', 'inbox', {}, 0, 3, 14, 14); w('al', 'legacy.homecard', { ref: 'alerts', s_title: '오늘 확인할 것(지금 웹앱 홈 칸)' }, 14, 3, 10, 14); w('vw', 'views', { save: false }, 0, 17, 24, 4); return p; }
+      w('ib', 'inbox', {}, 0, 3, 14, 19); w('al', 'legacy.homecard', { ref: 'alerts', s_title: '오늘 확인할 것(지금 웹앱 홈 칸)' }, 14, 3, 10, 19); w('vw', 'views', { save: false }, 0, 22, 24, 4); return p; }
     return { id, title: id, icon: '📄', grid: { rowH: 16, half: false, compact: false }, rev: 0, widgets: {}, layouts: { pc: [], tab: null, sm: null, phone: null } };
   };
   /* ── 견본 배치(Q8 ② · 설계안 5-7 빈 페이지 견본) — 시험 자료는 '손님A'처럼 개인 정보 없음 ── */
@@ -77,7 +77,7 @@
     if (!d) { b.innerHTML = '<div class="u2-empty">모르는 위젯: ' + esc(w && w.type) + '</div>'; return; }
     if (!p.guide && d && d.legacy && !edit) { try { if (w.type === 'legacy.homecard' && typeof W_DESC !== 'undefined' && W_DESC[p.ref]) p.guide = W_DESC[p.ref]; else { const it = U2.catalog && (U2.catalog.items || []).find((i) => i.perm === U2.permKey(w)); if (it && (it.desc || it.title)) p.guide = it.title + (it.desc ? ' — ' + it.desc : '') + (it.mem && it.mem.mb ? ' · 켜면 받는 자료 ≈' + it.mem.mb + 'MB' : ''); } } catch (e) {} if (w.type === 'legacy.tab' || w.type === 'legacy.header') p.guide = ''; } /* 📖 옛 기능 위젯은 지금 웹앱 설명(W_DESC·기능 찾기 설명)을 그대로(E7) */
     if (p.guide && !edit) { const gb = document.createElement('button'); gb.type = 'button'; gb.className = 'u2-guide-btn'; gb.textContent = 'ⓘ'; gb.setAttribute('aria-label', '이 위젯 설명'); gb.onclick = () => { let g = f.querySelector('.u2-guide'); if (g) return g.remove(); g = document.createElement('div'); g.className = 'u2-guide'; g.textContent = p.guide; f.appendChild(g); }; f.appendChild(gb); } /* 📖 위젯마다 설명(E7) — 누를 때만(톡 누르기 툴팁 아님) */
-    const _t0 = performance.now(); try { const off = d.render(b, p, { wid, page: pg.id, edit: !!edit, cell: c, pg }); if (typeof off === 'function') c._u2off = off; else if (off && off.dyn) c._dyn = true; } catch (e) { b.innerHTML = '<div class="u2-empty">⚠ 위젯 오류: ' + esc(e.message) + '</div>'; console.error('[u2] 위젯', wid, e); } c._ms = Math.round((performance.now() - _t0) * 10) / 10; /* 위젯 성능 배지(E11)용 */
+    const _t0 = performance.now(); try { const off = d.render(b, p, { wid, page: pg.id, edit: !!edit, cell: c, pg }); if (typeof off === 'function') c._u2off = off; else if (off && off.dyn) c._dyn = true; } catch (e) { b.innerHTML = '<div class="u2-empty">⚠ 위젯 오류: ' + esc(U2.errKo(e)) + '</div>'; console.error('[u2] 위젯', wid, e); } c._ms = Math.round((performance.now() - _t0) * 10) / 10; /* 위젯 성능 배지(E11)용 */
   };
   /* 옛 기능 위젯을 누르면 그 위젯 종류를 쓰기 막이에 알림(허락 목록과 견줌) */
   document.addEventListener('pointerdown', (e) => { const c = e.target.closest && e.target.closest('.u2-cell[data-perm]'); if (c) U2.setCtx(c.dataset.perm); }, true);
@@ -93,7 +93,7 @@
     let items = U2.layoutFor(pg, bp).filter((i) => U2.data.visible(pg.widgets[i.id])); /* 보이기 조건(단계 5) */ if (pg.grid && pg.grid.compact) G.compact(items); v._items = items;
     v.place(items, 0); autoH(v, pg);
     document.title = (pg.title || '') + ' · 리드나우 2';
-    U2.$$('.u2-nav [data-pg]').forEach((x) => x.classList.toggle('on', x.dataset.pg === U2.cur));
+    U2.$$('.u2-nav [data-pg]').forEach((x) => x.classList.toggle('on', x.dataset.pg === U2.cur)); if (U2.find) setTimeout(U2.find.paintQa, 400); /* 페이지가 바뀌면 지금 웹앱 머리줄이 있는지 다시 봄 */
     const mine = U2.$('#u2-mine'); if (mine) mine.hidden = !pg._mine;
     if (U2._firstMs == null) U2._firstMs = Math.round(performance.now()); /* 첫 화면 시각(설계안 8-1) */
     U2.emit('rendered', { page: pg.id, bp: bp.k, n: items.length });
@@ -162,7 +162,7 @@
     bar.innerHTML = `<div class="u2-barrow"><a class="u2-brand" href="?p=home" data-pg="home">리드나우 2 <small>시범 ${esc(U2.ver)}</small></a>
       <span class="u2-chip" id="u2-mine" hidden title="이 기기 개인 배치를 쓰는 중">📱 이 기기 배치</span>
       <button type="button" class="u2-chip" id="u2-mode" title="쓰기 허락 보기">${mode}</button><span class="u2-chip u2-warnchip" id="u2-both" hidden>⚠ 다른 리드나우 탭도 열려 있음(메모리 2배 — 하나만 여세요)</span>
-      <span class="u2-sp"></span><button type="button" class="u2-btn" id="u2-editbtn">✏ 꾸미기</button><button type="button" class="u2-btn" id="u2-menubtn" aria-label="메뉴">☰</button></div>
+      <span class="u2-sp"></span>${U2.find ? U2.find.barHtml() : ''}<button type="button" class="u2-btn" id="u2-editbtn">✏ 꾸미기</button><button type="button" class="u2-btn" id="u2-menubtn" aria-label="메뉴">☰</button></div>
       <nav class="u2-nav" aria-label="페이지">${(U2.site.nav || []).filter((n) => !n.hide).map((n) => `<a href="?p=${encodeURIComponent(n.id)}" data-pg="${esc(n.id)}" class="${n.id === U2.cur ? 'on' : ''}">${esc(n.icon || '')} ${esc(n.title)}</a>`).join('')}</nav>`;
     bar.querySelectorAll('[data-pg]').forEach((a) => (a.onclick = (e) => { e.preventDefault(); U2.go(a.dataset.pg); }));
     U2.$('#u2-editbtn').onclick = () => U2.openEditor && U2.openEditor();
@@ -170,6 +170,7 @@
     U2.$('#u2-mode').onclick = () => U2.permScreen();
     if (U2._both) U2.$('#u2-both').hidden = false;
     const pg = U2.cur && U2.effective(U2.cur); U2.$('#u2-mine').hidden = !(pg && pg._mine);
+    if (U2.find) U2.find.bindBar(bar); /* ⚡ 빠른 작업 · 🔎 어디서나 찾기(u2-find.js · 0.4.5) */
     if (U2.pilotBar) U2.pilotBar(); /* 맨 위 시범 띠 + ✅ 체크리스트 열기(u2-check.js) */
   };
   U2.banner = (id, html, tone) => { let b = document.getElementById(id); if (!html) { if (b) b.remove(); return; } if (!b) { b = document.createElement('div'); b.id = id; b.className = 'u2-banner ' + (tone || ''); U2.$('#u2-banners').appendChild(b); } b.innerHTML = html; return b; };

@@ -3,7 +3,8 @@
 const fs = require('fs'); const path = require('path');
 const { routeAll, chromium, ok, done, nonU2Writes, OUT } = require('./lib');
 const SNIP = fs.readFileSync(path.join(__dirname, '..', 'tools', 'move-snippet.js'), 'utf8');
-const TPL = fs.readFileSync(path.join(OUT, 'app', 'index.html'), 'utf8').replace('<head>', '<head><script>' + SNIP + '</script>');
+const TPL0 = fs.readFileSync(path.join(OUT, 'app', 'index.html'), 'utf8'); const HAS = /RN2_MOVE_SYNC/.test(TPL0); /* (0.4.7) 지금 웹앱에 짧은 글이 들어간 판(리드 · readnow-scripts tU2MOVE1111)이면 그대로 · 아니면 견본을 끼워 흉내 */
+const TPL = HAS ? TPL0 : TPL0.replace('<head>', '<head><script>' + SNIP + '</script>');
 const CLASSIC = 'https://jerrycson.github.io/readnow-scripts/app/index.html'; const UI2 = 'https://jerrycson.github.io/readnow-ui2/';
 (async () => {
   console.log('[단계 13 이전 장치]');
@@ -57,7 +58,7 @@ const CLASSIC = 'https://jerrycson.github.io/readnow-scripts/app/index.html'; co
   /* ③-2 이 기기에서 새 웹앱을 한 번도 안 연 기기(기기 저장 없음) — 지금 웹앱이 로그인 뒤 RN2_MOVE_SYNC로 문서 하나 읽고 넘어감 */
   a = { q: await t.ctx.newPage() }; await a.q.addInitScript((s) => { window.__FS_SEED = s; try { localStorage.removeItem('rn2-move'); } catch (e) {} }, seedOn); await a.q.goto(CLASSIC).catch(() => {}); await a.q.waitForTimeout(3500);
   const still = /readnow-scripts/.test(a.q.url()); await a.q.evaluate(() => { RN2_MOVE_SYNC(firebase.firestore()); }).catch(() => {}); await a.q.waitForTimeout(3000);
-  ok(still && /readnow-ui2\/?/.test(a.q.url()), '기기 저장이 없는 기기: 로그인 뒤 RN2_MOVE_SYNC(문서 1개 읽기)로 새 웹앱으로 넘어감', a.q.url()); await a.q.close();
+  ok((HAS ? !still : still) && /readnow-ui2\/?/.test(a.q.url()), '기기 저장이 없는 기기: 로그인 뒤 RN2_MOVE_SYNC(문서 1개 읽기)로 새 웹앱으로 넘어감' + (HAS ? '(지금 웹앱이 로그인 뒤 저절로 부름)' : '(견본 — 시험이 부름)'), a.q.url()); await a.q.close();
   await p.evaluate((m) => { localStorage.setItem('rn2-move', JSON.stringify(m)); }, await p.evaluate(() => Object.assign({}, U2.move.cur())));
   /* ④ 한 번에 되돌리기 */
   await p.evaluate(() => U2.moveScreen()); await p.waitForSelector('[data-mvback]:not([disabled])');

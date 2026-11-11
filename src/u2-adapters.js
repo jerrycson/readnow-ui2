@@ -13,6 +13,7 @@
     home: (m) => fnOf('renderHome') && renderHome(m), orders: (m) => fnOf('renderOrders') && renderOrders(m), products: (m) => fnOf('renderProducts') && renderProducts(m),
     sellers: (m) => fnOf('renderSellers') && renderSellers(m), purchase: (m) => fnOf('renderPurchase') && renderPurchase(m), biz: (m) => fnOf('renderBiz') && renderBiz(m),
     market: (m) => fnOf('renderMarket') && renderMarket(m), projects: (m) => fnOf('renderProjects') && renderProjects(m),
+    channels: (m) => fnOf('navTabPage') && navTabPage(m, 'channels'), research: (m) => fnOf('navTabPage') && navTabPage(m, 'research'), /* (0.4.7) 지금 웹앱 1.78.481 nav1 새 탭(🛒 판매처 · 🔬 연구 — 묶음 카드 화면) */
     /* (11/10) 고객 탭은 지금 웹앱에 따로 그리기 함수가 없음(renderMainNow0 안에서 #main에 바로) → 그리는 동안만 상자를 #main으로 · 몸 class·옛 #main은 되돌림 */
     search: (m) => { if (!fnOf('renderMainNow0')) return; const real = document.getElementById('main'); const bc = document.body.className; if (real) real.id = 'main__u2'; m.id = 'main'; try { renderMainNow0(); } finally { m.removeAttribute('id'); if (real) real.id = 'main'; document.body.className = bc; } },
     settings: (m) => { if (!fnOf('renderSettings')) return; try { if (fnOf('setUiEnter')) setUiEnter(); } catch (e) {} renderSettings(m); try { if (fnOf('setUiBind')) setUiBind(m); } catch (e) {} },

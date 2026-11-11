@@ -12,7 +12,7 @@ let P = 0, F = 0; const ok = (c, m, x) => { console.log('  ' + (c ? '✓' : '✗
   const out = fs.mkdtempSync(path.join(os.tmpdir(), 'u2track-'));
   const n = cp.execFileSync('git', ['-C', REPO, 'log', '--since=7.days', '--format=%H', '--', 'src/app.html'], { encoding: 'utf8' }).trim().split('\n').filter(Boolean).length;
   const t0 = Date.now(); const r = T.run({ repo: REPO, since: 7, max: 400, out, quiet: true }); const sec = Math.round((Date.now() - t0) / 1000);
-  ok(r.J.rows.length === n && n > 0, `지난 7일 웹앱 원본 커밋 ${n}개를 모두 표로`, r.J.rows.length + '줄 · ' + sec + '초');
+  ok(r.J.rows.length === Math.min(n, 400) && n > 0, `지난 7일 웹앱 원본 커밋 ${n}개를 표로(최근 400개까지 — track.js --max)`, r.J.rows.length + '줄 · ' + sec + '초');
   const latest = fs.readFileSync(path.join(REPO, 'src/app.html'), 'utf8');
   const vers = [...new Set(r.J.rows.map((x) => x.app))];
   const noDate = r.J.rows.filter((x) => !x.date).map((x) => x.app); const noLog = vers.filter((v) => !T.changelog(latest, v));

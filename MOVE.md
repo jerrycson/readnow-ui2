@@ -29,6 +29,8 @@
 | 정범님이 정한 날짜·시각 · 지금 웹앱 탭 따로 열림 · '모두 막기' 꺼짐 · 막은 쓰기 수 | 참고 | 막지 않고 보여만 줌 |
 
 ## 1. 지금 웹앱 쪽에 필요한 변경 (리드가 냄 — 새 웹앱 저장소는 지금 웹앱 파일을 바꾸지 않음)
+> **0.4.7(11/11) 구현함 — readnow-scripts 가지 `work/u2move-1111`(지금 웹앱 판 번호 그대로 · 수집기 머리와 상관없음) · 리드가 판에 합침.** 1~4·6 끝: ① `<head>` 맨 앞(charset 다음) 짧은 글 ② 로그인 뒤 `RN2_MOVE_SYNC(db)` 한 줄(한 번 연 동안 한 번 · 막히면 조용히, 까닭은 `window.RN2_MOVE_LAST`) ③ Firestore 규칙 글은 저장소에 없고 Firebase 콘솔에만 있음 → 지금 웹앱 ⚙ 권한 점검(기기마다 하루 한 번)에 `ui2_site/main` 읽기 한 줄을 더해 막히면 ✗로 보이게 함 ④ `?old=1` 탭 머리 띠 '↩ 옛 화면 — ○일 뒤 닫힘 · 리드나우 2로 ›'(× = 이 탭에서 닫기) ⑥ 시험 `src/tests/tU2MOVE1111.js` 28항목. 덧붙임: 설치 앱 '시작 화면' 넘김은 넘어가는 중(`RN2_MOVING`)이면 안 함(두 넘김이 겹치지 않게). 5(`?go=` 화면 열림)는 판이 나간 뒤 리드가 한 번 확인.
+> 주의: 빨리 넘기기(`rn2-move`)는 같은 주소 공간(jerrycson.github.io)에서만 — Firebase Hosting·readnow.kr 주소로 연 기기는 로그인 뒤 `RN2_MOVE_SYNC`로만 넘어감.
 1. **`src/app.html` `<head>` 맨 앞**(Firebase·본문 스크립트보다 먼저)에 `tools/move-snippet.js`의 첫 덩어리(즉시 실행 함수)를 `<script>`로 그대로. 수집기 머리와 상관없음 · 기능 바뀜 없음(`rn2-move`가 없으면 아무것도 안 함).
 2. 같은 파일의 `window.RN2_MOVE_SYNC` 함수도 함께 두고, **로그인 뒤 Firebase 준비가 끝난 자리에서 한 줄** `RN2_MOVE_SYNC(firebase.firestore())` (문서 1개 읽기 · 하루 기기마다 열 때 1번).
 3. Firestore 규칙: 지금 웹앱 로그인으로 `ui2_site/main` **읽기**가 되어야 함(새 웹앱은 이미 같은 로그인으로 읽음 — 바뀜 없을 것).

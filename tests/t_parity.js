@@ -6,7 +6,7 @@
  * ③ 홈 칸(WIDGETS) · 상세 화면(PG_SCR) · 휴대폰 섹션 고르기(THIN_SEC·PT_SECS) · 🔍 기능 찾기(FEAT) 하나도 빠짐없이 목록에
  * ④ 새로 생긴 칸(시험용으로 끼워 넣음)도 탭을 한 번 그리면 저절로 서랍에 들어가고 그 칸 위젯이 그 칸을 그림 */
 const { open, seed, ok, done, nonU2Writes } = require('./lib');
-const TABS = ['search', 'products', 'sellers', 'orders', 'purchase', 'biz', 'market', 'projects'];
+let TABS = ['search', 'products', 'sellers', 'orders', 'purchase', 'biz', 'market', 'projects']; /* (0.4.7) 지금 웹앱에 NAV_TABS(1.78.481 nav1)가 있으면 그 탭 표 그대로(홈·화면을 여는 탭 빼고) — 새 탭(판매처·연구)도 대조 */
 (async () => {
   console.log('[빠짐 대조] 지금 웹앱 ↔ 리드나우 2');
   const t = await open({ settle: 3000, init: () => { const iv = setInterval(() => { if (window.U2) { U2._adminOverride = true; clearInterval(iv); } }, 1); } }); const p = t.p;
@@ -14,6 +14,7 @@ const TABS = ['search', 'products', 'sellers', 'orders', 'purchase', 'biz', 'mar
   /* ① 탭 */
   const tabs = await p.evaluate(() => { const legacy = [...document.querySelectorAll('#tabs [data-tab]')].map((b) => b.dataset.tab); const have = Object.keys(U2W.TABS); return { legacy, miss: legacy.filter((k) => !have.includes(k)) }; });
   ok(tabs.legacy.length >= 9 && !tabs.miss.length, '① 지금 웹앱 탭 단추가 모두 새 웹앱 탭 위젯으로', tabs.legacy.length + '개 · 빠짐 ' + JSON.stringify(tabs.miss));
+  { const real = await p.evaluate(() => (typeof NAV_TABS !== 'undefined' && NAV_TABS && NAV_TABS.length ? NAV_TABS.map((x) => x[0]).filter((k) => k !== 'home' && !(U2.SCREEN_TABS || {})[k]) : null)); if (real) { const noR = await p.evaluate((ks) => ks.filter((k) => !U2.adapters.RENDER[k]), real); ok(!noR.length, '지금 웹앱 실제 탭 표(NAV_TABS)의 탭마다 새 웹앱 그리기 길이 있음', real.join(',') + ' · 없음 ' + JSON.stringify(noR)); TABS = real.filter((k) => !noR.includes(k)); console.log('  · 대조할 탭(실제 NAV_TABS): ' + TABS.join(',')); } }
   /* 탭마다 새 웹앱 페이지로 가서 옛 탭을 한 번 그림(서랍이 화면의 칸을 기억) */
   for (const tab of TABS) { await p.evaluate((tab) => U2.go(U2.pageForTab(tab) || tab), tab); await p.waitForTimeout(2600); }
   /* ② 탭 첫 화면 칸 */
@@ -22,13 +23,15 @@ const TABS = ['search', 'products', 'sellers', 'orders', 'purchase', 'biz', 'mar
     for (const tab of TABS) {
       const box = document.createElement('div'); box.style.cssText = 'position:absolute;left:-99999px;top:0;width:1200px;visibility:hidden'; document.body.appendChild(box); const keep = { tab: S.tab, a: S.secOnly, b: S.ptOnly, c: S.mkOnly };
       S.tab = tab; S.secOnly = null; S.ptOnly = null; S.mkOnly = null; try { A.RENDER[tab](box); } catch (e) {} S.tab = keep.tab; S.secOnly = keep.a; S.ptOnly = keep.b; S.mkOnly = keep.c;
-      const full = tobBlocks(box).filter((b) => !/^w:/.test(b.k) && !/#\d+$/.test(b.k)).map((b) => [b.k, tobLabel(b.el)]); box.remove();
+      const full = tobBlocks(box).filter((b) => !/^w:/.test(b.k) && !/#\d+$/.test(b.k)).map((b) => [b.k, tobLabel(b.el)]); const html = box.textContent.length; box.remove();
       const items = U2.catalog.get().filter((i) => i.kind === 'sec' && i.tab === tab); const cov = {};
       for (const it of items) { const g = A.resolve(tab, [it.key]); keysOf(g[it.key]).forEach((k) => { k = A.blkKey(k); (cov[k] = cov[k] || []).push(it.key); }); /* (0.4.5) 지금 웹앱 1.78.470부터 칸에 고정 이름표(data-blk · TOB_BLK)가 붙어 '#c_plat' 같은 열쇠 — 예전 'b:' 열쇠와 같은 칸으로 맞춰 셈 */ }
-      out[tab] = { n: full.length, miss: full.filter(([k]) => !cov[A.blkKey(k)]).map(([k, l]) => k + ' ' + l.slice(0, 30)), blk: items.filter((i) => i.blk).length };
+      out[tab] = { html, n: full.length, miss: full.filter(([k]) => !cov[A.blkKey(k)]).map(([k, l]) => k + ' ' + l.slice(0, 30)), blk: items.filter((i) => i.blk).length };
     }
     return out; }, TABS);
-  for (const tab of TABS) ok(r[tab].n > 0 && !r[tab].miss.length, `② ${tab} 탭 첫 화면 칸 ${r[tab].n}줄이 모두 새 웹앱 위젯으로 그려짐`, '🧱 칸 위젯 ' + r[tab].blk + ' · 빠짐 ' + JSON.stringify(r[tab].miss));
+  const OLD8 = ['search', 'products', 'sellers', 'orders', 'purchase', 'biz', 'market', 'projects'];
+  for (const tab of TABS) { if (!OLD8.includes(tab) && r[tab].n === 0) { ok(r[tab].html > 50, `② ${tab} 탭 = 칸 나눔 없는 묶음 카드 화면(지금 웹앱 ✎ 첫 화면 편집 없음) — '탭 전체' 위젯으로 통째 그려짐`, '글 ' + r[tab].html + '자'); continue; }
+    ok(r[tab].n > 0 && !r[tab].miss.length, `② ${tab} 탭 첫 화면 칸 ${r[tab].n}줄이 모두 새 웹앱 위젯으로 그려짐`, '🧱 칸 위젯 ' + r[tab].blk + ' · 빠짐 ' + JSON.stringify(r[tab].miss)); }
   const reg = await p.evaluate(() => { const it = U2.catalog.get().find((i) => i.kind === 'sec' && i.tab === 'products' && /등록/.test(i.title) && /^(pt_reg|#p_reg)$/.test(i.key)); if (!it) return null; const g = U2.adapters.resolve('products', [it.key]); const n = g[it.key]; return { key: it.key, ok: !!n && !!n.querySelector('#reg_open') }; });
   ok(reg && reg.ok, '② 상품 탭 📥 등록 줄이 새 웹앱 위젯으로 있고 등록 단추(#reg_open)가 그려짐', JSON.stringify(reg));
   /* (11/10) 상품 탭 가격 감시 칸 — 지금 웹앱 예전 열쇠는 제목에 엔진 상태 글(판정 중·A단계/판정 쉼/전체 정지)이 섞여 바뀜 → 새 웹앱은 고정 열쇠 #p_watch 하나로 · 예전 열쇠로 넣은 🧱 칸도 그려짐 */

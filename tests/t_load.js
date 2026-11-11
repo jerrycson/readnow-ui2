@@ -23,7 +23,8 @@ const { open, ok, done, nonU2Writes } = require('./lib');
   const pages = await p.evaluate(() => U2.site.nav.map((n) => n.id).filter((id) => id !== 'inbox')); /* 📥 할 일은 새 웹앱 페이지(옛 탭 없음) */
   for (const id of pages) { await p.evaluate((i) => U2.go(i), id); await p.waitForTimeout(700); }
   const tabOk = await p.evaluate(() => U2.cur === 'settings' && document.querySelector('.u2-cell #main') && S.tab === 'settings');
-  ok(tabOk && pages.length === 10, '페이지 10개(탭 9 + ⚙ 설정)를 차례로 열면 옛 탭도 따라 바뀜(마지막 설정)', pages.length + '개');
+  const nT = await p.evaluate(() => Math.max(9, U2.legacyTabs().length)); /* (0.4.7) 지금 웹앱 탭 수를 따라감(1.78.481 nav1 = 12) */
+  ok(tabOk && pages.length === nT + 1, `페이지 ${nT + 1}개(탭 ${nT} + ⚙ 설정)를 차례로 열면 옛 탭도 따라 바뀜(마지막 설정)`, pages.length + '개');
   await p.goBack(); await p.waitForTimeout(700);
   ok(await p.evaluate(() => U2.cur === 'projects'), '페이지 사이 뒤로 가기(?p= 주소 길)');
   const w1 = await nonU2Writes(p); const bl = await p.evaluate(() => U2.guard.blocked.length);

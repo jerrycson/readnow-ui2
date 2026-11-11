@@ -109,13 +109,19 @@ NODE_PATH=... node tests/t_parity.js     # 빠짐 대조(11/10) — 지금 웹�
 NODE_PATH=... node tests/t_sync.js       # 페이지 맞춤(11/05) — 옛 등록 화면·옛 자리 되살리기 막음 · 페이지마다 다른 화면 · 옛 상세 층이 머리 아래 · 휴대폰 · 🗓 전체 일정
 NODE_PATH=... node tests/t_bench.js      # 단계 9 새 기능(0.4.5 · 성공 사례 견줌 '이어서') — 🔔 알림 한 자리 · 오류 글 한국어 · ⚡ 빠른 작업 · 🔎 어디서나 찾기 Ctrl+K · 받은편지함·스캔 검수를 사람처럼 · 같은 탭 한 번 그리기
 NODE_PATH=... node tests/t_dev5.js       # 단계 10 기기 5가지 모양(PC 1920·1400·노트북 1280·태블릿 820·휴대폰 390) × STEP12 1·2·4·9·10번
-NODE_PATH=... node tests/t_move.js       # 단계 13 이전 장치(0.4.6) — 이전 전 점검 · 시작/되돌리기 · 지금 웹앱 주소에서 넘어감(짧은 글을 틀에 끼워 흉내) · ?old=1 · 돌고 돌지 않음 · 개인 배치 되돌리기 알림
+NODE_PATH=... node tests/t_move.js       # 단계 13 이전 장치(0.4.6) — 이전 전 점검 · 시작/되돌리기 · 지금 웹앱 주소에서 넘어감(짧은 글이 든 판이면 그대로 · 없으면 견본을 끼워 흉내 · 0.4.7) · ?old=1 · 돌고 돌지 않음 · 개인 배치 되돌리기 알림
 NODE_PATH=... node tests/t_nav.js        # 메뉴 틀 맞춤(0.4.6) — 지금 웹앱 탭 차례·새 탭(nav1 🛒 판매처·🔬 연구 흉내)이 메뉴에 저절로 · 저장 안 함
 ```
 - 인터넷의 지금 웹앱은 받지 않습니다 — `U2_BASE`로 가는 요청을 기기 안 배포본 사본(`U2_TEST_OUT`, 기본 `/home/user/w/out`)에서 돌려줍니다.
 - Firebase는 가짜(`tests/fbstub2.js`)입니다.
 
-### 마지막 결과 (11/11 · 새 웹앱 0.4.6 · 지금 웹앱 1.78.480 배포본)
+### 마지막 결과 (11/11 · 새 웹앱 0.4.7 · 지금 웹앱 1.78.481 배포본 + 이전 짧은 글(readnow-scripts work/u2move-1111))
+시험 28묶음 모두 통과 — t_grid_unit 23 · t_expr_unit 203 · t_load 21 · t_editor 49 · t_widgets 29 · t_perm 22 · t_mem 6 · t_actions 25 · t_adapters 23 · t_track 18 · t_new 9 · t_feats 8 · t_tabswap 7 · t_pairs 9 · t_coexist 12 · t_soak 8 · t_perf 4 · t_dual 45 · t_real 17 · t_check 17 · t_parity 21 · t_sync 26 · t_bench 25 · t_dev5 37 · t_move 23 · t_nav 13 · t_default 9 · t_money 4.
+- t_default·t_money 홈 흔들림(85%·45/61)의 원인: 옛 홈 칸은 화면에 실제로 보일 때 채워짐(IntersectionObserver · body가 굴림 상자라 rootMargin 600px이 먹지 않음 — 지금 웹앱 그대로 열어도 같음). 시험이 1500·3000·6000으로 건너뛰어 굴려 '매출 페이스' 칸이 한 번도 안 보이고 지나감 → 기간 단추 7줄이 빠짐(85.4%). 칸 위치가 경고 칸 높이에 따라 ±200px 흔들려 판마다 통과·실패가 갈림. → 두 시험 모두 lib.js `scrollThrough`(400px씩 끝까지)로 — 홈 100%(48줄) · 돈 숫자 74/74. 실제 사용자는 이어서 굴리므로 화면 고침은 없음.
+- nav1(지금 웹앱 1.78.481 · 탭 12개 = 🧾 통합 장부·🛒 판매처·🔬 연구 더함)을 따라: t_nav·t_parity가 실제 NAV_TABS로 · 🧾 통합 장부(누르면 화면을 여는 탭) 페이지 = 머리줄 + 통합 장부 단추가 든 옛 화면 자리(U2.SCREEN_TABS) · 판매처·연구 그리기 길(A.RENDER navTabPage) · 옆 메뉴 기본 높이 29→38 · 탭 수를 세던 t_load·t_adapters·t_sync는 지금 웹앱 탭 수를 따라감 · t_track 7일 커밋 407개 > 표 400줄 상한은 상한까지로 셈 · t_pairs 남은 타이머는 위젯이 만든 것만(지금 웹앱 뒤 받기 syncColl 타이머는 뺌).
+- t_move: 지금 웹앱에 짧은 글이 든 판이면 견본을 끼우지 않고 그대로 시험(로그인 뒤 RN2_MOVE_SYNC를 지금 웹앱이 저절로 부름).
+
+#### 지난 결과 (11/11 · 새 웹앱 0.4.6 · 지금 웹앱 1.78.480 배포본)
 시험 28묶음 — 26 통과 · 2 홈 탭만 흔들림: t_grid_unit 23 · t_expr_unit 203 · t_load 21 · t_editor 49 · t_widgets 29 · t_perm 22 · t_mem 6 · t_actions 25 · t_adapters 23 · t_track 18 · t_new 9 · t_feats 8 · t_tabswap 7 · t_pairs 9 · t_coexist 12 · t_soak 8 · t_perf 4 · t_dual 45 · t_real 17 · t_check 17 · t_parity 18 · t_sync 26 · t_bench 25 · t_dev5 37 · t_move 23(새) · t_nav 10(새) · t_default 8/9 · t_money 3/4.
 - t_default·t_money: 🏠 홈 탭 숫자·줄만 지금 웹앱과 85%·45/61(다른 탭 모두 100%) — **지난 판 0.4.5를 그대로 돌려도 똑같이 실패**(이번 고침 탓 아님 · 지금 웹앱 1.78.479 배포본으로도 같음) → 홈 칸이 시각·날짜에 따라 달리 채워지는 것으로 보임(지금 웹앱만: 239건·247명·900건 / 새 웹앱만: % 숫자) · 다음 회차에 홈 칸 차례를 맞춰 볼 것.
 

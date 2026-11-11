@@ -6,7 +6,8 @@ const { open, seed, ok, done, nonU2Writes } = require('./lib');
   const t = await open({ q: '?p=hx', settle: 3000 }); const p = t.p; await seed(p); await p.waitForTimeout(2000);
   /* H-02 ① 기본 위젯 모든 짝 */
   const r1 = await p.evaluate(async () => {
-    const T = U2W.order.filter((k) => !U2W.defs[k].legacy && k !== 'query'); const out = { n: 0, err: [], dup: 0, iv0: U2.guard.stats.intervals };
+    const T = U2W.order.filter((k) => !U2W.defs[k].legacy && k !== 'query'); const out = { n: 0, err: [], dup: 0 }; /* (0.4.7) 남은 타이머는 새 웹앱 위젯이 만든 것만 셈 — 지금 웹앱이 뒤에서 시작한 받기(상품·지표 syncColl 등 1.78.481)는 위젯 짝과 무관 */
+    const live = new Map(), si = window.setInterval, ci = window.clearInterval; window.setInterval = function () { const h = si.apply(this, arguments); if (!/readnow-(webapp|[a-z-]+-core)\.js|readnow-registry/.test(new Error().stack || '')) live.set(h, 1); return h; }; window.clearInterval = function (h) { live.delete(h); return ci.apply(this, arguments); };
     for (let i = 0; i < T.length; i++) for (let j = i + 1; j < T.length; j++) {
       U2.pages.hx = { id: 'hx', title: 'hx', grid: { rowH: 16 }, rev: 0, widgets: { a: { type: T[i], props: {} }, b: { type: T[j], props: {} } }, layouts: { pc: [{ id: 'a', x: 0, y: 0, w: 12, h: 8 }, { id: 'b', x: 12, y: 0, w: 12, h: 8 }] } };
       U2.render({ reset: true }); out.n++;
@@ -15,7 +16,7 @@ const { open, seed, ok, done, nonU2Writes } = require('./lib');
       if (out.n % 200 === 0) await new Promise((r) => setTimeout(r, 0));
     }
     U2.pages.hx = { id: 'hx', title: 'hx', grid: { rowH: 16 }, rev: 0, widgets: {}, layouts: { pc: [] } }; U2.render({ reset: true }); await new Promise((r) => setTimeout(r, 50));
-    out.ivLeft = U2.guard.stats.intervals - out.iv0; out.T = T.length; return out;
+    out.ivLeft = live.size; window.setInterval = si; window.clearInterval = ci; out.T = T.length; return out;
   });
   ok(r1.err.length === 0 && r1.dup === 0 && r1.ivLeft <= 0, `H-02 기본 위젯 ${r1.T}종 모든 짝 ${r1.n}쌍 — 오류 0 · 중복 id 0 · 남은 타이머 0`, r1.err.slice(0, 5).join(', ') + (r1.dup ? ' 중복 id ' + r1.dup : '') + ' 남은 타이머 ' + r1.ivLeft);
   /* H-02 ② 리드나우 기능 위젯 짝 — 탭마다 섹션 하나 + 홈 칸 + 화면 단추 + 기능 단추 (다른 묶음끼리는 대표만 · 짝 시험표 방식) */

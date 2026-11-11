@@ -56,4 +56,11 @@ async function routeAll(ctx, opt) {
 }
 const seedFn = require('./seed2.js');
 const seed = (p, n) => p.evaluate(`(${seedFn.toString()})(${JSON.stringify(n || {})})`);
-module.exports = { open, openClassic, routeAll, seed, ok, done, nonU2Writes, chromium, OUT, PORT, STUB };
+/* (0.4.7) 끝까지 천천히 굴리기 — 옛 홈 칸은 화면에 실제로 보일 때 채워짐(지금 웹앱 IntersectionObserver · body가 굴림 상자라 rootMargin 600px이 먹지 않음)
+ *  예전 시험은 1500·3000·6000으로 건너뛰어 그 사이(예: 매출 페이스 칸)가 한 번도 안 보이고 지나가 '주문 기록을 받는 중'에 머묾 → 탭마다 % 흔들림(85%·45/61)
+ *  화면 높이보다 짧게(400px) 내려 모든 칸이 한 번은 보이게 · 두 시험(지금 웹앱 그대로·새 웹앱)이 같은 함수 */
+async function scrollThrough(p, step, ms) { step = step || 400; ms = ms || 120;
+  const H = await p.evaluate(() => Math.max(document.body.scrollHeight, document.documentElement.scrollHeight));
+  for (let y = 0; y <= H + step; y += step) { await p.evaluate((y) => { document.body.scrollTop = y; document.documentElement.scrollTop = y; }, y); await p.waitForTimeout(ms); }
+  await p.evaluate(() => { document.body.scrollTop = 0; document.documentElement.scrollTop = 0; }); await p.waitForTimeout(ms * 2); }
+module.exports = { scrollThrough, open, openClassic, routeAll, seed, ok, done, nonU2Writes, chromium, OUT, PORT, STUB };

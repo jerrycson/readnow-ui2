@@ -10,7 +10,8 @@ const { open, ok, done, nonU2Writes } = require('./lib');
   const bad = await p.evaluate(() => U2.adapters.bad);
   ok(Array.isArray(bad) && bad.length === 0, '계약 검사: 새 웹앱이 기대는 옛 함수·값·화면 뼈대가 모두 살아 있음', JSON.stringify(bad));
   const cnt = await p.evaluate(() => ({ c: U2.catalog.count(), cats: [...new Set(U2.catalog.get().map((i) => i.cat))].length, sup: (U2.catalog.get().find((i) => i.key === 'bz_sup') || {}).mem, pace: (U2.catalog.get().find((i) => i.key === 'bz_pace') || {}).mem, feat: typeof FEAT !== 'undefined' ? FEAT.length : 0, words: (U2.catalog.get().find((i) => i.key === 'bz_vat') || {}).words || '' }));
-  ok(cnt.c.tab === 10 && cnt.c.sec >= 60 && cnt.c.home >= 15 && cnt.c.screen >= 80 && cnt.c.feat >= 50, '위젯 목록을 지금 웹앱에서 저절로', JSON.stringify(cnt.c) + ' (기능 찾기 원본 ' + cnt.feat + '개 중 섹션·화면을 가리키는 것은 그 위젯 별칭으로 묶음)');
+  const nT = await p.evaluate(() => Math.max(9, U2.legacyTabs().length) + 1); /* (0.4.7) 탭 위젯 = 지금 웹앱 탭 + ⚙ 설정 */
+  ok(cnt.c.tab === nT && cnt.c.sec >= 60 && cnt.c.home >= 15 && cnt.c.screen >= 80 && cnt.c.feat >= 50, '위젯 목록을 지금 웹앱에서 저절로', JSON.stringify(cnt.c) + ' (기능 찾기 원본 ' + cnt.feat + '개 중 섹션·화면을 가리키는 것은 그 위젯 별칭으로 묶음)');
   ok(cnt.cats >= 10, '분류 12가지 중 쓰인 것', cnt.cats + '가지');
   ok(cnt.sup && cnt.sup.mb === 64 && cnt.pace && cnt.pace.mb >= 0, "메모리 값표: '🏪 매입처'는 켜면 상품 자료 ≈64MB(지금 웹앱 휴대폰 고르기 값 그대로)", JSON.stringify(cnt.sup));
   ok(cnt.words.length > 20, '기능 찾기 낱말이 같은 섹션 위젯의 찾을 낱말로 묶임(bz_vat)', cnt.words.slice(0, 60));

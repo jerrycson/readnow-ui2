@@ -29,7 +29,8 @@ const shot = async (p) => { const bb = await p.evaluate(() => Math.ceil(document
     if (!good) { allOk = false; bad.push(id + ':' + JSON.stringify({ on: s.on, cur: s.cur, tab: s.tab, want: s.want, below: s.belowIn })); }
     sig[id] = (s.tab || '-') + '|' + s.txt.replace(/\d+/g, '#').slice(0, 200); hashes[id] = await shot(p);
   }
-  ok(ids.length === 11, '  머리에 페이지 11개(홈·고객·상품·판매자·주문-매출·매입·경영·시장조사·프로젝트·설정·할 일)', ids.join(' '));
+  const nT = await p.evaluate(() => Math.max(9, U2.legacyTabs().length)); /* (0.4.7) 지금 웹앱 탭 수를 따라감(1.78.481 nav1 = 12) */
+  ok(ids.length === nT + 2, `  머리에 페이지 ${nT + 2}개(지금 웹앱 탭 ${nT} + 설정·할 일)`, ids.join(' '));
   ok(allOk, '② 페이지 단추마다 그 페이지 + 맞춤표의 옛 탭이 보이고 옛 층이 덮지 않음', bad.join(' / ') || '11개 모두');
   const nSig = new Set(Object.values(sig)).size, nPix = new Set(Object.values(hashes)).size;
   ok(nSig === ids.length, '  페이지마다 보이는 글이 다름', nSig + '/' + ids.length);

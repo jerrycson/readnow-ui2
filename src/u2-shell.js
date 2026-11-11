@@ -15,6 +15,9 @@
     if (t && id === 'projects') return { id, title: t[1], icon: t[0], grid: { rowH: 16, half: false, compact: false }, rev: 0, /* 🧪 프로젝트 = 지금 웹앱과 같게 + 맨 위 '🗓 새 웹앱 일정' 한 줄(11/05) */
       widgets: { hdr: { type: 'legacy.header', props: {} }, plan: { type: 'u2plan', props: {} }, main: { type: 'legacy.tab', props: { ref: id } } },
       layouts: { pc: [{ id: 'hdr', x: 0, y: 0, w: 24, h: 8 }, { id: 'plan', x: 0, y: 8, w: 24, h: 5 }, { id: 'main', x: 0, y: 13, w: 24, h: 40 }], tab: null, sm: null, phone: null } };
+    if (t && U2.SCREEN_TABS && U2.SCREEN_TABS[id]) return { id, title: t[1], icon: t[0], grid: { rowH: 16, half: false, compact: false }, rev: 0,
+      widgets: { hdr: { type: 'legacy.header', props: {} }, main: { type: 'legacy.dock', props: { title: t[1], scrs: U2.SCREEN_TABS[id] } } },
+      layouts: { pc: [{ id: 'hdr', x: 0, y: 0, w: 24, h: 8 }, { id: 'main', x: 0, y: 8, w: 24, h: 40 }], tab: null, sm: null, phone: null } };
     if (t) return { id, title: t[1], icon: t[0], grid: { rowH: 16, half: false, compact: false }, rev: 0,
       widgets: { hdr: { type: 'legacy.header', props: {} }, main: { type: 'legacy.tab', props: { ref: id } } },
       layouts: { pc: [{ id: 'hdr', x: 0, y: 0, w: 24, h: 8 }, { id: 'main', x: 0, y: 8, w: 24, h: 40 }], tab: null, sm: null, phone: null } };
@@ -53,7 +56,9 @@
   /* ── 메뉴 틀을 지금 웹앱 탭과 맞춤(11/11 · nav1 새 탭 묶음 🛒 판매처·🔬 연구 등) — 저장하지 않고 보이는 메뉴만 ──
    *  지금 웹앱 탭 차례(NAV_TABS 또는 #tabs 단추 차례)를 읽어 ① 새 탭은 W.TABS·메뉴에 저절로 더함(그 탭 전체 위젯 페이지) ② 메뉴를 한 번도 저장 안 했으면 차례도 지금 웹앱과 같게
    *  ③ 저장한 메뉴(관리자가 고친 것)는 차례를 바꾸지 않고 새로 생긴 탭만 옆 탭 뒤에 끼움(일부러 뺀 예전 탭은 다시 안 넣음) · 지금 웹앱에서 없어진 탭 페이지는 메뉴에 그대로(배치를 잃지 않음) */
-  U2.TAB_ICON = { channels: '🛒', research: '🔬' };
+  U2.TAB_ICON = { channels: '🛒', research: '🔬', ledger: '🧾' };
+  /* (0.4.7) 지금 웹앱 탭 줄에 있지만 누르면 탭이 아니라 화면을 여는 것(🧾 통합 장부 = uxTabGo → openLedger · 1.78.481 nav1) → 그 페이지 기본 = 머리줄 + 그 화면 단추가 든 '옛 화면 자리' 칸 */
+  U2.SCREEN_TABS = { ledger: 'ledger' };
   U2.BASE_TABS = Object.keys(TABS); /* 새 웹앱이 처음부터 아는 탭 — 저장한 메뉴에서 빠져 있으면 일부러 뺀 것으로 보고 다시 넣지 않음 */
   U2.legacyTabs = () => { let t = null; try { if (typeof NAV_TABS !== 'undefined' && NAV_TABS && NAV_TABS.length) t = NAV_TABS.map((x) => [x[0], String(x[1] || x[0])]); } catch (e) {}
     if (!t) { const bs = [...document.querySelectorAll('#tabs > button[data-tab]')]; if (bs.length) t = bs.map((b) => [b.dataset.tab, (b.textContent || '').replace(/\s+/g, ' ').trim() || b.dataset.tab]); }

@@ -1,14 +1,14 @@
 /* H-11 돈 숫자 같음 — 같은 가짜 자료(tests/seed2.js · 고정 씨앗)를 넣고 지금 웹앱 화면 숫자 = 새 웹앱 숫자
  * ① 탭 전체 위젯(홈·주문·경영·상품·매입) ② 섹션 위젯(경영 ②매출 페이스·③수익성·재고 등) ③ 계산식 별칭(주문.전체수·상품.전체수…)
  * 숫자 = 화면 글에서 '…원·건·권·명·%'가 붙은 수(시각·몇 초 전은 뺌) — 차례 상관없이 같은 수 모음인지 */
-const { open, openClassic, seed, ok, done, chromium } = require('./lib');
+const { scrollThrough, open, openClassic, seed, ok, done, chromium } = require('./lib');
 const TABS = ['home', 'orders', 'biz', 'products', 'purchase', 'sellers'];
 const SECS = [['bz_pace', 'biz'], ['bz_margin', 'biz'], ['bz_inv', 'biz'], ['bz_cust', 'biz'], ['o_bb', 'orders'], ['bz_supsales', 'biz']];
 const nums = (t) => (String(t || '').match(/[-−]?[\d,]+(\.\d+)?\s?(원|건|권|명|%)/g) || []).map((x) => x.replace(/\s/g, '').replace('−', '-')).sort();
 const same = (a, b) => { const B = new Map(); b.forEach((x) => B.set(x, (B.get(x) || 0) + 1)); let k = 0; a.forEach((x) => { const n = B.get(x); if (n) { k++; B.set(x, n - 1); } }); return { k, n: Math.max(a.length, b.length) }; };
 const settle = async (p, get) => { let a = null; for (let i = 0; i < 6; i++) { const b = await p.evaluate(get); if (b === a) return b; a = b; await p.waitForTimeout(1000); } return a; }; /* 두 번 연달아 같을 때까지(늦게 오는 계산 기다림) */
 const ready = (p) => p.waitForFunction(() => S.pur && S.pur.loaded && S.ordersLoaded, null, { timeout: 20000 }).catch(() => {});
-const scrollAll = async (p) => { for (const y of [1500, 3000, 6000, 9000, 0]) { await p.evaluate((y) => { document.body.scrollTop = y; document.documentElement.scrollTop = y; }, y); await p.waitForTimeout(300); } };
+const scrollAll = (pg) => scrollThrough(pg); /* (0.4.7) 건너뛰지 않고 끝까지 — lib.js scrollThrough */
 (async () => {
   console.log('[H-11] 돈 숫자 같음');
   const b = await chromium.launch();

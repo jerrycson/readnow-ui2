@@ -2,11 +2,11 @@
  * 탭 10개(9 + ⚙ 설정)마다 지금 웹앱을 그대로 연 것과 새 웹앱 기본 페이지의 옛 화면 글(#main)을 견줌 · 머리줄 ⚙ 단추 → 설정 페이지
  * · 견본 배치 6가지 겹침 0·오류 0 · 📥 할 일 받은편지함(N3 ★) · 옛 기능 위젯 📖 설명(E7) */
 const fs = require('fs'), path = require('path');
-const { open, ok, done, chromium, OUT } = require('./lib');
+const { scrollThrough, open, ok, done, chromium, OUT } = require('./lib');
 const STUB = fs.readFileSync(path.join(__dirname, 'fbstub2.js'), 'utf8');
 const TABS = ['home', 'search', 'products', 'sellers', 'orders', 'purchase', 'biz', 'market', 'projects', 'settings'];
 const ready = (pg) => pg.waitForFunction(() => typeof S !== 'undefined' && S.ordersLoaded && S.prodLoaded && S.sellersLoaded, null, { timeout: 30000 }).catch(() => {});
-const scrollAll = async (pg) => { for (const y of [1500, 3000, 6000, 0]) { await pg.evaluate((y) => { document.body.scrollTop = y; document.documentElement.scrollTop = y; }, y); await pg.waitForTimeout(250); } }; /* 홈 칸은 화면에 보일 때 채워짐(지금 웹앱 IntersectionObserver) — 둘 다 끝까지 한 번 내려 봄 */
+const scrollAll = (pg) => scrollThrough(pg); /* (0.4.7) 건너뛰지 않고 끝까지 — lib.js scrollThrough */
 const norm = (t) => String(t || '').split('\n').filter(Boolean);
 const sim = (a, b) => { if (!a.length) return 100; /* 지금 웹앱에 있는 줄이 새 웹앱에 몇 % 있나(홈 칸은 화면에 보일 때 채워져 새 웹앱이 더 많을 수 있음) */ const B = new Map(); b.forEach((l) => B.set(l, (B.get(l) || 0) + 1)); let same = 0; a.forEach((l) => { const n = B.get(l); if (n) { same++; B.set(l, n - 1); } }); return Math.round((same / a.length) * 1000) / 10; };
 (async () => {

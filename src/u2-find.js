@@ -49,6 +49,20 @@
     if (nt.startsWith(nq)) return 3; if (String(title).split(/[\s·(]+/).some((w) => norm(w).startsWith(nq))) return 2.5; if (nt.includes(nq)) return 2; if (ne.includes(nq)) return 1.2;
     if (/^[ㄱ-ㅎ]+$/.test(nq) && norm(cho(title)).includes(nq)) return 1; return 0;
   };
+  /* (0.4.9) ⚡ 명령 — ☰ 메뉴의 일을 찾기 창에서 바로(Linear·Shopify 명령 창처럼 · 약속 50 '두 번 누름 안') · ⚙ 설정 범위에도 듦 */
+  F.cmds = () => { const C = []; const add = (icon, title, fn, sub) => { if (typeof fn !== 'function') return; C.push({ kind: 'cmd', set: true, icon, title, sub: '⚡ 명령 · ' + (sub || '☰ 메뉴와 같음'), go: fn }); };
+    add('✏', '꾸미기 — 이 페이지 편집', U2.openEditor && (() => U2.openEditor()), '머리줄 ✏와 같음');
+    add('📱', '이 기기 화면 꾸미기(개인 배치)', U2.openEditor && (() => U2.openEditor('mine')));
+    add('🔒', '쓰기 허락 보기(위젯마다)', U2.permScreen && (() => U2.permScreen()));
+    add('✅', '시범 체크리스트', U2.checkScreen && (() => U2.checkScreen()));
+    add('🩺', '충돌 감시 보기', U2.watchScreen && (() => U2.watchScreen()));
+    add('🔁', '따라잡기 표', U2.trackScreen && (() => U2.trackScreen()));
+    add('🗓', '전체 일정·진행', U2.planScreen && (() => U2.planScreen()));
+    add('🚚', '이전(단계 13)', U2.moveScreen && (() => U2.moveScreen()));
+    add('⬇', '배치 내보내기(JSON 파일)', U2.exportJson && (() => U2.exportJson()));
+    try { Object.entries((U2.theme && U2.theme.THEMES) || {}).forEach(([k, t]) => add('🎨', '테마: ' + t.name, () => { U2.theme.choose(k); U2.render({ reset: true }); U2.toast('🎨 테마: ' + t.name + '(이 기기)'); }, '이 기기')); } catch (e) {}
+    add('☰', '메뉴 열기', U2.menu && (() => U2.menu()), '머리줄 ☰');
+    return C; };
   F.sources = () => {
     const out = []; const L = U2.legacy || {}; const W = window.U2W || { defs: {} };
     (U2.site && U2.site.nav || []).forEach((n) => out.push({ kind: 'page', icon: n.icon || '📄', title: n.title, sub: '페이지', go: () => U2.go(n.id) }));
@@ -58,6 +72,7 @@
     try { const ix = (L.list && (L.list('FEATIX') || L.list('FEAT'))) || []; const seen = new Set();
       ix.forEach((f) => { if (!f || !f.t) return; const g = f.go || {}; const k = f.t + '|' + (g.tab || '') + '|' + (g.sec || g.sel || ''); if (seen.has(k)) return; seen.add(k); const set = g.tab === 'settings' || /^⚙\s*설정/.test(f.w || ''); out.push({ kind: 'feat', set, icon: set ? '⚙' : '🔧', title: f.t, sub: f.w || '', extra: f.k || '', go: () => (L.featGo ? L.featGo(f) : L.feat(f.t)) }); }); } catch (e) {}
     try { (L.list && L.list('PG_SCR') || []).forEach((r) => { if (L.needsArg && L.needsArg(r[0])) return; out.push({ kind: 'scr', icon: '🪟', title: String(r[1]), sub: '지금 웹앱 화면', extra: r[0], go: () => L.screen(r[0]) }); }); } catch (e) {}
+    F.cmds().forEach((c) => out.push(c));
     Object.values(U2.pages || {}).forEach((p) => Object.entries(p.widgets || {}).forEach(([wid, w]) => { const d = W.defs[w.type] || {}; const pr = w.props || {}; const t = pr.s_title || pr.title || pr.label || pr.text || ''; if (!t || /^legacy\.(tab|header)$/.test(w.type)) return; out.push({ kind: 'wid', icon: d.icon || '🧱', title: String(t).split('\n')[0].slice(0, 80), sub: (p.icon || '') + ' ' + (p.title || p.id) + ' 페이지 › ' + (d.name || w.type), go: () => F.goWidget(p.id, wid) }); }));
     return out;
   };
@@ -76,9 +91,12 @@
     scope = scope || 'all'; const rows = [];
     if (String(q || '').trim() && (scope === 'all' || scope === 'data')) rows.push({ kind: 'data', icon: '👥', title: `‘${String(q).trim()}’ 자료에서 찾기`, sub: '고객·전화 · 주문번호 · 책 제목·ISBN — 지금 웹앱 검색 그대로(결과 위 범위 칩)', s: 9, go: () => F.dataGo(String(q).trim()) });
     if (scope === 'data') return rows;
-    const per = { page: 6, feat: 10, scr: 6, wid: 6 }; const by = {};
+    const per = { page: 6, cmd: 4, feat: 10, scr: 6, wid: 6 }; const by = {};
     F.sources().forEach((r) => { if (scope === 'set' ? !r.set : scope !== 'all' && r.kind !== scope) return; const s = F.score(q, r.title, (r.sub || '') + ' ' + (r.extra || '')); if (!s) return; r.s = s; (by[r.kind] = by[r.kind] || []).push(r); });
-    ['page', 'feat', 'scr', 'wid'].forEach((k) => { const a = (by[k] || []).sort((x, y) => y.s - x.s || String(x.title).length - String(y.title).length); rows.push(...a.slice(0, scope === 'all' ? per[k] : 60)); });
+    ['page', 'cmd', 'feat', 'scr', 'wid'].forEach((k) => { const a = (by[k] || []).sort((x, y) => y.s - x.s || String(x.title).length - String(y.title).length); rows.push(...a.slice(0, scope === 'all' ? per[k] : 60)); });
+    /* (0.4.9) 페이지 이름과 똑같이 쳤으면(예 '매입') 그 페이지를 맨 위로 — Enter 한 번에 그 페이지(자료 찾기는 바로 아래) */
+    const nq = String(q || '').replace(/\s+/g, '').toLowerCase(); const ex = nq && rows.findIndex((r) => r.kind === 'page' && String(r.title).replace(/\s+/g, '').toLowerCase() === nq);
+    if (ex > 0) rows.unshift(rows.splice(ex, 1)[0]);
     return rows;
   };
   /* 📌 고정 — 이 기기(rn2-findPins) · 이름으로 기억(페이지·기능·화면·위젯) · 20개까지 */
@@ -96,7 +114,7 @@
     const run = (r) => { if (!r) return; close(); U2.ls.set('findRecent', [r.title].concat((U2.ls.get('findRecent', []) || []).filter((x) => x !== r.title)).slice(0, 8)); try { r.go(); } catch (e) { U2.toast('열지 못함: ' + U2.errKo(e), 1); } };
     const draw = () => {
       const q = inp.value; rows = F.search(q, scope);
-      const KN = { data: '👥 자료', page: '📄 페이지', feat: '🔧 기능(지금 웹앱 🔍 기능 찾기)', scr: '🪟 지금 웹앱 화면', wid: '🧱 이 웹앱 위젯' };
+      const KN = { data: '👥 자료', page: '📄 페이지', cmd: '⚡ 명령(새 웹앱)', feat: '🔧 기능(지금 웹앱 🔍 기능 찾기)', scr: '🪟 지금 웹앱 화면', wid: '🧱 이 웹앱 위젯' };
       const pins = F.pins();
       if (!q.trim()) { /* (0.4.9) 빈 칸 = 📌 고정한 것 → 최근 연 것(Linear·Notion 즐겨찾기처럼 — 자주 여는 것은 Ctrl+K 한 번 + 누름 한 번) */
         const rec = U2.ls.get('findRecent', []) || []; const all = F.sources(); const pick = (t) => all.find((x) => x.title === t);

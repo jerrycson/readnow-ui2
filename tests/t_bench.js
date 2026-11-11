@@ -69,6 +69,23 @@ const { open, ok, done, nonU2Writes, seed } = require('./lib');
   const pu = await p.evaluate(() => ({ pins: JSON.parse(localStorage.getItem('rn2-findPins') || '[]').length, head: [...document.querySelectorAll('#u2-find .u2-findk2')].map((h) => h.textContent) }));
   ok(pu.pins === 0 && !pu.head.includes('📌 고정'), '📌 다시 누르면 고정 풀림', JSON.stringify(pu));
   await p.keyboard.press('Escape'); await p.waitForTimeout(150);
+  /* (0.4.9) 페이지 이름과 똑같이 치면 그 페이지가 맨 위 — Enter 한 번 */
+  await p.keyboard.press('Control+k'); await p.waitForTimeout(200); await p.click('#u2-find [data-sc="all"]'); await p.fill('#u2-find input', '경영'); await p.waitForTimeout(250);
+  const ex1 = await p.evaluate(() => [...document.querySelectorAll('#u2-find .u2-findrow')].slice(0, 2).map((b) => b.textContent.replace(/\s+/g, ' ').slice(0, 24)));
+  await p.keyboard.press('Enter'); await p.waitForTimeout(1200); const ex2 = await p.evaluate(() => U2.cur);
+  ok(/경영/.test(ex1[0] || '') && /페이지/.test(ex1[0] || '') && /자료에서 찾기/.test(ex1[1] || '') && ex2 === 'biz', "페이지 이름('경영')과 똑같이 치면 그 페이지가 맨 위 · 자료 찾기는 바로 아래 · Enter → 그 페이지", JSON.stringify({ ex1, ex2 }));
+  await p.evaluate(() => U2.go('inbox')); await p.waitForTimeout(500);
+  /* (0.4.9) ⚡ 명령 — ☰ 메뉴의 일(테마·쓰기 허락·체크리스트·꾸미기 …)을 찾기 창에서 바로 */
+  await p.keyboard.press('Control+k'); await p.waitForTimeout(200); await p.fill('#u2-find input', '테마 어두'); await p.waitForTimeout(250);
+  const c1 = await p.evaluate(() => { const rows = [...document.querySelectorAll('#u2-find .u2-findrow')]; const r = rows.find((x) => /🎨/.test(x.textContent) && /어두움/.test(x.textContent)); return { heads: [...document.querySelectorAll('#u2-find .u2-findk2')].map((h) => h.textContent), first: r ? r.textContent : '', th0: U2.theme.cur }; });
+  await p.evaluate(() => [...document.querySelectorAll('#u2-find .u2-findrow')].find((x) => /🎨/.test(x.textContent) && /어두움/.test(x.textContent)).click()); await p.waitForTimeout(600);
+  const c2 = await p.evaluate(() => ({ th: U2.theme.cur, open: !!document.getElementById('u2-find'), nCmd: U2.find.cmds().length, inSet: U2.find.search('쓰기 허락', 'set').some((r) => r.kind === 'cmd') }));
+  ok(c1.heads.includes('⚡ 명령(새 웹앱)') && /테마/.test(c1.first) && c2.th !== c1.th0 && /dark|어두/.test(c2.th) && !c2.open && c2.nCmd >= 10 && c2.inSet, "⚡ 명령 — '테마 어두' → '🎨 테마: 어두움' 줄을 누르면 테마가 바뀜 · ☰ 메뉴 일 10가지 넘게 · ⚙ 설정 범위에도", JSON.stringify(Object.assign({}, c1, c2)));
+  await p.evaluate(() => { U2.theme.choose('light'); U2.render({ reset: true }); });
+  await p.keyboard.press('Control+k'); await p.waitForTimeout(200); await p.click('#u2-find [data-sc="set"]'); await p.fill('#u2-find input', 'ㅊㅋㄹㅅㅌ'); await p.waitForTimeout(250); await p.keyboard.press('Enter'); await p.waitForTimeout(600); await p.evaluate(() => U2.ls.set('findScope', 'all')); /* ⚙ 설정 범위에선 자료 줄이 없어 맨 위가 명령 */
+  const c3 = await p.evaluate(() => !!document.querySelector('.u2-layer .u2-check, .u2-layer [data-ck], #u2-check, .u2-ck'));
+  ok(c3, "⚡ 명령 — ⚙ 설정 범위에서 초성 'ㅊㅋㄹㅅㅌ' Enter로 ✅ 시범 체크리스트가 열림", c3);
+  await p.evaluate(() => document.querySelectorAll('.u2-layer').forEach((l) => l.remove()));
   /* (0.4.8 · 견줌 ⑧ 설정 찾기) 섹션 이름(지금 웹앱 🔍 기능 찾기의 SECS)도 찾힘 · ⚙ 설정 범위 = 설정 탭 칸만 · Enter = 설정 탭에서 그 칸을 펼침 */
   await p.keyboard.press('Control+k'); await p.waitForTimeout(200); await p.click('#u2-find [data-sc="set"]'); await p.fill('#u2-find input', '번외 수집기'); await p.waitForTimeout(250);
   const g1 = await p.evaluate(() => ({ rows: [...document.querySelectorAll('#u2-find .u2-findrow')].map((b) => b.textContent.replace(/\s+/g, ' ').slice(0, 50)), allSet: U2.find.search('', 'set').every((r) => r.set), nSet: U2.find.search('', 'set').length, nFeat: U2.find.sources().filter((r) => r.kind === 'feat').length, nOld: (U2.legacy.list('FEAT') || []).length }));

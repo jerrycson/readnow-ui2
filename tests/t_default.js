@@ -36,6 +36,14 @@ const sim = (a, b) => { if (!a.length) return 100; /* 지금 웹앱에 있는 �
   await p.evaluate(() => U2.go('inbox')); await p.waitForTimeout(1500);
   const ib = await p.evaluate(() => { const c = U2.view.cell('ib'); return { rows: c ? c.querySelectorAll('.u2-ibr').length : 0, total: c ? c.querySelector('.u2-ibh b').textContent : '', card: !!(U2.view.cell('al') && U2.view.cell('al').textContent.length > 5) }; });
   ok(ib.rows >= 5 && ib.card, "📥 할 일 받은편지함 페이지: 처리할 것 줄 5 + 지금 웹앱 '오늘 확인할 것' 홈 칸", JSON.stringify(ib));
+  /* (0.4.9) 🚚 줄 아래 판매처별 칩(알라딘·예스24·네이버·우리숍 — 지금 웹앱 shipCnt 그대로) · 식 이름(출고.예스24)이 숫자를 품어도 풀림 */
+  const sb = await p.evaluate(() => { const r = [...U2.view.cell('ib').querySelectorAll('.u2-ibr')].find((x) => /오늘 출고/.test(x.textContent)); const chips = r ? [...r.querySelectorAll('.u2-ibsub > span')].map((c) => c.textContent.replace(/\s+/g, ' ').trim()) : []; const by = U2.find.qaCounts(); const al = ['출고.알라딘', '출고.예스24', '출고.네이버', '출고.우리숍'].map((k) => U2.data.eval(k)); return { chips, ship: by.ship, by: by.shipBy, al: al.map((x) => x.err || x.v), cash: by.shipBy && by.shipBy.cash }; });
+  const sbOk = sb.by ? sb.chips.length === 4 && sb.al.every((v) => typeof v === 'number') && sb.by.al + sb.by.y24 + sb.by.nv + sb.by.cash === sb.ship : sb.chips.length === 0 && sb.al.every((v) => v === null);
+  ok(sbOk, "📥 '오늘 출고 남은 일' 줄 아래 판매처별 칩(🟥 알라딘·🟦 예스24·🟩 네이버·🛍 우리숍) — 합이 그 줄 숫자와 같음(현금 포함)", JSON.stringify(sb));
+  const sb2 = await p.evaluate(async () => { const o = window.shipCnt; const hadShip = S.ship; window.shipCnt = () => ({ all: { confirm: 3, deliv: 2 }, al: { confirm: 2, deliv: 1 }, y24: { deliv: 1 }, nv: { confirm: 1 }, shop: { confirm: 1 }, cash: {} }); if (!S.ship) S.ship = {}; U2.mountCell(U2.view.cell('ib'), 'ib', U2.effective('inbox'), false);
+    const r = [...U2.view.cell('ib').querySelectorAll('.u2-ibr')].find((x) => /오늘 출고/.test(x.textContent)); const out = { n: r.querySelector(':scope > b').textContent, on: [...r.querySelectorAll('.u2-ibsub > span.on')].map((c) => c.textContent.replace(/\s+/g, ' ').trim()) };
+    window.shipCnt = o; S.ship = hadShip; U2.mountCell(U2.view.cell('ib'), 'ib', U2.effective('inbox'), false); return out; });
+  ok(sb2.n === '5' && sb2.on.join(',') === '🟥 알라딘 3,🟦 예스24 1,🟩 네이버 1,🛍 우리숍 1', '판매처별 칩 — 숫자가 있으면 진하게(가짜 출고 5건: 알라딘 3·예스24 1·네이버 1 · 그중 우리숍 1)', JSON.stringify(sb2));
   await p.evaluate(() => [...U2.view.cell('ib').querySelectorAll('.u2-ibr')].find((r) => /연결 확정/.test(r.textContent)).querySelector('button').click()); await p.waitForTimeout(1200);
   ok(await p.evaluate(() => U2.cur === 'pending' && S.tab === 'pending' && !!document.querySelector('.u2-cell #main')), "받은편지함 '연결 확정 › 열기' → 지금 웹앱 연결 확정 탭 페이지");
   /* 📖 옛 기능 위젯 설명 */

@@ -13,9 +13,9 @@
   F.QA = [['reg', '📥 등록', '📥 상품 등록 화면 열기 — 숫자 = 진행 중(조회·선택·결정 대기·보류)', 'register'], ['ship', '🚚 오늘 출고', '🚚 오늘 출고 화면 열기 — 숫자 = 남은 일(확인할 주문·출고 준비·송장 인쇄됨·보내는 중) · 열기만(원스톱은 시작하지 않음)', 'ship'], ['pur', '＋ 매입', '＋ 새 매입 기록(매입 탭 「＋ 새 매입 기록」과 같음)', 'purForm']];
   F.qaOn = () => { try { if (typeof ux2On === 'function') return !!ux2On('quick'); } catch (e) {} return true; };
   F.qaCounts = () => {
-    const o = { reg: null, ship: null };
+    const o = { reg: null, ship: null, shipBy: null };
     try { if (typeof S !== 'undefined' && S.regItems) { let n = 0; for (const x of S.regItems.values()) if (['q', 'sel', 'pick', 'hold'].includes(x.stage)) n++; o.reg = n; } } catch (e) {}
-    try { if (typeof S !== 'undefined' && (S.ship || S.shipC) && typeof shipCnt === 'function') { const c = shipCnt().all || {}; o.ship = ['confirm', 'deliv', 'printed', 'sending'].reduce((a, k) => a + (c[k] || 0), 0); } } catch (e) {}
+    try { if (typeof S !== 'undefined' && (S.ship || S.shipC) && typeof shipCnt === 'function') { const C = shipCnt(); const sum = (c) => ['confirm', 'deliv', 'printed', 'sending'].reduce((a, k) => a + ((c || {})[k] || 0), 0); o.ship = sum(C.all); o.shipBy = { al: sum(C.al), y24: sum(C.y24), nv: sum(C.nv), shop: sum(C.shop), cash: sum(C.cash) }; } } catch (e) {} /* (0.4.9) 판매처별(알라딘·예스24·네이버·우리숍·현금) — 지금 웹앱 shipCnt 그대로 */
     return o;
   };
   F.QA_FN = { reg: () => openRegister(), ship: () => openShipHome(), pur: () => { if (typeof S !== 'undefined' && S.pur && !S.pur.loaded && typeof loadPur === 'function') loadPur(); openPurForm(null); } };

@@ -309,3 +309,7 @@ body.u2-dockdrag { user-select: none; cursor: col-resize; } body.u2-dockdrag #sh
 @media (min-width: 1000px) { .u2-edtop { flex-wrap: nowrap; } .u2-edtop > * { flex-shrink: 0; } .u2-edtop .u2-edst { flex: 1 1 auto; flex-shrink: 1; min-width: 60px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } }
 .u2-blkbar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 6px 10px; background: var(--soft); border-bottom: 1px solid var(--line); }
 .u2-blkbar .u2-sub { flex: 1 1 auto; font-size: 12px; }
+/* (0.4.9) 받은편지함 세부 칩(판매처별 출고 남은 일) */
+.u2-ibsub { display: flex; flex-wrap: wrap; gap: 2px 8px; margin-top: 2px; font-size: 11.5px; color: var(--sub); opacity: .75; }
+.u2-ibsub span b { font-size: 11.5px; font-weight: 600; }
+.u2-ibsub span.on { color: var(--ink); opacity: 1; } .u2-ibsub span.on b { color: var(--red); }

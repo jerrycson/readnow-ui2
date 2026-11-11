@@ -31,6 +31,10 @@
     ['따라잡기.할일', '따라잡기 표 ⬜·❌ 줄 수(표를 받았으면)', () => (U2._track ? U2._track.rows.filter((r) => r.state === '⬜' || r.state === '❌').length : null)],
     ['등록.진행', '📥 등록 진행 중(조회·선택·결정 대기·보류 — 지금 웹앱 빠른 작업 숫자와 같은 셈)', () => (U2.find ? U2.find.qaCounts().reg : null)],
     ['출고.남은', '🚚 오늘 출고 남은 일(확인할 주문·출고 준비·송장 인쇄됨·보내는 중)', () => (U2.find ? U2.find.qaCounts().ship : null)],
+    ['출고.알라딘', '🚚 오늘 출고 남은 일 중 🟥 알라딘', () => { const b = U2.find && U2.find.qaCounts().shipBy; return b ? b.al : null; }],
+    ['출고.예스24', '🚚 오늘 출고 남은 일 중 🟦 예스24', () => { const b = U2.find && U2.find.qaCounts().shipBy; return b ? b.y24 : null; }],
+    ['출고.네이버', '🚚 오늘 출고 남은 일 중 🟩 네이버', () => { const b = U2.find && U2.find.qaCounts().shipBy; return b ? b.nv : null; }],
+    ['출고.우리숍', '🚚 오늘 출고 남은 일 중 🛍 우리숍', () => { const b = U2.find && U2.find.qaCounts().shipBy; return b ? b.shop : null; }],
     ['계약.깨짐', '지금 불러온 판에서 깨진 계약 수', () => (U2.adapters && U2.adapters.bad ? U2.adapters.bad.length : null)],
   ];
   const D = (U2.data = { ALIAS: AL, alias: new Map(AL.map((a) => [a[0], a])) });

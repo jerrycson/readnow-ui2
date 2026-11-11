@@ -50,6 +50,25 @@
 
   /* ── 상태 ── */
   U2.site = U2.ls.get('c:ui2_site/main', null) || U2.defaultSite();
+  /* ── 메뉴 틀을 지금 웹앱 탭과 맞춤(11/11 · nav1 새 탭 묶음 🛒 판매처·🔬 연구 등) — 저장하지 않고 보이는 메뉴만 ──
+   *  지금 웹앱 탭 차례(NAV_TABS 또는 #tabs 단추 차례)를 읽어 ① 새 탭은 W.TABS·메뉴에 저절로 더함(그 탭 전체 위젯 페이지) ② 메뉴를 한 번도 저장 안 했으면 차례도 지금 웹앱과 같게
+   *  ③ 저장한 메뉴(관리자가 고친 것)는 차례를 바꾸지 않고 새로 생긴 탭만 옆 탭 뒤에 끼움(일부러 뺀 예전 탭은 다시 안 넣음) · 지금 웹앱에서 없어진 탭 페이지는 메뉴에 그대로(배치를 잃지 않음) */
+  U2.TAB_ICON = { channels: '🛒', research: '🔬' };
+  U2.BASE_TABS = Object.keys(TABS); /* 새 웹앱이 처음부터 아는 탭 — 저장한 메뉴에서 빠져 있으면 일부러 뺀 것으로 보고 다시 넣지 않음 */
+  U2.legacyTabs = () => { let t = null; try { if (typeof NAV_TABS !== 'undefined' && NAV_TABS && NAV_TABS.length) t = NAV_TABS.map((x) => [x[0], String(x[1] || x[0])]); } catch (e) {}
+    if (!t) { const bs = [...document.querySelectorAll('#tabs > button[data-tab]')]; if (bs.length) t = bs.map((b) => [b.dataset.tab, (b.textContent || '').replace(/\s+/g, ' ').trim() || b.dataset.tab]); }
+    return (t || []).filter((x) => x[0] && !U2.EXTRA_TABS[x[0]]); };
+  U2.syncNav = () => {
+    const lt = U2.legacyTabs(); if (!lt.length) return false; let ch = false;
+    lt.forEach(([k, name]) => { if (!TABS[k]) { TABS[k] = [U2.TAB_ICON[k] || '📄', name.replace(/^[\u{1F300}-\u{1FAFF}☀-➿️\s]+/u, '') || k]; ch = true; } });
+    const nav = (U2.site.nav || []).slice(); const has = new Set(nav.map((n) => n.id)); const order = lt.map((x) => x[0]);
+    if (U2.site._navAuto) { /* 저장한 적 없는 메뉴 = 지금 웹앱 차례 그대로 + (설정·할 일 등 나머지는 뒤에 예전 차례로) */
+      const byId = new Map(nav.map((n) => [n.id, n])); const out = order.map((k) => byId.get(k) || { id: k, title: TABS[k][1], icon: TABS[k][0] }); nav.forEach((n) => { if (order.indexOf(n.id) < 0) out.push(n); });
+      if (out.map((n) => n.id).join() !== nav.map((n) => n.id).join()) { U2.site.nav = out; ch = true; } return ch; }
+    order.forEach((k, i) => { if (has.has(k) || U2.BASE_TABS.indexOf(k) >= 0) return; let at = -1; for (let j = i - 1; j >= 0 && at < 0; j--) at = nav.findIndex((n) => n.id === order[j]); nav.splice(at + 1, 0, { id: k, title: TABS[k][1], icon: TABS[k][0], auto: true }); has.add(k); ch = true; });
+    if (ch) U2.site.nav = nav; return ch;
+  };
+  U2.site._navAuto = !(U2.ls.get('c:ui2_site/main', null) || {}).nav;
   U2.pages = {}; U2.prefs = null; U2.cur = null; U2.view = null; U2.edit = null;
   U2.pageForTab = (tab) => { const n = (U2.site.nav || []).find((x) => x.id === tab); if (n) return n.id; for (const [id, p] of Object.entries(U2.pages)) if (Object.values(p.widgets || {}).some((w) => w.type === 'legacy.tab' && w.props && w.props.ref === tab)) return id; return null; };
   U2.permKey = (w) => { if (!w) return ''; const p = w.props || {}; if (w.type === 'legacy.tab') return 'tab:' + p.ref; if (w.type === 'legacy.feat') return 'feat:' + p.feat; if (w.type === 'legacy.screen') return 'screen:' + p.scr; if (w.type === 'legacy.homecard') return 'home:' + p.ref; if (w.type === 'legacy.header') return 'header'; if (w.type === 'legacy.sec') return 'sec:' + p.ref; return ''; };
@@ -147,11 +166,12 @@
   /* ── 불러오기(읽기: 전체 설정 1 + 페이지 1 + 이 기기 1 = 3문서) ── */
   U2.loadPage = async (id) => (await U2.store.get('ui2_pages', id)) || U2.defaultPage(id);
   U2.loadAll = async () => {
-    const s = await U2.store.get('ui2_site', 'main'); if (s) U2.site = Object.assign(U2.defaultSite(), s);
+    const s = await U2.store.get('ui2_site', 'main'); if (s) U2.site = Object.assign(U2.defaultSite(), s); U2.site._navAuto = !(s && s.nav);
     U2.guard.writeOk = U2.site.writeOk || {}; U2.guard.lockAll = !!U2.site.lockAll;
     U2.prefs = (await U2.store.get('ui2_prefs', U2.devKey())) || null;
     const id = U2.cur || 'home'; U2.pages[id] = await U2.loadPage(id);
-    U2.theme.init(U2.site); U2.drawBar(); if (!U2.edit) U2.render({ reset: true });
+    U2.theme.init(U2.site); U2.syncNav(); U2.drawBar(); if (!U2.edit) U2.render({ reset: true });
+    try { U2.move && U2.move.sync(); } catch (e) {} /* 단계 13 이전 상태 맞추기(되돌렸으면 옛 주소로) */
   };
   U2.devKey = () => U2.dev().replace(/[\/\s]/g, '-');
 
@@ -202,7 +222,8 @@
       <button type="button" class="u2-btn" data-m="watch">🩺 충돌 감시 보기</button>
       <button type="button" class="u2-btn" data-m="track">🔁 따라잡기 표</button>
       <button type="button" class="u2-btn" data-m="plan">🗓 전체 일정·진행(설계안 단계 0~13)</button>
-      <a class="u2-btn" href="${esc(U2.base)}">↩ 지금 웹앱으로 가기</a>
+      <button type="button" class="u2-btn" data-m="move">🚚 이전(단계 13 · 옮기기 ㉮)${U2.move && U2.move.cur().state === 'on' ? ' — 옮김' : ''}</button>
+      ${U2.move && U2.move.cur().state === 'on' ? `<a class="u2-btn" data-oldlink href="${esc(U2.move.oldUrl())}">↩ 옛 화면(지금 웹앱 · ${U2.move.daysLeft()}일 남음)</a>` : `<a class="u2-btn" data-oldlink href="${esc(U2.base)}">↩ 지금 웹앱으로 가기</a>`}
       <p class="u2-hint">이 기기: <b>${esc(U2.dev())}</b> · ${adm ? '관리자 기기(공용 배치 게시 가능)' : '관리자 기기 아님(개인 배치만)'} · 지금 웹앱 ${esc(U2.legacy.appVer || '불러오지 못함')} · 새 웹앱 ${esc(U2.ver)}</p></div>`);
     L.querySelectorAll('[data-dkset]').forEach((b) => (b.onclick = () => { const [k, v] = b.dataset.dkset.split(':'); U2.dock.set({ [k]: k === 'w' ? +v : v }); L.remove(); U2.menu(); U2.toast(k === 'keep' ? (v === 'keep' ? '페이지를 바꿔도 옛 화면을 둠' : '페이지를 바꾸면 옛 화면을 닫음') : k === 'pos' ? (v === 'side' ? '옛 화면을 오른쪽 나란히' : '옛 화면을 전체로') : '옛 화면 폭 반반'); }));
     L.querySelectorAll('[data-th]').forEach((b) => (b.onclick = () => { U2.theme.choose(b.dataset.th); L.remove(); U2.render({ reset: true }); }));
@@ -215,9 +236,10 @@
     const vs = (pub) => () => U2.data.saveView(L.querySelector('[data-vname]').value, pub).then((v) => { U2.toast('보기 저장: ' + v.name); L.remove(); }).catch((e) => U2.toast(e.message, 1));
     m('vsave', vs(false)); m('vsavepub', vs(true));
     m('perm', () => { L.remove(); U2.permScreen(); }); m('mine', () => { L.remove(); U2.openEditor('mine'); });
-    m('unmine', (e) => U2.twice(e.currentTarget, '개인 배치 끔(공용 배치로)', async () => { delete U2.prefs.pages[U2.cur]; await U2.savePrefs(); L.remove(); U2.render({ reset: true }); U2.toast('공용 배치로 돌아감'); }));
+    m('unmine', (e) => U2.twice(e.currentTarget, '개인 배치 끔(공용 배치로)', async () => { const pid = U2.cur; const keep = U2.clone(U2.prefs.pages[pid]); delete U2.prefs.pages[pid]; await U2.savePrefs(); L.remove(); U2.render({ reset: true });
+      /* (0.4.6 · 견줌 ⑪) 끈 개인 배치를 10초 안에 되살림 */ U2.toast('공용 배치로 돌아감', false, 0, { act: { label: '↶ 되돌리기', fn: async () => { U2.prefs = U2.prefs || { pages: {} }; U2.prefs.pages = U2.prefs.pages || {}; U2.prefs.pages[pid] = keep; await U2.savePrefs(); if (U2.cur === pid) U2.render({ reset: true }); U2.toast('이 기기 개인 배치를 되살림'); } } }); }));
     m('export', () => U2.exportJson()); m('import', (e) => { const f = e.target.files[0]; if (f) U2.importJson(f).then(() => L.remove()); });
-    m('watch', () => { L.remove(); U2.watchScreen(); }); m('track', () => { L.remove(); U2.trackScreen(); }); m('plan', () => { L.remove(); U2.planScreen(); }); m('check', () => { L.remove(); U2.checkScreen(); });
+    m('watch', () => { L.remove(); U2.watchScreen(); }); m('track', () => { L.remove(); U2.trackScreen(); }); m('plan', () => { L.remove(); U2.planScreen(); }); m('move', () => { L.remove(); U2.moveScreen(); }); m('check', () => { L.remove(); U2.checkScreen(); });
   };
   U2.savePrefs = async () => { U2.prefs = U2.prefs || { pages: {} }; U2.prefs.at = U2.now(); U2.prefs.dev = U2.dev(); await U2.store.set('ui2_prefs', U2.devKey(), U2.prefs); };
 
@@ -231,13 +253,21 @@
   };
   U2.permScreen = () => {
     const adm = U2.isAdmin(); const ok = U2.site.writeOk || {};
-    const rows = [...U2.permKeys()].map(([k, name]) => { const o = ok[k]; return `<tr><td>${esc(name)}</td><td>${o && o.on ? `<b class="u2-t-red">켜짐</b><br><small>${esc(o.by || '')} · ${esc((o.at || '').slice(0, 16).replace('T', ' '))}</small>` : '<span class="u2-sub">꺼짐</span>'}</td><td><button type="button" class="u2-btn ${o && o.on ? '' : 'u2-pri'}" data-k="${esc(k)}" ${adm ? '' : 'disabled'}>${o && o.on ? '끄기' : '켜기'}</button></td></tr>`; }).join('');
-    const L = U2.panel('🔒 쓰기 허락', `<p class="u2-hint">시범 동안 새 웹앱은 <b>읽기만</b> 합니다 — 주문·상품·가격을 바꾸는 단추는 막히고 '지금 웹앱에서' 안내가 나옵니다. 정범님이 아래에서 <b>위젯마다 직접 켠 것만</b> 실제 자료를 바꿀 수 있습니다(켠 기기·시각이 남고 언제든 끔). 새 웹앱 자기 배치(ui2_ 칸)는 늘 저장됩니다.</p>
+    /* (0.4.6) 칸까지 허락 — 켠 위젯도 고른 칸(컬렉션)에만 씀 · 칸 칩: 허락한 칸(진함) + 이 기기에서 쓰려다 막힌 칸(눌러서 더함) · 칸 이름 직접 더하기 */
+    const colsOf = (k) => { const o = ok[k] || {}; return [...new Set([].concat(o.cols || [], U2.guard.wanted(k)))]; };
+    const chips = (k) => { const o = ok[k] || {}; const cs = colsOf(k); const al = new Set(o.cols || []);
+      return `<div class="u2-row u2-pcols" data-pc="${esc(k)}">${cs.map((c) => `<button type="button" class="u2-chip ${al.has(c) ? 'u2-pri' : ''}" data-col="${esc(c)}" aria-pressed="${al.has(c)}" ${adm && o.on ? '' : 'disabled'} title="${al.has(c) ? '허락한 칸 — 누르면 뺌' : '쓰려다 막힌 칸 — 누르면 허락'}">${al.has(c) ? '✓ ' : '＋ '}${esc(c)}</button>`).join('') || '<span class="u2-sub">칸 없음 — 켜면 아무 칸에도 못 씀(위젯을 한 번 써 보면 쓰려던 칸이 여기 뜸)</span>'}${adm && o.on ? `<input class="u2-in" style="width:130px" data-addcol placeholder="칸 이름" aria-label="허락할 칸 이름"><button type="button" class="u2-btn" data-addbtn>칸 더하기</button>` : ''}</div>`; };
+    const rows = [...U2.permKeys()].map(([k, name]) => { const o = ok[k]; return `<tr><td>${esc(name)}${chips(k)}</td><td>${o && o.on ? `<b class="u2-t-red">켜짐</b><br><small>${esc(o.by || '')} · ${esc((o.at || '').slice(0, 16).replace('T', ' '))}</small><br><small>칸 ${(o.cols || []).length}개</small>` : '<span class="u2-sub">꺼짐</span>'}</td><td><button type="button" class="u2-btn ${o && o.on ? '' : 'u2-pri'}" data-k="${esc(k)}" ${adm ? '' : 'disabled'}>${o && o.on ? '끄기' : '켜기'}</button></td></tr>`; }).join('');
+    const L = U2.panel('🔒 쓰기 허락', `<p class="u2-hint">시범 동안 새 웹앱은 <b>읽기만</b> 합니다 — 주문·상품·가격을 바꾸는 단추는 막히고 '지금 웹앱에서' 안내가 나옵니다. 정범님이 아래에서 <b>위젯마다 직접 켠 것만</b>, 그것도 <b>고른 칸(컬렉션)에만</b> 실제 자료를 바꿀 수 있습니다(켠 기기·시각이 남고 언제든 끔). 칸 칩: ✓ 허락한 칸 · ＋ 이 기기에서 쓰려다 막힌 칸. 새 웹앱 자기 배치(ui2_ 칸)는 늘 저장됩니다.</p>
       ${adm ? '' : '<p class="u2-banner u2-warn">이 기기는 관리자 기기가 아니라 볼 수만 있습니다.</p>'}
       <label class="u2-sw"><input type="checkbox" data-lockall ${U2.site.lockAll ? 'checked' : ''} ${adm ? '' : 'disabled'}><span></span>비상: 허락한 것까지 모두 막기</label>
-      <div class="u2-tblw"><table class="u2-tbl u2-perm"><thead><tr><th>위젯</th><th>지금</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>
-      <p class="u2-hint">막은 쓰기: 이 기기에서 ${U2.guard.blocked.length}번(내용 없이 칸 이름만 ui2_blocked에 기록)</p>`);
-    L.querySelectorAll('[data-k]').forEach((b) => (b.onclick = () => { const k = b.dataset.k; const on = !(ok[k] && ok[k].on); const run = async () => { const v = { on, by: U2.dev(), at: U2.now() }; U2.site.writeOk = Object.assign({}, U2.site.writeOk, { [k]: v }); U2.site.writeLog = (U2.site.writeLog || []).concat([Object.assign({ k }, v)]).slice(-50); U2.guard.writeOk = U2.site.writeOk; await U2.store.set('ui2_site', 'main', { writeOk: U2.site.writeOk, writeLog: U2.site.writeLog }, true); L.remove(); U2.drawBar(); U2.permScreen(); U2.toast(on ? '쓰기 켬: ' + k : '쓰기 끔: ' + k); }; if (on) U2.twice(b, '쓰기 켬 (' + k + ')', run); else run(); }));
+      <div class="u2-tblw"><table class="u2-tbl u2-perm"><thead><tr><th>위젯 · 칸</th><th>지금</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>
+      <p class="u2-hint">막은 쓰기: 이 기기에서 ${U2.guard.blocked.length}번(내용 없이 칸 이름만 ui2_blocked에 기록) · 그중 켠 위젯이 허락 밖 칸에 ${U2.guard.blocked.filter((b) => b.out).length}번</p>`);
+    const save = async (k, v, msg) => { U2.site.writeOk = Object.assign({}, U2.site.writeOk, { [k]: v }); U2.site.writeLog = (U2.site.writeLog || []).concat([Object.assign({ k }, v)]).slice(-50); U2.guard.writeOk = U2.site.writeOk; await U2.store.set('ui2_site', 'main', { writeOk: U2.site.writeOk, writeLog: U2.site.writeLog }, true); L.remove(); U2.drawBar(); U2.permScreen(); U2.toast(msg); };
+    L.querySelectorAll('[data-k]').forEach((b) => (b.onclick = () => { const k = b.dataset.k; const on = !(ok[k] && ok[k].on); const cols = on ? colsOf(k) : (ok[k] && ok[k].cols) || []; const run = () => save(k, { on, by: U2.dev(), at: U2.now(), cols }, (on ? '쓰기 켬: ' : '쓰기 끔: ') + k + (on ? ' · 칸 ' + (cols.join(', ') || '없음') : '')); if (on) U2.twice(b, '쓰기 켬 (' + k + ' · 칸 ' + (cols.join(', ') || '없음') + ')', run); else run(); }));
+    L.querySelectorAll('.u2-pcols').forEach((r) => { const k = r.dataset.pc; const o = () => Object.assign({}, ok[k] || {}); const put = (cols, msg) => save(k, Object.assign(o(), { cols, by: U2.dev(), at: U2.now() }), msg);
+      r.querySelectorAll('[data-col]').forEach((c) => (c.onclick = () => { const col = c.dataset.col; const cur = (ok[k] && ok[k].cols) || []; if (cur.indexOf(col) >= 0) put(cur.filter((x) => x !== col), '칸 뺌: ' + col + ' (' + k + ')'); else U2.twice(c, '칸 허락 ' + col, () => put(cur.concat([col]), '칸 허락: ' + col + ' (' + k + ')')); }));
+      const ab = r.querySelector('[data-addbtn]'); if (ab) ab.onclick = () => { const col = (r.querySelector('[data-addcol]').value || '').trim(); if (!/^[\w:-]{2,60}$/.test(col) || /^ui2_/.test(col)) return U2.toast('칸 이름은 영문·숫자·_ 2~60자(ui2_ 칸은 늘 허락)', true); const cur = (ok[k] && ok[k].cols) || []; if (cur.indexOf(col) >= 0) return U2.toast('이미 허락한 칸'); U2.twice(ab, '칸 허락 ' + col, () => put(cur.concat([col]), '칸 허락: ' + col + ' (' + k + ')')); }; });
     const la = L.querySelector('[data-lockall]'); if (la) la.onchange = async () => { U2.site.lockAll = la.checked; U2.guard.lockAll = la.checked; await U2.store.set('ui2_site', 'main', { lockAll: la.checked }, true); U2.drawBar(); U2.toast(la.checked ? '모두 막음' : '허락한 것은 다시 통과'); };
   };
   U2.watchScreen = () => { const r = U2.guard.report(); U2.panel('🩺 충돌 감시', `<div class="u2-tblw"><table class="u2-tbl"><tbody>${[['쓰는 기억(힙)', r.heapMB == null ? '이 브라우저는 못 잼' : r.heapMB + 'MB'], ['긴 멈춤(200ms 넘음)', r.longTasks], ['살아 있는 반복 타이머', r.intervals], ['겹친 id', r.dupIds], ['막은 쓰기', r.blockedWrites], ['rn2- 밖 새 기기 저장 열쇠', (r.newKeys || []).join(', ') || '없음'], ['불러오기 걸린 시간', (U2.legacy.loadMs || '-') + 'ms'], ['배치 읽은 문서', U2.stat.reads]].map(([a, b]) => `<tr><td>${esc(a)}</td><td>${esc(b)}</td></tr>`).join('')}</tbody></table></div><p class="u2-hint">5분마다 ui2_perf/기기_날짜 한 문서에 덮어 씀</p>`); };
@@ -291,12 +321,12 @@
     try { history.replaceState({ u2: 1, p: U2.cur }, '', location.href); } catch (e) {}
     U2.render({ reset: true });
     U2.banner('u2-loading', '⏳ 지금 웹앱 기능을 불러오는 중…', 'u2-info');
-    U2.on('safe', (s) => { U2.banner('u2-loading', ''); U2.banner('u2-safe', `⚠ <b>안전 모드</b> — 지금 웹앱 기능을 불러오지 못했습니다: ${esc(s.why)}<br>꾸미기 위젯은 그대로 쓰고, 기능은 <a href="${esc(U2.base)}">지금 웹앱에서 열기 ›</a>`, 'u2-warn'); U2.render({ reset: true }); });
+    U2.on('safe', (s) => { U2.banner('u2-loading', ''); U2.banner('u2-safe', `⚠ <b>안전 모드</b> — 지금 웹앱 기능을 불러오지 못했습니다: ${esc(s.why)}<br>꾸미기 위젯은 그대로 쓰고, 기능은 <a href="${esc(U2.move && U2.move.cur().state === 'on' ? U2.move.oldUrl() : U2.base)}">지금 웹앱에서 열기 ›</a>`, 'u2-warn'); U2.render({ reset: true }); });
     U2.loadTrack = async () => { for (const u of ['https://raw.githubusercontent.com/jerrycson/readnow-ui2/track/TRACK.json', 'TRACK.json']) { try { const r = await fetch(u, { cache: 'no-cache' }); if (r.ok) { U2._track = await r.json(); return U2._track; } } catch (e) {} } return null; };
     U2.on('safe', () => U2.preload());
     U2.on('legacyLoaded', () => { U2.preload(); setTimeout(() => U2.loadTrack().then(() => U2.data && U2.data.bump()), 3000);
       U2.banner('u2-loading', ''); U2.render({ reset: true }); setInterval(() => U2.legacy.checkNew(), U2.CFG.verCheckMin * 60e3); document.addEventListener('visibilitychange', () => { if (!document.hidden) U2.legacy.checkNew(); }); });
-    U2.on('legacyShell', () => U2.render({ reset: true }));
+    U2.on('legacyShell', () => { try { if (U2.syncNav()) U2.drawBar(); } catch (e) {} U2.render({ reset: true }); });
     U2.on('auth', (u) => { if (u) U2.loadAll(); });
     U2.on('newVer', (v) => { const b = U2.banner('u2-newver', `🆕 ${v.app ? '지금 웹앱 새 판 ' + esc(v.app) : ''}${v.app && v.u2 ? ' · ' : ''}${v.u2 ? '새 웹앱 새 판 ' + esc(v.u2) : ''} — <button type="button" class="u2-btn u2-pri" data-re>눌러서 다시 열기</button>`, 'u2-info'); b.querySelector('[data-re]').onclick = () => location.reload(); });
     /* 두 웹앱을 함께 열면 알림(R3 ★) — 지금 웹앱은 손대지 않으므로, 새 웹앱끼리 + 지금 웹앱 서비스 워커 저장본 이름표로 짐작 */

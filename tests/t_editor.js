@@ -68,6 +68,12 @@ const box = async (p, id) => p.locator(`.u2-cell[data-wid="${id}"]`).boundingBox
   /* 지우기·되돌림·복사 */
   await p.focus(`.u2-cell[data-wid="${C}"]`); await p.keyboard.press('Delete'); ok((await items(p)).length === 2, 'Delete로 지움');
   await p.keyboard.press('Control+z'); ok((await items(p)).length === 3, 'Ctrl+Z로 지운 위젯이 돌아옴');
+  /* (0.4.6 · 견줌 ⑪) 지운 알림의 '↶ 되돌리기' 단추 — 한 번 누르면 돌아옴 · 그 뒤 다른 것을 고쳤으면 두 걸음 되돌리지 않음 */
+  await p.focus(`.u2-cell[data-wid="${C}"]`); await p.keyboard.press('Delete'); await p.waitForTimeout(100);
+  const ub = '#u2-toast .u2-note:last-child .u2-nact'; ok(/되돌리기/.test(await p.textContent(ub)), "지우면 알림에 '↶ 되돌리기' 단추", (await p.textContent('#u2-toast .u2-note:last-child')).trim());
+  await p.click(ub); ok((await items(p)).length === 3, "알림 '되돌리기'를 누르면 지운 위젯이 돌아옴");
+  await p.focus(`.u2-cell[data-wid="${C}"]`); await p.keyboard.press('Delete'); await p.waitForTimeout(100); await p.keyboard.press('Control+z'); await p.waitForTimeout(100);
+  const n3 = (await items(p)).length; await p.click(ub).catch(() => {}); ok(n3 === 3 && (await items(p)).length === 3, '이미 Ctrl+Z로 되돌렸으면 알림 단추가 한 걸음 더 되돌리지 않음');
   await p.click(`.u2-cell[data-wid="${A}"]`); await p.keyboard.press('Control+c'); await p.keyboard.press('Control+v'); ok((await items(p)).length === 4, 'Ctrl+C / Ctrl+V 복사');
   /* / 빠른 넣기 */
   await p.click('.u2-grid', { position: { x: 5, y: 2 } }).catch(() => {}); await p.keyboard.press('Escape');

@@ -193,7 +193,8 @@
   Editor.prototype.remove = function (ids) {
     const E = this; ids = [...ids]; if (!ids.length) return;
     E.change(() => { ids.forEach((id) => { delete E.draft.widgets[id]; Object.keys(E.draft.layouts).forEach((k) => { if (E.draft.layouts[k]) E.draft.layouts[k] = E.draft.layouts[k].filter((i) => i.id !== id); }); E.sel.delete(id); }); });
-    U2.toast('지움 ' + ids.length + '개 — Ctrl+Z로 되돌림');
+    /* (0.4.6 · 성공 사례 견줌 ⑪) 지운 뒤 알림에 '되돌리기' 단추(10초) — Gmail '실행 취소'처럼 · Ctrl+Z와 같은 한 걸음 */
+    const n0 = E.nPush, h0 = E.hist.length; U2.toast('지움 ' + ids.length + '개', false, 0, { act: { label: '↶ 되돌리기', fn: () => { if (U2.edit !== E) return U2.toast('편집기를 닫아 되돌릴 수 없음 — 게시 기록에서', true); if (E.nPush !== n0 || E.hist.length !== h0) return U2.toast('그 뒤에 다른 것을 고쳐서 — Ctrl+Z로 한 걸음씩', true); E.undo(); U2.toast('되돌림 — 지운 ' + ids.length + '개가 돌아옴'); } } });
   };
   Editor.prototype.copy = function () { const E = this; const ws = [...E.sel].map((id) => ({ w: E.draft.widgets[id], it: E.cur.find((i) => i.id === id) })).filter((x) => x.w); if (!ws.length) return; U2.ls.set('clip', ws); U2.toast('복사함 ' + ws.length + '개'); };
   Editor.prototype.paste = function () {

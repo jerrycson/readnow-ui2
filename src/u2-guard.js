@@ -2,6 +2,7 @@
  * 시범 동안 새 웹앱이 실제 자료(주문·상품·가격…)를 바꾸지 못하게 Firestore·Storage 쓰기 길목을 감쌈.
  *  - 칸 이름이 ui2_ 로 시작하면 늘 통과(새 웹앱 배치·기록)
  *  - 아니면 막음. 단 정범님이 '쓰기 허락' 화면에서 직접 켠 위젯(ui2_site/main.writeOk)이 방금(U2.CFG.ctxMs 안) 부른 쓰기는 통과
+ *    (0.4.6) 그것도 그 위젯에 허락한 칸(writeOk[k].cols — 컬렉션 이름)에 쓸 때만 · 칸 목록이 없으면(예전 기록) 아무 칸도 안 됨(안전 쪽) · 막힌 칸은 허락 화면에 '쓰려던 칸'으로 보임
  *  - '어느 위젯이 불렀나' 모르면 막음(안전 쪽)
  *  - 막은 쓰기는 기억해 두었다가 ui2_blocked/<기기>_<날짜> 한 문서에 모아 씀(무엇을·어느 위젯·언제 — 자료 내용은 적지 않음 = 개인 정보 없음)
  * 감싸는 곳: DocumentReference.set/update/delete · CollectionReference.add · WriteBatch.set/update/delete/commit · Transaction.set/update/delete
@@ -17,6 +18,10 @@
   G.BG = ['y24oScan', 'y24oAuto', 'aoInfoBackfill', 'Backfill', 'autoSched', 'bcObsSave', 'heartbeat', 'Heartbeat', 'homeSumWrite', 'frwAlPub', 'chkSeed'];
   /* 지금 웹앱이 뒤에서만 쓰는 문서(이름 없는 함수·거래 안에서 써서 함수 이름으로 못 잡는 것) — 위젯 몫으로 치지 않음 */
   G.BG_DOCS = [/^app_summary\//, /^app_settings\/(y24_link|y24_ord_state|purchase|bench_obs)$/, /^prd_price_batches\//, /^prd_system\//];
+  /* (0.4.6) 칸까지 허락 — 켠 위젯이라도 허락한 칸(컬렉션)에만 */
+  G.colOk = (k, col) => { const o = G.writeOk[k]; return !!(o && o.on && Array.isArray(o.cols) && o.cols.indexOf(col) >= 0); };
+  /* 그 위젯이 쓰려다 막힌 칸(이 기기 기억) — 허락 화면에서 고를 거리 · '뒤에서'·모르는 위젯 몫은 넣지 않음 */
+  G.wanted = (k) => [...new Set(G.blocked.filter((b) => b.by === k && b.col && !/^\(/.test(b.col)).map((b) => b.col))];
   /* 위젯이 무엇을 누르면 그 위젯 종류를 잠깐 둠 */
   U2.setCtx = (k) => { G.ctx = k; G.ctxAt = Date.now(); };
   G.decide = (path, op) => {
@@ -25,8 +30,8 @@
     /* (0.4.5) 허락한 위젯을 누른 1.5초 사이에 지금 웹앱이 '뒤에서' 하는 쓰기(예스24 응답 풀기·매입 정보 채우기 등 — 시험 t_perm이 1.78.47x에서 찾음)가
      *  그 위젯 몫으로 새던 것 → ① 사람이 실제로 누른 지(G.userAt) 1.5초 안일 때만 위젯 몫 ② 뒤에서 도는 함수(G.BG)가 부른 쓰기는 위젯 몫이 아님(막음 · 감시에 '뒤에서' 표시) */
     if (k && G.writeOk[k] && G.writeOk[k].on) { if (Date.now() - (G.userAt || 0) >= ms) k = null; else { try { const st = new Error().stack || ''; const hit = G.BG.find((n) => st.indexOf(n) >= 0) || (G.BG_DOCS.some((re) => re.test(String(path))) ? String(path).split('/').slice(0, 2).join('/') : ''); if (hit) { bg = hit; k = null; } } catch (e) {} } }
-    if (!G.lockAll && k && G.writeOk[k] && G.writeOk[k].on) { G.allowed++; return true; }
-    G.blocked.push({ at: Date.now(), col: colOf(path), op, by: k || (bg ? '뒤에서:' + bg : '') }); if (G.blocked.length > 500) G.blocked.splice(0, G.blocked.length - 500);
+    let out = 0; if (!G.lockAll && k && G.writeOk[k] && G.writeOk[k].on) { if (G.colOk(k, colOf(path))) { G.allowed++; return true; } out = 1; }
+    G.blocked.push({ at: Date.now(), col: colOf(path), op, by: k || (bg ? '뒤에서:' + bg : ''), ...(out ? { out: 1 } : {}) }); if (G.blocked.length > 500) G.blocked.splice(0, G.blocked.length - 500);
     G._dirty = true;
     /* 사람이 방금 누른 것일 때만 알림(웹앱이 뒤에서 하는 쓰기마다 알리면 시끄러움) */
     if (Date.now() - (G.userAt || 0) < 2000 && Date.now() - (G.toastAt || 0) > 3000) { G.toastAt = Date.now(); try { U2.toast('🔒 시범 중 — 이 일은 지금 웹앱에서 해 주세요 (' + colOf(path) + ')', true, 3500); } catch (e) {} }
@@ -70,7 +75,7 @@
   G.flush = async () => {
     if (!G._dirty || !U2.store) return; G._dirty = false;
     const id = (U2.dev() + '_' + U2.today()).replace(/[\/\s]/g, '-');
-    const list = G.blocked.slice(-200).map((b) => ({ at: b.at, col: b.col, op: b.op, by: b.by }));
+    const list = G.blocked.slice(-200).map((b) => ({ at: b.at, col: b.col, op: b.op, by: b.by, ...(b.out ? { out: 1 } : {}) }));
     try { await U2.store.set('ui2_blocked', id, { dev: U2.dev(), day: U2.today(), n: G.blocked.length, last: list, at: U2.now() }); } catch (e) {}
   };
 

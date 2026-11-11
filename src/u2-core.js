@@ -80,11 +80,21 @@
     b.addEventListener('click', (e) => { if (e.target === b) done(false); });
     setTimeout(() => b.querySelector('[data-ok]').focus(), 0);
   });
-  /* ── 두 번 누르기 확인: 첫 번째 = 단추 글이 '한 번 더 누르면 …'으로 바뀜 (4초 안에 다시) ── */
-  U2.twice = (btn, label, fn) => {
-    if (btn._u2arm && Date.now() - btn._u2arm < 4000) { btn._u2arm = 0; btn.classList.remove('u2-armed'); if (btn._u2txt != null) btn.innerHTML = btn._u2txt; return fn(); }
-    btn._u2txt = btn.innerHTML; btn._u2arm = Date.now(); btn.classList.add('u2-armed'); btn.textContent = '한 번 더 누르면 ' + label;
-    clearTimeout(btn._u2h); btn._u2h = setTimeout(() => { btn._u2arm = 0; btn.classList.remove('u2-armed'); if (btn._u2txt != null) btn.innerHTML = btn._u2txt; }, 4000);
+  /* ── 두 번 누르기 확인: 첫 번째 = 단추 글이 '한 번 더 누르면 …'으로 바뀜 (4초 안에 다시) ──
+   *  (0.4.10 · 성공 사례 견줌 '확인 방식 하나로' — 지금 웹앱 W11과 같은 규칙) 0.4초 안 더블클릭의 두 번째 누름은 무시(손이 미끄러진 더블클릭·두 번 톡이 곧바로 실행되지 않게)
+   *  더블클릭인지는 브라우저가 세는 누름 횟수(click.detail ≥ 2)로 봄 — 천천히 두 번 누른 것·키보드(Enter)는 그대로
+   *  opt.undo(fn) — 한 뒤 알림에 '↶ 되돌리기'(10초) · opt.done — 한 뒤 알림 글 */
+  U2.TWICE_GAP = 400; U2._clk = { at: 0, n: 0 };
+  document.addEventListener('click', (e) => { U2._clk = { at: Date.now(), n: e.detail || 0 }; }, true);
+  U2.isDbl = () => Date.now() - U2._clk.at < 60 && U2._clk.n >= 2;
+  U2.twice = (btn, label, fn, opt) => {
+    opt = opt || {};
+    if (btn._u2arm && Date.now() - btn._u2arm < U2.TWICE_GAP && U2.isDbl()) { btn.classList.add('u2-dblno'); setTimeout(() => btn.classList.remove('u2-dblno'), 500); return; } /* 더블클릭의 두 번째 — 무장 상태 그대로 */
+    if (btn._u2arm && Date.now() - btn._u2arm < 4000) { btn._u2arm = 0; clearTimeout(btn._u2h); btn.classList.remove('u2-armed'); btn.removeAttribute('aria-live'); if (btn._u2txt != null) btn.innerHTML = btn._u2txt;
+      const after = () => { if (typeof opt.undo === 'function') U2.toast(opt.done || label + ' — 했음', false, 0, { act: { label: '↶ 되돌리기', fn: opt.undo } }); else if (opt.done) U2.toast(opt.done); };
+      let r; try { r = fn(); } catch (e) { U2.toast(U2.errKo(e), 1); return; } if (r && typeof r.then === 'function') return r.then((v) => { if (v !== false) after(); return v; }, (e) => U2.toast(U2.errKo(e), 1)); if (r !== false) after(); return r; }
+    btn._u2txt = btn.innerHTML; btn._u2arm = Date.now(); btn.classList.add('u2-armed'); btn.setAttribute('aria-live', 'polite'); btn.textContent = '한 번 더 누르면 ' + label;
+    clearTimeout(btn._u2h); btn._u2h = setTimeout(() => { btn._u2arm = 0; btn.classList.remove('u2-armed'); btn.removeAttribute('aria-live'); if (btn._u2txt != null) btn.innerHTML = btn._u2txt; }, 4000);
   };
 
   /* ── 저장소: Firestore(지금 웹앱이 연 것 · 칸 이름 ui2_*만) — 못 쓰면 기기에만(rn2-c:) ──

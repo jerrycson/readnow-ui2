@@ -89,6 +89,7 @@
   };
   F.search = (q, scope) => {
     scope = scope || 'all'; const rows = [];
+    const code = F.isbn(q); if (code && (scope === 'all' || scope === 'data')) rows.push({ kind: 'isbn', icon: '📥', title: '등록에 넣기 — ' + code, sub: '📥 등록 화면을 열고 「넣고 조회」 칸에 넣어 둠 · Enter = 조회(지금 웹앱 등록 그대로)', s: 10, go: () => F.regPut(code) });
     if (String(q || '').trim() && (scope === 'all' || scope === 'data')) rows.push({ kind: 'data', icon: '👥', title: `‘${String(q).trim()}’ 자료에서 찾기`, sub: '고객·전화 · 주문번호 · 책 제목·ISBN — 지금 웹앱 검색 그대로(결과 위 범위 칩)', s: 9, go: () => F.dataGo(String(q).trim()) });
     if (scope === 'data') return rows;
     const per = { page: 6, cmd: 4, feat: 10, scr: 6, wid: 6 }; const by = {};
@@ -108,13 +109,13 @@
     let scope = U2.ls.get('findScope', 'all') || 'all'; if (!F.SCOPES.some((s) => s[0] === scope)) scope = 'all'; let sel = 0; let rows = [];
     L.innerHTML = `<div class="u2-findbox"><div class="u2-findtop"><input class="u2-in" type="search" placeholder="페이지·기능·화면·위젯·고객·책·주문번호 찾기" aria-label="찾을 글" autocomplete="off"><button type="button" class="u2-btn" data-x aria-label="닫기">✕</button></div>
       <div class="u2-findsc" role="group" aria-label="찾는 곳">${F.SCOPES.map(([k, l]) => `<button type="button" class="u2-chip" data-sc="${k}" aria-pressed="${k === scope}">${esc(l)}</button>`).join('')}</div>
-      <div class="u2-findres" role="listbox"></div><div class="u2-sub u2-findhelp">↑↓ 고르기 · Enter 열기 · Esc 닫기 · 초성도 됨(ㅇㄴㅊㄱ = 오늘 출고) · 찾는 곳은 이 기기에 기억</div></div>`;
+      <div class="u2-findres" role="listbox"></div><div class="u2-sub u2-findhelp">↑↓ 고르기 · Enter 열기 · Esc 닫기 · 초성도 됨(ㅇㄴㅊㄱ = 오늘 출고) · 📷 바코드를 찍으면 어느 페이지든 여기로 · 찾는 곳은 이 기기에 기억</div></div>`;
     document.body.appendChild(L); const inp = L.querySelector('input'); const res = L.querySelector('.u2-findres');
     const close = () => { L.remove(); document.removeEventListener('keydown', kd, true); }; L._close = close;
-    const run = (r) => { if (!r) return; close(); U2.ls.set('findRecent', [r.title].concat((U2.ls.get('findRecent', []) || []).filter((x) => x !== r.title)).slice(0, 8)); try { r.go(); } catch (e) { U2.toast('열지 못함: ' + U2.errKo(e), 1); } };
+    const run = (r) => { if (!r) return; close(); if (r.kind !== 'isbn' && r.kind !== 'data') U2.ls.set('findRecent', [r.title].concat((U2.ls.get('findRecent', []) || []).filter((x) => x !== r.title)).slice(0, 8)); try { r.go(); } catch (e) { U2.toast('열지 못함: ' + U2.errKo(e), 1); } };
     const draw = () => {
       const q = inp.value; rows = F.search(q, scope);
-      const KN = { data: '👥 자료', page: '📄 페이지', cmd: '⚡ 명령(새 웹앱)', feat: '🔧 기능(지금 웹앱 🔍 기능 찾기)', scr: '🪟 지금 웹앱 화면', wid: '🧱 이 웹앱 위젯' };
+      const KN = { isbn: '📷 ISBN — 스캔·입력한 책', data: '👥 자료', page: '📄 페이지', cmd: '⚡ 명령(새 웹앱)', feat: '🔧 기능(지금 웹앱 🔍 기능 찾기)', scr: '🪟 지금 웹앱 화면', wid: '🧱 이 웹앱 위젯' };
       const pins = F.pins();
       if (!q.trim()) { /* (0.4.9) 빈 칸 = 📌 고정한 것 → 최근 연 것(Linear·Notion 즐겨찾기처럼 — 자주 여는 것은 Ctrl+K 한 번 + 누름 한 번) */
         const rec = U2.ls.get('findRecent', []) || []; const all = F.sources(); const pick = (t) => all.find((x) => x.title === t);
@@ -122,7 +123,7 @@
         rows = pp.length || rr.length ? pp.concat(rr) : rows.slice(0, 12); }
       rows.forEach((r) => { if (!r._sec) r._sec = KN[r.kind] || ''; });
       sel = Math.min(sel, Math.max(0, rows.length - 1)); let lastS = null;
-      res.innerHTML = rows.length ? rows.map((r, i) => { const h = r._sec !== lastS ? `<div class="u2-findk2">${esc(r._sec)}</div>` : ''; lastS = r._sec; const pin = r.kind !== 'data' ? `<button type="button" class="u2-findpin ${pins.indexOf(r.title) >= 0 ? 'on' : ''}" data-pin="${i}" aria-pressed="${pins.indexOf(r.title) >= 0}" aria-label="${pins.indexOf(r.title) >= 0 ? '고정 풀기' : '📌 고정(빈 칸일 때 맨 위)'}" title="${pins.indexOf(r.title) >= 0 ? '고정 풀기' : '📌 고정 — 찾기 칸이 비었을 때 맨 위에'}">📌</button>` : ''; return h + `<div class="u2-findwrap"><button type="button" class="u2-findrow ${i === sel ? 'on' : ''}" role="option" aria-selected="${i === sel}" data-i="${i}"><span class="u2-findi">${esc(r.icon)}</span><span class="u2-findt">${esc(r.title)}<small class="u2-sub">${esc(r.sub || '')}</small></span></button>${pin}</div>`; }).join('')
+      res.innerHTML = rows.length ? rows.map((r, i) => { const h = r._sec !== lastS ? `<div class="u2-findk2">${esc(r._sec)}</div>` : ''; lastS = r._sec; const pin = r.kind !== 'data' && r.kind !== 'isbn' ? `<button type="button" class="u2-findpin ${pins.indexOf(r.title) >= 0 ? 'on' : ''}" data-pin="${i}" aria-pressed="${pins.indexOf(r.title) >= 0}" aria-label="${pins.indexOf(r.title) >= 0 ? '고정 풀기' : '📌 고정(빈 칸일 때 맨 위)'}" title="${pins.indexOf(r.title) >= 0 ? '고정 풀기' : '📌 고정 — 찾기 칸이 비었을 때 맨 위에'}">📌</button>` : ''; return h + `<div class="u2-findwrap"><button type="button" class="u2-findrow ${i === sel ? 'on' : ''}" role="option" aria-selected="${i === sel}" data-i="${i}"><span class="u2-findi">${esc(r.icon)}</span><span class="u2-findt">${esc(r.title)}<small class="u2-sub">${esc(r.sub || '')}</small></span></button>${pin}</div>`; }).join('')
         : `<div class="u2-empty">‘${esc(q)}’ — 여기엔 없음${scope !== 'all' ? ' · <button type="button" class="u2-btn" data-allsc>🌐 전체에서 찾기</button>' : ''}</div>`;
       res.querySelectorAll('[data-i]').forEach((b) => (b.onclick = () => run(rows[+b.dataset.i])));
       res.querySelectorAll('[data-pin]').forEach((b) => (b.onclick = (e) => { e.stopPropagation(); const r = rows[+b.dataset.pin]; if (!r) return; const on = F.pinToggle(r.title); U2.toast(on ? '📌 고정: ' + r.title + ' — 찾기 칸이 비었을 때 맨 위에' : '고정 풀기: ' + r.title); draw(); inp.focus(); }));
@@ -137,6 +138,32 @@
     document.addEventListener('keydown', kd, true);
     if (q0) inp.value = q0; draw(); setTimeout(() => inp.focus(), 0); return L;
   };
+  /* ── 📷 스캔이 첫 동작(0.4.10 · 성공 사례 견줌 '스캔(ISBN)이 첫 동작' — Amazon 판매자 앱·Bibliopolis처럼) ──
+   *  어느 페이지든 입력 칸 밖에서 바코드 스캐너로 찍으면(글자 사이 45ms 밑 · ISBN 10/13자리) 🔎 찾기가 그 ISBN으로 열리고 맨 위 = 📥 등록에 넣기 · 그 아래 = 우리 자료에서 찾기
+   *  등록 화면(옛 화면)이 열려 있으면 손대지 않음 — 지금 웹앱 등록의 스캐너 처리 그대로 · 입력 칸 안에서 찍은 것도 그대로(그 칸 몫) · 편집 중엔 쉼
+   *  읽기만: 등록 칸에 넣어 두기만 하고 조회(쓰기)는 사람이 Enter */
+  F.isbn = (q) => { const t = String(q || '').trim(); if (!t || t.length > 24 || /[^0-9Xx\-\s]/.test(t)) return null;
+    try { const RG = window.ReadnowRegister; if (RG && RG.normCode) return RG.normCode(t); } catch (e) {}
+    let d = t.replace(/[-\s]/g, '').toUpperCase(); if (/^\d{18}$/.test(d)) d = d.slice(0, 13); if (/^\d{12}$/.test(d)) d = '0' + d; return /^(\d{9}[\dX]|\d{13})$/.test(d) ? d : null; }; /* 지금 웹앱 공용 파일 normCode와 같은 규칙(그 파일이 없을 때만 이 줄) */
+  F.regPut = async (code) => {
+    const L = U2.legacy; if (!L || !L.ready || U2.safe) return U2.toast('지금 웹앱을 아직 불러오지 못함 — 잠시 뒤 다시', 1);
+    L.userAt = performance.now(); U2.setCtx('screen:register');
+    try { if (typeof S !== 'undefined') S._regDraft = code; openRegister(); } catch (e) { return U2.toast('등록 화면을 열지 못함: ' + U2.errKo(e), 1); }
+    for (let i = 0; i < 40; i++) { const inp = document.getElementById('rg_in'); if (inp && inp.isConnected) { if (!inp.value) inp.value = code; try { inp.focus({ preventScroll: true }); } catch (e) {} U2.toast('📥 ' + code + ' — 등록 「넣고 조회」 칸에 넣음 · Enter = 조회'); return; } await new Promise((r) => setTimeout(r, 100)); }
+  };
+  F.SCAN_MS = 45; F._sb = { s: '', t: 0, n: 0, first: 0 };
+  F.scanIdle = () => { if (U2.edit) return false; const sh = document.getElementById('sheet'); if (sh && sh.classList.contains('on')) return false; if (document.getElementById('u2-find') || document.getElementById('u2-ask')) return false;
+    const a = document.activeElement; return !(a && (/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName) || a.isContentEditable)); };
+  F.scanFire = (why) => { const B = F._sb; const code = F.isbn(B.s); const avg = B.n > 1 ? (B.t - B.first) / (B.n - 1) : 999; F._sb = { s: '', t: 0, n: 0, first: 0 }; clearTimeout(F._st);
+    if (!code || B.n < 10 || avg > F.SCAN_MS || !F.scanIdle()) return false; F.lastScan = { code, why, at: Date.now() }; F.open(code); return true; };
+  window.addEventListener('keydown', (e) => {
+    if (e.ctrlKey || e.metaKey || e.altKey || e.isComposing) return; if (!F.scanIdle()) { F._sb.n = 0; F._sb.s = ''; return; }
+    const now = Date.now(); const B = F._sb;
+    if (e.key === 'Enter') { if (B.n >= 10 && now - B.t < 120 && F.scanFire('enter')) { e.preventDefault(); e.stopImmediatePropagation(); } else F._sb = { s: '', t: 0, n: 0, first: 0 }; return; }
+    if (!/^[0-9Xx-]$/.test(e.key || '')) { F._sb = { s: '', t: 0, n: 0, first: 0 }; return; }
+    if (!B.n || now - B.t > 120) { B.s = ''; B.n = 0; B.first = now; } B.s += e.key; B.n++; B.t = now;
+    clearTimeout(F._st); if (B.n >= 10) F._st = setTimeout(() => F.scanFire('pause'), 150); /* Enter를 안 보내는 스캐너 — 멈춘 뒤 0.15초 */
+  }, true);
   /* Ctrl/⌘+K — 옛 화면(등록·출고 등)이 열려 있거나 편집 중이면 손대지 않음(지금 웹앱 규칙 그대로) */
   window.addEventListener('keydown', (e) => {
     if (!(e.ctrlKey || e.metaKey) || e.altKey || e.shiftKey || !(e.key === 'k' || e.key === 'K' || e.code === 'KeyK')) return;

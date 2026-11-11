@@ -40,13 +40,14 @@
 | `src/u2-catalog.js` | 위젯 목록을 지금 웹앱에서 실행 중에 뽑음(탭·섹션·홈 칸·화면·기능 찾기) · 분류 12 · ≈MB · 🆕 · 메모리 예산 |
 | `src/u2-adapters.js` | 섹션 위젯(T2 — 같은 탭은 한 번 그려 나눠 줌) · 🧱 칸 위젯(탭 첫 화면 칸 하나 — 지금 웹앱 tobBlocks로 떼어 냄 · 11/10) · 계약 검사 |
 | `u2-contract.json` | 새 웹앱이 기대는 옛 함수·값·화면 id(계약 목록) |
-| `src/u2-widgets.js` | 기본 UI 위젯 58종(계산 카드·질의·저장한 보기·📥 할 일·🔎 스캔 검수 포함) + 리드나우 기능 위젯 6종(탭·섹션·머리줄·홈 칸·화면·기능) |
+| `src/u2-widgets.js` | 기본 UI 위젯 58종(계산 카드·질의·저장한 보기·📥 할 일·🔎 스캔 검수 포함 · 0.4.9 🚦 처리할 주문 숫자 줄 · 0.4.10 📋 목록 보기 탭 — 지금 웹앱 큰 목록 탭 + ⭐ 저장한 거르기 rn2-listViews) + 리드나우 기능 위젯 6종(탭·섹션·머리줄·홈 칸·화면·기능) |
 | `src/u2-widgets-extra.js` | 덜 쓰는 무거운 위젯 10종(카드 목록·보드·달력·타임라인·차트·바깥 페이지·변수 바·반복·질의·스캔 검수) — 첫 화면 뒤 쉬는 때·처음 놓일 때 받음 |
 | `src/u2-theme.js` | 색 토큰·밝음/어두움/높은 대비·모양·무늬 6·글꼴·아이콘 |
 | `src/u2-check.js` | ✅ 단계 12 시범 체크리스트(STEP12.md 표와 같은 줄 · 줄마다 그 자리로 가는 단추 · 통과/안 됨/메모 → 기기 rn2-check12 + ui2_checks/<기기>) · 맨 위 시범 띠 '🔒 리드나우 2 시범 중 — 읽기만 · ✅ 체크리스트 열기' · 주소 ?check=1 |
 | `src/u2-move.js` | 🚚 단계 13 이전 장치(정범님 ㉮) — 이전 전 점검표(✗면 시작 못 함) · 이전 시작/한 번에 되돌리기(두 번 누르기) · 옛 화면 `<지금 웹앱>?old=1` 30일 · `ui2_site/main.move` + 기기 저장 `rn2-move` · 되돌린 뒤 넘어오면 한 번만 돌려보냄 |
 | `tools/move-snippet.js` | 지금 웹앱 쪽에 넣을 짧은 글 견본(리드가 `src/app.html` `<head>` 맨 앞에) — `rn2-move`가 on이면 새 웹앱으로 · `?old=1`은 옛 화면 · 로그인 뒤 `RN2_MOVE_SYNC` |
 | `src/u2-blocks.js` | 🧩 바깥 블록 받는 자리(0.4.9 · 약속 53) — 우리숍(`shop/`) 화면 조각을 파일 그대로 받아 격자 위젯으로(`U2.blocks.add`) · 설정 틀(SCHEMA)이 속성판에 그대로(묶음 머리·여럿 고르기) · CSS는 `@scope`로 블록 칸 안에만 · 기기 저장 `rn2-blk-` · 첫 블록 📚 서가 책장(`BQShelf.mount` · 우리숍 파일 주소 `U2_SHOP_BASE`, 없으면 지금 웹앱 옆 `shop/`) · ☰ 견본 '🛍 우리숍 책장 견본' |
+| `src/u2-find.js` | ⚡ 머리줄 빠른 작업 · 🔎 어디서나 찾기 Ctrl+K(페이지·기능·⚙ 설정·화면·위젯·자료 · 📌 고정 · ⚡ 명령) · 📷 스캔이 첫 동작(0.4.10 — 입력 칸 밖에서 바코드를 찍으면 찾기가 그 ISBN으로 · 맨 위 📥 등록에 넣기 · 등록 화면이 열려 있으면 지금 웹앱 그대로) |
 | `src/u2-shell.js` | 머리줄·페이지·주소 길·메뉴·쓰기 허락·견본·내보내기/가져오기 |
 | `src/u2.css` | 모양(모두 `.u2-` 머리) |
 | `PLAN.json` | 🗓 전체 일정(설계안 단계 0~13 · 예상·실제 시간·상태 끝/진행 중/정범님 필요) — 손으로 고침 → `node tools/track.js --plan`이 TRACK.json `plan`·TRACK.md 맨 위 '전체 일정 요약'으로 · 새 웹앱 ☰ 메뉴·🧪 프로젝트 페이지 '🗓 새 웹앱 일정'에서 막대로 |
@@ -112,12 +113,19 @@ NODE_PATH=... node tests/t_bench.js      # 단계 9 새 기능(0.4.5 · 성공 �
 NODE_PATH=... node tests/t_dev5.js       # 단계 10 기기 5가지 모양(PC 1920·1400·노트북 1280·태블릿 820·휴대폰 390) × STEP12 1·2·4·9·10번
 NODE_PATH=... node tests/t_move.js       # 단계 13 이전 장치(0.4.6) — 이전 전 점검 · 시작/되돌리기 · 지금 웹앱 주소에서 넘어감(짧은 글이 든 판이면 그대로 · 없으면 견본을 끼워 흉내 · 0.4.7) · ?old=1 · 돌고 돌지 않음 · 개인 배치 되돌리기 알림
 NODE_PATH=... node tests/t_blocks.js     # 🧩 우리숍 블록(0.4.9) — 📚 서가 책장: 파일 없을 때 알림 · 그려짐 · CSS 안 샘 · 속성판 = 우리숍 설정 틀 · rn2- 열쇠 · 휴대폰 (서가 파일: U2_SHELF_DIR, 기본 <U2_TEST_OUT>/shop-shelf)
+NODE_PATH=... node tests/t_scanlist.js   # 성공 사례 견줌 리드나우 2 빈 곳(0.4.10) — 더블클릭 두 번째 무시·↶ 되돌리기 · 📷 스캔(ISBN) 첫 동작 → 📥 등록에 넣기 · 📋 목록 보기 탭(⭐ 저장한 거르기) · 휴대폰
 NODE_PATH=... node tests/t_nav.js        # 메뉴 틀 맞춤(0.4.6) — 지금 웹앱 탭 차례·새 탭(nav1 🛒 판매처·🔬 연구 흉내)이 메뉴에 저절로 · 저장 안 함
 ```
 - 인터넷의 지금 웹앱은 받지 않습니다 — `U2_BASE`로 가는 요청을 기기 안 배포본 사본(`U2_TEST_OUT`, 기본 `/home/user/w/out`)에서 돌려줍니다.
 - Firebase는 가짜(`tests/fbstub2.js`)입니다.
 
-### 마지막 결과 (11/11 밤 · 새 웹앱 0.4.9 · 지금 웹앱 1.78.485 main 배포본)
+### 마지막 결과 (11/12 · 새 웹앱 0.4.10 · 지금 웹앱 1.78.487 main 배포본 — 우리숍 서가 파일 shop/ 들어 있음)
+시험 30묶음 모두 통과 — t_grid_unit 23 · t_expr_unit 203 · t_load 21 · t_editor 49 · t_widgets 29 · t_perm 24 · t_mem 6 · t_actions 25 · t_adapters 23 · t_track 18 · t_new 9 · t_feats 8 · t_tabswap 7 · t_pairs 9 · t_coexist 12 · t_soak 8 · t_perf 4 · t_dual 45 · t_real 17 · t_check 17 · t_parity 21 · t_sync 26 · t_bench 32 · t_dev5 37 · t_move 27 · t_nav 13 · t_default 13 · t_money 4 · t_blocks 21 · **t_scanlist 20(새)**.
+- 시험용 지금 웹앱 = readnow-scripts origin/main(3f16061 · 1.78.487)을 `git archive`로 푼 사본(app·shop·공용 파일) → `U2_TEST_OUT`.
+- t_blocks: 서가 파일이 main에 들어와 배포본 사본의 `shop/`을 그대로 씀(U2_SHELF_DIR 기본) · '파일 없을 때' 줄은 shop/shelf* 요청을 404로 흉내.
+- 첫 전체 실행에서 t_real 휴대폰 1줄(📋 목록 보기 탭 기본 높이 5칸에서 안내 글이 넘침 18px) → 기본 높이 6 · 안내 한 줄 말줄임 · t_default는 브라우저 끊김(Target closed) 한 번 → 둘 다 다시 돌려 통과.
+
+#### 지난 결과 (11/11 밤 · 새 웹앱 0.4.9 · 지금 웹앱 1.78.485 main 배포본)
 시험 29묶음 모두 통과(두 번 돌림) — t_grid_unit 23 · t_expr_unit 203 · t_load 21 · t_editor 49 · t_widgets 29 · t_perm 24 · t_mem 6 · t_actions 25 · t_adapters 23 · t_track 18 · t_new 9 · t_feats 8 · t_tabswap 7 · t_pairs 9 · t_coexist 12 · t_soak 8 · t_perf 4 · t_dual 45 · t_real 17 · t_check 17 · t_parity 21 · t_sync 26 · t_bench 32 · t_dev5 37 · t_move 27 · t_nav 13 · t_default 13 · t_money 4 · **t_blocks 21(새)**.
 - 우리숍 서가 파일(shop/shelf-core.js·shelf.js·shelf.css)은 아직 main에 없어(가지 work/shelf1-1111) t_blocks는 그 가지 사본을 `U2_SHELF_DIR`로 돌려줌 · main 그대로면 블록 칸에 '파일을 아직 받을 수 없습니다' 알림(시험 줄 있음).
 - 시험 흔들림 고침: t_soak(안전 모드에서 편집기를 그때 받는 동안 기다림) · t_adapters ① 0.7초 모음이 바쁜 기계에서 1초를 넘김 ② '가만히 두면 다시 그리지 않음'이 0.4.8 코드로도 실패 — 지금 웹앱 1.78.485는 가짜 자료를 다 받기까지 ~10초(S.ver 9→20)라 3초 창이 자료 받는 중에 걸림 → 자료 받기가 2.5초 멈춘 뒤 셈(실제 헛돌기 0).

@@ -40,7 +40,8 @@
     list: { name: '목록+상세 견본', make: (id) => { const p = U2.TEMPLATES.blank.make(id); const w = mk(p);
       w('vb', 'varbar', { vars: '판매처: 전체, 알라딘, 예스24\n기간: 오늘, 7일, 30일' }, 0, 0, 24, 3); w('q', 'search', { ph: '책 제목·주문번호', var: '찾기' }, 0, 3, 24, 3);
       w('tb', 'table', { data: '주문,손님,책,금액\nA-001,손님A,책 하나,12000\nA-002,손님B,책 둘,4500\nA-003,손님C,책 셋,9000', s_title: '목록(견본 — 자료 연결은 질의 위젯으로)' }, 0, 6, 16, 16);
-      w('dt', 'card', { title: '고른 것', text: '찾기: {{찾기}}\n판매처: {{판매처}} · 기간: {{기간}}' }, 16, 6, 8, 8); w('vw', 'views', {}, 16, 14, 8, 8); return p; } },
+      w('dt', 'card', { title: '고른 것', text: '찾기: {{찾기}}\n판매처: {{판매처}} · 기간: {{기간}}' }, 16, 6, 8, 8); w('vw', 'views', {}, 16, 14, 8, 8);
+      p.layouts.pc.forEach((it) => { it.y += 6; }); w('lt', 'listtabs', {}, 0, 0, 24, 6); /* (0.4.10) 맨 위 = 지금 웹앱 큰 목록 보기 탭(⭐ 저장한 거르기) */ return p; } },
     flow: { name: '처리 흐름(단계 칸) 견본', make: (id) => { const p = U2.TEMPLATES.blank.make(id); const w = mk(p);
       w('h', 'heading', { text: '오늘 처리 흐름', size: 'l' }, 0, 0, 24, 3); w('bd', 'board', { cols: '① 주문 확인: 가, 나, 다\n② 송장: 라\n③ 발송 요청: 마, 바\n④ 끝: 사' }, 0, 3, 16, 14);
       w('pg', 'progress', { label: '오늘 출고', value: 1, max: 7 }, 16, 3, 8, 4); w('ck', 'checklist', { items: '상자 접기\n테이프 확인\n송장 붙이기\n사진 찍기' }, 16, 7, 8, 10);
@@ -242,7 +243,8 @@
     const readT = () => { const th = U2.clone(U2.site.theme || {}); const c = L.querySelector('[data-st]'); if (!c) return th; th.tokens = Object.assign({}, th.tokens, { '--cloth': c.value }); th.shape = Object.assign({}, th.shape, { '--u2-radius': (+L.querySelector('[data-sh]').value || 0) + 'px' }); th.font = L.querySelector('[data-font]').value; th.def = L.querySelector('[data-def]').value; return th; };
     const prev = () => { const th = readT(); U2.theme.site = th; U2.theme.apply(U2.theme.cur); const r = U2.theme.contrast(th.tokens['--cloth'], U2.theme.LIGHT['--paper']); const o = L.querySelector('[data-contrast]'); if (o) o.textContent = '강조 색·흰 바탕 대비 ' + r.toFixed(2) + ':1' + (r < 4.5 ? ' ⚠ 4.5 아래 — 글자가 잘 안 보일 수 있음' : ' ✓'); };
     L.querySelectorAll('[data-st],[data-sh],[data-font],[data-def]').forEach((x) => x.addEventListener('input', prev));
-    m('savetheme', (e) => U2.twice(e.currentTarget, '모든 기기 기본 모양 바꿈', async () => { U2.site.theme = readT(); await U2.store.set('ui2_site', 'main', { theme: U2.site.theme }, true); U2.toast('공용 모양 저장'); }));
+    m('savetheme', (e) => { const was = U2.clone(U2.site.theme || {}); U2.twice(e.currentTarget, '모든 기기 기본 모양 바꿈', async () => { U2.site.theme = readT(); await U2.store.set('ui2_site', 'main', { theme: U2.site.theme }, true); },
+      { done: '공용 모양 저장', undo: async () => { U2.site.theme = was; await U2.store.set('ui2_site', 'main', { theme: was }, true); U2.theme.site = was; U2.theme.apply(U2.theme.cur); U2.toast('공용 모양을 예전으로 되돌림'); } }); }); /* (0.4.10) 되돌리기 10초 */
     L.querySelectorAll('[data-view]').forEach((b) => (b.onclick = () => { L.remove(); U2.data.openView(b.dataset.view).catch((e) => U2.toast(e.message, 1)); }));
     const vs = (pub) => () => U2.data.saveView(L.querySelector('[data-vname]').value, pub).then((v) => { U2.toast('보기 저장: ' + v.name); L.remove(); }).catch((e) => U2.toast(e.message, 1));
     m('vsave', vs(false)); m('vsavepub', vs(true));

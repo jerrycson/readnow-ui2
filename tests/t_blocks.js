@@ -5,7 +5,7 @@
  *  우리숍 서가 파일은 아직 지금 웹앱 main에 없을 수 있어 U2_SHELF_DIR(기본 <U2_TEST_OUT>/shop-shelf)에서 돌려줌 */
 const fs = require('fs'); const path = require('path');
 const { open, ok, done, nonU2Writes, OUT } = require('./lib');
-const SHELF = process.env.U2_SHELF_DIR || path.join(OUT, 'shop-shelf');
+const SHELF = process.env.U2_SHELF_DIR || (fs.existsSync(path.join(OUT, 'shop', 'shelf-core.js')) ? path.join(OUT, 'shop') : path.join(OUT, 'shop-shelf')); /* (0.4.10) 서가 파일이 지금 웹앱 main에 들어옴(11/11 shelf1) → 배포본 사본의 shop/ 그대로 */
 const E = (t) => t.errs.filter((e) => !/js-profiling/.test(e)); /* 지금 웹앱 쪽 경고(다른 시험과 같이 뺌) */
 const SHOT = process.env.U2_SHOT_DIR || '';
 const have = ['shelf-core.js', 'shelf.js', 'shelf.css'].every((f) => fs.existsSync(path.join(SHELF, f)));
@@ -15,7 +15,7 @@ const put = (p, pg) => p.evaluate(async (pg) => { U2.pages.bk = pg; U2.render({ 
 (async () => {
   console.log('[0.4.9] 🧩 우리숍 블록 받는 자리 — 📚 서가 책장' + (have ? '' : ' (우리숍 서가 파일 없음: ' + SHELF + ' — 파일 있는 줄은 건너뜀)'));
   /* ② 파일이 없을 때(지금 main 그대로) */
-  let t = await open({ q: '?p=bk', settle: 1200 }); let p = t.p;
+  let t = await open({ q: '?p=bk', settle: 1200, override: (rel) => (/^shop\/shelf/.test(rel) ? { status: 404, body: '' } : null) }); let p = t.p; /* 파일이 없을 때를 흉내(배포본에 들어온 뒤에도) */
   const def = await p.evaluate(() => { const d = U2W.defs['shop.shelf']; return d && { g: d.group, block: d.block, one: d.one, inGroups: U2W.GROUPS.includes(d.group) }; });
   ok(def && def.g === '우리숍 블록' && def.block && def.one && def.inGroups, "위젯 목록에 '📚 서가 책장(우리숍)' — 묶음 '우리숍 블록' · 한 페이지에 하나", JSON.stringify(def));
   await put(p, PG());

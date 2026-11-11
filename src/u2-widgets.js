@@ -184,6 +184,38 @@
   /* ═══ 🔎 스캔 검수(N8 ①) — 바코드(블루투스 스캐너는 글 칸에 치고 Enter · 휴대폰은 카메라 BarcodeDetector)로 '맞는 책인지' 대조 · 읽기만(자료를 바꾸지 않음) ═══ */
 
 
+  /* ── 📋 목록 보기 탭(0.4.10 · 성공 사례 견줌 '한 목록 + 보기 탭(저장한 거르기)' — Shopify 관리자 목록 위 보기 탭·Linnworks 저장한 보기처럼) ──
+   *  지금 웹앱의 큰 목록(📚 상품 전체 · 📋 주문 전체 · 🟦 예스24 전체 · 🧾 통합 장부 …)을 한 줄 탭으로 · 그 목록을 연 채 '＋ 지금 보기 저장'을 누르면 그 거르기·정렬·검색어가 ⭐ 탭이 됨
+   *  탭을 누르면 = 그 거르기를 지금 웹앱 목록 상태(S._bt_<목록>)에 넣고 그 화면을 엶 — 목록 엔진·단추는 지금 웹앱 그대로(새로 그리지 않음)
+   *  저장은 이 기기(rn2-listViews)만 · Firestore 쓰기 없음 · 지우기는 알림의 '↶ 되돌리기'(10초) */
+  W.LV_DEF = 'prodAll, ordAll, y24All, ledger, shopAdm';
+  W.lvAll = () => (U2.ls.get('listViews', []) || []).filter((v) => v && v.name && v.scr);
+  W.lvOpen = (scr, st) => { const L = U2.legacy; if (!L || !L.ready || U2.safe) return U2.toast('지금 웹앱을 아직 불러오지 못함 — 잠시 뒤 다시', 1);
+    if (st && st.bt) { try { const cur = S['_bt_' + st.bt] || {}; S['_bt_' + st.bt] = Object.assign({}, cur, { q: st.q || '', sort: st.sort || cur.sort, f: Object.assign({}, st.f || {}), lim: 200 }); } catch (e) {} }
+    return L.screen(scr); };
+  W.lvNow = () => { /* 지금 열린 지금 웹앱 큰 목록 → { scr, bt, title, q, sort, f } */
+    try { const d = S.detail; if (!d || !d.bigTable) return null; const sh = document.getElementById('sheet'); if (!sh || !sh.classList.contains('on')) return null;
+      const P = (U2.legacy && U2.legacy.list('PG_SCR')) || []; const r = P.find((x) => { try { return typeof x[2] === 'function' && x[2](d); } catch (e) { return false; } }); if (!r) return null;
+      const st = S['_bt_' + d.bigTable] || {}; return { scr: r[0], bt: d.bigTable, title: String(r[1]), q: st.q || '', sort: st.sort || '', f: Object.assign({}, st.f || {}) }; } catch (e) { return null; } };
+  W.def('listtabs', { name: '목록 보기 탭', group: '자료 보기', icon: '📋', w: 24, h: 6, minH: 3, props: [{ k: 'lists', label: '기본 탭(지금 웹앱 화면 이름 · 쉼표)', type: 'text', def: W.LV_DEF }, { k: 'save', label: "'＋ 지금 보기 저장' 단추 보이기", type: 'check', def: true }],
+    render(b, p, ctx) {
+      const L = U2.legacy; const ok = !!(L && L.ready) && !U2.safe; const lastK = 'listTab:' + (ctx.page || '') + ':' + (ctx.wid || '');
+      const base = String(p.lists || W.LV_DEF).split(/[,\s]+/).filter(Boolean).map((k) => [k, ok ? L.findScreen(k) : null]).filter(([, r]) => !ok || r);
+      const draw = () => { const vs = W.lvAll(); const now = W.lvNow(); const last = U2.ls.get(lastK, '');
+        b.innerHTML = `<div class="u2-lvt"><div class="u2-row u2-lvrow" role="tablist" aria-label="목록 보기">${base.map(([k, r]) => `<button type="button" role="tab" class="u2-chip ${last === 'b:' + k ? 'u2-on' : ''}" aria-selected="${last === 'b:' + k}" data-lvb="${esc(k)}" ${ok ? '' : 'disabled'}>${esc(r ? String(r[1]) : k)}</button>`).join('')}${vs.map((v, i) => `<span class="u2-lvv"><button type="button" role="tab" class="u2-chip ${last === 'v:' + v.name ? 'u2-on' : ''}" aria-selected="${last === 'v:' + v.name}" data-lvv="${i}" title="${esc(v.title + ' · ' + W.lvDesc(v))}" ${ok ? '' : 'disabled'}>⭐ ${esc(v.name)}</button><button type="button" class="u2-lvx" data-lvx="${i}" aria-label="보기 지우기: ${esc(v.name)}" title="이 보기 지우기(이 기기)">×</button></span>`).join('')}</div>
+          ${p.save ? `<div class="u2-row u2-lvsave">${now ? `<input class="u2-in" data-lvn maxlength="24" placeholder="보기 이름(예: 예스24 품절)" aria-label="보기 이름" value=""><button type="button" class="u2-btn u2-pri" data-lvs>＋ 지금 보기 저장</button><span class="u2-sub">${esc(now.title)} · ${esc(W.lvDesc(now))}</span>` : `<span class="u2-sub" title="목록을 열고 거르기·정렬을 고른 뒤 ＋ 지금 보기 저장 — ⭐ 탭이 됩니다(이 기기)">${ok ? '목록을 열고 거르기·정렬을 고른 뒤 여기서 ＋ 지금 보기 저장 — ⭐ 탭이 됩니다(이 기기)' : '지금 웹앱을 불러오지 못해 목록을 열 수 없음'}</span>`}</div>` : ''}</div>`;
+        b.querySelectorAll('[data-lvb]').forEach((x) => (x.onclick = () => { if (ctx.edit) return; U2.ls.set(lastK, 'b:' + x.dataset.lvb); W.lvOpen(x.dataset.lvb); draw(); }));
+        b.querySelectorAll('[data-lvv]').forEach((x) => (x.onclick = () => { if (ctx.edit) return; const v = W.lvAll()[+x.dataset.lvv]; if (!v) return; U2.ls.set(lastK, 'v:' + v.name); W.lvOpen(v.scr, v); draw(); }));
+        b.querySelectorAll('[data-lvx]').forEach((x) => (x.onclick = () => { if (ctx.edit) return; const all = W.lvAll(); const v = all[+x.dataset.lvx]; if (!v) return; U2.ls.set('listViews', all.filter((y) => y !== v)); draw();
+          U2.toast('보기 지움: ⭐ ' + v.name, false, 0, { act: { label: '↶ 되돌리기', fn: () => { U2.ls.set('listViews', W.lvAll().filter((y) => y.name !== v.name).concat([v])); U2.emit('listViews'); U2.toast('되살림: ⭐ ' + v.name); } } }); U2.emit('listViews'); }));
+        const sb = b.querySelector('[data-lvs]'); if (sb) sb.onclick = () => { const n = W.lvNow(); if (!n) return U2.toast('열린 목록이 없음 — 목록을 다시 연 뒤', 1); const nm = (b.querySelector('[data-lvn]').value || '').trim().slice(0, 24) || n.title.replace(/^\W+\s*/, '') + (n.q ? ' ' + n.q : '');
+          const all = W.lvAll(); if (all.length >= 30) return U2.toast('보기는 30개까지 — 안 쓰는 것을 지운 뒤', 1); const v = Object.assign({ name: nm, at: Date.now() }, n); U2.ls.set('listViews', all.filter((y) => y.name !== nm).concat([v])); U2.ls.set(lastK, 'v:' + nm); U2.toast('⭐ 보기 저장: ' + nm + ' (이 기기)'); U2.emit('listViews'); draw(); };
+      };
+      draw(); const off = U2.on ? U2.on('listViews', draw) : null; const t = setInterval(() => { if (p.save && !document.hidden && !b.contains(document.activeElement)) { const has = !!W.lvNow(); if (has !== !!b.querySelector('[data-lvs]')) draw(); } }, 1500);
+      return () => { clearInterval(t); if (typeof off === 'function') off(); };
+    } });
+  W.lvDesc = (v) => { const f = Object.entries(v.f || {}).filter(([, x]) => x && x !== 'all').map(([, x]) => x); return [v.q ? '찾기 ‘' + v.q + '’' : '', f.length ? '거르기 ' + f.join('·') : '', v.sort ? '정렬 ' + v.sort : ''].filter(Boolean).join(' · ') || '거르기 없음'; };
+
   /* ── 늦게 받는 위젯(설계안 8-4 '위젯 코드 늦게 받기'): 덜 쓰는 무거운 위젯은 src/u2-widgets-extra.js — 처음 놓이거나 보일 때 받음(쉬는 때 미리 받아 둠) ── */
   W.LAZY_FILE = 'src/u2-widgets-extra.js';
   W.lazyLoad = () => W._lz || (W._lz = new Promise((res, rej) => { const sc = document.createElement('script'); sc.src = W.LAZY_FILE + '?v=' + U2.ver; sc.onload = () => res(); sc.onerror = () => { W._lz = null; rej(new Error('위젯 파일을 못 받음')); }; document.head.appendChild(sc); }));

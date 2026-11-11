@@ -43,6 +43,9 @@
   Editor.prototype.snap = function () { return snapOf(this.draft); };
   Editor.prototype.push = function () { this.nPush = (this.nPush || 0) + 1; this.hist.push(this.snap()); if (this.hist.length > U2.CFG.undoMax) this.hist.shift(); this.fut = []; };
   Editor.prototype.restore = function (s) { Object.assign(this.draft, JSON.parse(s)); this.sel.forEach((id) => { if (!this.draft.widgets[id]) this.sel.delete(id); }); this.saveDraft(); this.refresh(true); };
+  /* (0.4.10 · 확인 방식 하나로) 두 번 누르기로 한 일을 알림의 '↶ 되돌리기'로 — 그 뒤에 다른 것을 고쳤으면 Ctrl+Z로 한 걸음씩(지운 것 되돌리기와 같은 규칙) */
+  Editor.prototype.undoOnce = function () { const E = this; const n0 = E.nPush || 0; /* 두 번째 누름 때 만들어짐(일 하기 바로 전) — 그 일이 한 걸음(push 하나)이면 되돌림 */
+    return () => { if (U2.edit !== E) return U2.toast('편집기를 닫아 되돌릴 수 없음 — 게시 기록에서', true); if ((E.nPush || 0) !== n0 + 1) return U2.toast('그 뒤에 다른 것을 고쳐서 — Ctrl+Z로 한 걸음씩', true); E.undo(); U2.toast('되돌림'); }; };
   Editor.prototype.undo = function () { if (!this.hist.length) return U2.toast('더 되돌릴 것이 없음'); this.fut.push(this.snap()); this.restore(this.hist.pop()); };
   Editor.prototype.redo = function () { if (!this.fut.length) return U2.toast('다시 할 것이 없음'); this.hist.push(this.snap()); this.restore(this.fut.pop()); };
   Editor.prototype.change = function (fn, keepCells) { this.push(); fn(); this.saveDraft(); this.refresh(!keepCells); };
@@ -323,11 +326,11 @@
     pr.querySelectorAll('[data-grid]').forEach((el) => (el.onchange = () => E.change(() => { const k = el.dataset.grid; E.draft.grid[k] = el.type === 'checkbox' ? el.checked : Math.max(8, Math.min(96, +el.value || 16)); if (k === 'compact' && el.checked) { Object.keys(E.draft.layouts).forEach((b) => { if (E.draft.layouts[b]) G.compact(E.draft.layouts[b]); }); } })));
     pr.querySelectorAll('[data-al]').forEach((b) => (b.onclick = () => E.align(b.dataset.al)));
     pr.querySelectorAll('[data-pick]').forEach((b) => (b.onclick = (e) => { const id = b.dataset.pick; if (e.shiftKey) { E.sel.has(id) ? E.sel.delete(id) : E.sel.add(id); } else { E.sel.clear(); E.sel.add(id); } E.markSel(); E.drawProps(); const c = U2.view.cell(id); if (c) try { c.scrollIntoView({ block: 'nearest' }); } catch (x) {} }));
-    pr.querySelectorAll('[data-tpl]').forEach((b) => (b.onclick = () => U2.twice(b, '견본으로 바꿈(지금 배치 대신)', () => E.change(() => { const t = U2.TEMPLATES[b.dataset.tpl].make(E.id); E.draft.widgets = t.widgets; E.draft.layouts = t.layouts; E.sel.clear(); }))));
+    pr.querySelectorAll('[data-tpl]').forEach((b) => (b.onclick = () => U2.twice(b, '견본으로 바꿈(지금 배치 대신)', () => E.change(() => { const t = U2.TEMPLATES[b.dataset.tpl].make(E.id); E.draft.widgets = t.widgets; E.draft.layouts = t.layouts; E.sel.clear(); }), { done: '견본으로 바꿈(초안)', undo: E.undoOnce() })));
     const a = (k, f) => { const b = pr.querySelector('[data-a="' + k + '"]'); if (b) b.onclick = f; };
     a('del', () => E.remove(E.sel)); a('dup', () => { E.copy(); E.paste(); });
     a('follow', () => E.change(() => { E.draft.layouts[E.bp] = (E.draft.layouts[E.bp] || []).filter((i) => i.id !== one); }));
-    a('rederive', (e) => U2.twice(e.currentTarget, '모두 PC 배치를 따름(따로 고친 자리 지움)', () => E.change(() => { E.draft.layouts[E.bp] = null; })));
+    a('rederive', (e) => U2.twice(e.currentTarget, '모두 PC 배치를 따름(따로 고친 자리 지움)', () => E.change(() => { E.draft.layouts[E.bp] = null; }), { done: '이 폭은 PC 배치를 따름', undo: E.undoOnce() }));
   };
   Editor.prototype.drawTreeOnly = function () { /* 이름이 바뀌었을 수 있어 층 나무만 */ const t = U2.$('#u2-edprops .u2-tree'); if (!t) return; const keepFocus = document.activeElement; this.drawProps(); if (keepFocus && keepFocus.id) { const n = document.getElementById(keepFocus.id); if (n) try { n.focus(); } catch (e) {} } };
 

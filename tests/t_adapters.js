@@ -35,16 +35,17 @@ const { open, ok, done, nonU2Writes } = require('./lib');
   ok(r.shown >= secs.length * 0.8, '섹션 위젯 대부분이 그 섹션만 보여 줌(가짜 빈 자료에서)', r.shown + '/' + secs.length + (r.none.length ? ' · 빈 것: ' + r.none.slice(0, 12).join(' ') : ''));
   /* 같은 탭 섹션 셋 → 한 번 그림 · 옛 코드가 다시 그리라고 하면 모아서 */
   const g = await p.evaluate(async () => {
+    { const F = () => { try { return [S.ordersLoaded, S.prodLoaded, S.sellersLoaded, S.pmLoaded, S.pmatchLoaded, S.custLoaded, S.pur && S.pur.loaded, S.ver].join('|'); } catch (e) { return ''; } }; let f0 = F(), st = performance.now(); const t0 = performance.now(); while (performance.now() - st < 2500 && performance.now() - t0 < 25000) { await new Promise((r) => setTimeout(r, 250)); const f = F(); if (f !== f0) { f0 = f; st = performance.now(); } } } /* (0.4.9) 지금 웹앱 1.78.485는 가짜 자료를 다 받기까지 ~10초(S.ver 9→20) — 자료 받기가 2.5초 멈춘 뒤 셈(받는 동안 다시 그리는 것은 설계대로) */
     const ids = ['bz_pace', 'bz_margin', 'bz_inv']; const W0 = {}; const L0 = []; ids.forEach((id, i) => { W0['s' + i] = { type: 'legacy.sec', props: { ref: id, tab: 'biz' } }; L0.push({ id: 's' + i, x: i * 8, y: 0, w: 8, h: 16 }); });
     U2.pages.ad = { id: 'ad', title: '셋', grid: { rowH: 16 }, rev: 0, widgets: W0, layouts: { pc: L0 } }; const r0 = U2.adapters.renders; U2.render({ reset: true }); await new Promise((r) => setTimeout(r, 50));
     const once = U2.adapters.renders - r0; const shown = ids.filter((id, i) => U2.view.cell('s' + i).querySelector(`details.sec[data-sec="${id}"]`)).length;
     const r1 = U2.adapters.renders; renderMain(); renderMain(); renderMain(); for (let k = 0; k < 40 && U2.adapters.renders === r1; k++) await new Promise((r) => setTimeout(r, 100)); await new Promise((r) => setTimeout(r, 900)); const again = U2.adapters.renders - r1; /* (0.4.9) 기계가 바쁘면 0.7초 모음이 1초를 넘김 — 다시 그릴 때까지(4초 안) 기다린 뒤 0.9초 더 보고 셈 */
-    const r2 = U2.adapters.renders; await new Promise((r) => setTimeout(r, 3000)); const idle = U2.adapters.renders - r2;
-    return { once, shown, again, idle, dup: U2.guard.dupIds(), tab: S.tab };
+    let retry = 0; const BUSY = /받는 중|불러오는 중|기다리는 중/; [...U2.adapters.secs].forEach((it) => { const o = it.redraw; it.redraw = function () { if (BUSY.test(it.b.textContent) || it.b.querySelector('.ldg, .wload')) retry++; return o.apply(this, arguments); }; }); const r2 = U2.adapters.renders; await new Promise((r) => setTimeout(r, 3000)); const idle = U2.adapters.renders - r2 - retry; /* (0.4.9) '받는 중'이 남은 섹션의 정해진 다시 그리기(1.5·3·6…초 · 5번까지)는 헛돌기가 아님 — 뺌 */
+    return { once, shown, again, idle, retry, dup: U2.guard.dupIds(), tab: S.tab };
   });
   ok(g.once === 1 && g.shown === 3, '같은 탭(경영) 섹션 위젯 셋 = 탭 그리기 1번으로 나눠 줌', JSON.stringify({ once: g.once, shown: g.shown }));
   ok(g.again === 1, '옛 코드가 다시 그리라고 세 번 불러도 0.7초 모아 한 번', '다시 그림 ' + g.again + '번');
-  ok(g.idle <= 1, '가만히 두면 다시 그리지 않음(헛돌기 없음)', '3초 동안 ' + g.idle + '번');
+  ok(g.idle <= 1, '가만히 두면 다시 그리지 않음(헛돌기 없음)', '3초 동안 ' + g.idle + '번' + (g.retry ? " (+ '받는 중' 정해진 다시 그리기 " + g.retry + '번)' : ''));
   ok(g.dup.length === 0 && g.tab !== 'biz', '중복 id 0 · 그린 뒤 옛 S.tab은 되돌림', JSON.stringify(g.dup) + ' · S.tab=' + g.tab);
   /* 같은 옛 위젯 두 개 · 같은 탭 전체와 함께 → 막힘/경고 */
   const one = await p.evaluate(() => { U2.openEditor('pub'); const E = U2.edit; E.add('legacy.sec', { ref: 'bz_pace', tab: 'biz' }); const n = Object.values(E.draft.widgets).filter((w) => w.type === 'legacy.sec' && w.props.ref === 'bz_pace').length; E.add('legacy.tab', { ref: 'biz' }); const h = E.health(); E.close(true); return { n, h }; });

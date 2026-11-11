@@ -117,7 +117,13 @@ NODE_PATH=... node tests/t_nav.js        # 메뉴 틀 맞춤(0.4.6) — 지금 �
 - 인터넷의 지금 웹앱은 받지 않습니다 — `U2_BASE`로 가는 요청을 기기 안 배포본 사본(`U2_TEST_OUT`, 기본 `/home/user/w/out`)에서 돌려줍니다.
 - Firebase는 가짜(`tests/fbstub2.js`)입니다.
 
-### 마지막 결과 (11/11 · 새 웹앱 0.4.8 · 지금 웹앱 1.78.483 rel2 작업본으로 만든 배포본 — 이전 짧은 글 들어 있음)
+### 마지막 결과 (11/11 밤 · 새 웹앱 0.4.9 · 지금 웹앱 1.78.485 main 배포본)
+시험 29묶음 모두 통과(두 번 돌림) — t_grid_unit 23 · t_expr_unit 203 · t_load 21 · t_editor 49 · t_widgets 29 · t_perm 24 · t_mem 6 · t_actions 25 · t_adapters 23 · t_track 18 · t_new 9 · t_feats 8 · t_tabswap 7 · t_pairs 9 · t_coexist 12 · t_soak 8 · t_perf 4 · t_dual 45 · t_real 17 · t_check 17 · t_parity 21 · t_sync 26 · t_bench 32 · t_dev5 37 · t_move 27 · t_nav 13 · t_default 13 · t_money 4 · **t_blocks 21(새)**.
+- 우리숍 서가 파일(shop/shelf-core.js·shelf.js·shelf.css)은 아직 main에 없어(가지 work/shelf1-1111) t_blocks는 그 가지 사본을 `U2_SHELF_DIR`로 돌려줌 · main 그대로면 블록 칸에 '파일을 아직 받을 수 없습니다' 알림(시험 줄 있음).
+- 시험 흔들림 고침: t_soak(안전 모드에서 편집기를 그때 받는 동안 기다림) · t_adapters ① 0.7초 모음이 바쁜 기계에서 1초를 넘김 ② '가만히 두면 다시 그리지 않음'이 0.4.8 코드로도 실패 — 지금 웹앱 1.78.485는 가짜 자료를 다 받기까지 ~10초(S.ver 9→20)라 3초 창이 자료 받는 중에 걸림 → 자료 받기가 2.5초 멈춘 뒤 셈(실제 헛돌기 0).
+- 시험 웹 서버는 오래 켜 두는 것으로(백그라운드 작업 30분 제한에 꺼지면 시험이 'Target closed'로 끊김).
+
+#### 지난 결과 (11/11 · 새 웹앱 0.4.8 · 지금 웹앱 1.78.483 rel2 작업본으로 만든 배포본 — 이전 짧은 글 들어 있음)
 - 통과: t_parity 21/21(새 탭 셋·🟩 네이버·🧪 번외 수집기·🔀 번외로 넘기기 설정 칸·🧰 예스24 운영 화면까지 빠짐 0) · t_expr_unit 203 · t_grid_unit 23 · ship-check2 · t_move의 새 ?go= 줄(deliv·reg·batch·qna — 따로 돌려 모두 통과) · t_bench의 새 ⚙ 설정 찾기 2줄.
 - **이번엔 28묶음을 다 돌리지 못함** — 이 기계가 다른 일꾼 시험으로 몹시 바쁨(부하 60~120 · 주인 없이 남은 크롬 240여 개 · 남은 메모리 1GB 안팎)이라 브라우저가 중간에 죽음(Page crashed). 시험 틀(lib.js)은 페이지 열기 기다림만 2분으로 늘림(U2_NAV_MS). 기계가 한가할 때 28묶음 다시.
 - 고친 것: ① ?go= 바로 가기(설치 앱·알림)로 옛 화면을 여는 7가지가 새 웹앱 안에서 곧바로 닫히던 것(u2-loader 여는 동안 닫기 막이) ② 🔎 어디서나 찾기 ⚙ 설정 범위·기능 목록 564(섹션·홈 칸까지) ③ 자료 찾기 글이 페이지 바꾼 직후 지워지던 것(두 번까지 다시 넣음).

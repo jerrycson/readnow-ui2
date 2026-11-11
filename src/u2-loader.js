@@ -82,9 +82,14 @@
   L.userAt = 0; L.suppressed = [];
   ['pointerdown', 'keydown', 'touchstart'].forEach((ev) => document.addEventListener(ev, (e) => { if (e.isTrusted !== false) L.userAt = performance.now(); }, { capture: true, passive: true }));
   const LINK_HASH = /^#(c|open|man|upd)=/; /* 지금 웹앱 주소 링크로 일부러 여는 것 — 막지 않음 */
-  L.bootGate = () => !(L.userAt > (L.attachAt || 0)) && (!L.shellAt || performance.now() - L.shellAt < 12000) && !LINK_HASH.test(location.hash || '');
+  /* (0.4.8) 📱 화면마다 설치 앱·알림의 바로 가기(?go=화면 — 지금 웹앱 주소에서 넘어와도 그대로 붙음)는 일부러 여는 것 → 그 상세 층은 닫지 않음
+   *  지금 웹앱이 연 뒤 주소에서 ?go=를 지우므로(deliv·y24ord·qna) 여는 순간에 잡아 둠 · 새로고침 전 자리(placeRead)는 그래도 막음(새 웹앱 자리는 ?p=) */
+  L.GO_SHEET = ['confirm', 'deliv', 'y24ord', 'reg', 'ppt', 'batch', 'mgr'];
+  L.go0 = (() => { try { return new URLSearchParams(location.search).get('go') || ''; } catch (e) { return ''; } })();
+  L.goOpen = (n) => L.GO_SHEET.includes(L.go0) && (n === 'sheet' || (n === 'openRegister' && L.go0 === 'reg'));
+  L.bootGate = (n) => !(L.userAt > (L.attachAt || 0)) && (!L.shellAt || performance.now() - L.shellAt < 12000) && !LINK_HASH.test(location.hash || '') && !(n && L.goOpen(n));
   L.wrapBoot = function () {
-    const wrap = (n, alt) => { const o = window[n]; if (typeof o !== 'function' || o._u2) return; const f = function () { if (L.bootGate()) { L.suppressed.push({ n, at: Math.round(performance.now()) }); return alt; } return o.apply(this, arguments); }; f._u2 = 1; f._orig = o; window[n] = f; };
+    const wrap = (n, alt) => { const o = window[n]; if (typeof o !== 'function' || o._u2) return; const f = function () { if (L.bootGate(n)) { L.suppressed.push({ n, at: Math.round(performance.now()) }); return alt; } return o.apply(this, arguments); }; f._u2 = 1; f._orig = o; window[n] = f; };
     wrap('placeRead', null); /* 새로고침 전 자리(탭·상세 화면) — 새 웹앱은 주소 ?p= 가 자리 */
     wrap('openRegister', undefined); /* 하던 상품 등록 다시 엶(rn-reg-ui) — 사람이 누른 뒤에는 그대로 열림 */
   };
@@ -120,7 +125,7 @@
     let iv = null;
     const on = () => {
       const isOn = sh.classList.contains('on'); document.body.classList.toggle('u2-sheet-on', isOn); if (U2.dock) U2.dock.sync();
-      if (isOn) { L.measureTop(); if (!iv) iv = setInterval(L.measureTop, 600); if (L.bootGate()) { L.suppressed.push({ n: 'sheet', at: Math.round(performance.now()) }); setTimeout(() => { if (L.bootGate() && sh.classList.contains('on')) L.closeOverlays('boot'); }, 0); } }
+      if (isOn) { L.measureTop(); if (!iv) iv = setInterval(L.measureTop, 600); if (L.bootGate('sheet')) { L.suppressed.push({ n: 'sheet', at: Math.round(performance.now()) }); setTimeout(() => { if (L.bootGate('sheet') && sh.classList.contains('on')) L.closeOverlays('boot'); }, 0); } }
       else if (iv) { clearInterval(iv); iv = null; }
     };
     new MutationObserver(on).observe(sh, { attributes: true, attributeFilter: ['class'] }); on();
@@ -158,12 +163,14 @@
   };
   L.refreshCards = function () { if (!L.cards.size) return; clearTimeout(L._ch); L._ch = setTimeout(() => L.cards.forEach((c) => { try { c.draw(); } catch (e) {} }), 700); };
   /* 지금 웹앱 전역 목록(const라 window에 없음 — 이름마다 typeof로 읽음 · eval 안 씀) */
-  const GL = { FEAT: () => (typeof FEAT !== 'undefined' ? FEAT : null), PG_SCR: () => (typeof PG_SCR !== 'undefined' ? PG_SCR : null), WIDGETS: () => (typeof WIDGETS !== 'undefined' ? WIDGETS : null), W_DESC: () => (typeof W_DESC !== 'undefined' ? W_DESC : null) };
+  const GL = { FEAT: () => (typeof FEAT !== 'undefined' ? FEAT : null), PG_SCR: () => (typeof PG_SCR !== 'undefined' ? PG_SCR : null), WIDGETS: () => (typeof WIDGETS !== 'undefined' ? WIDGETS : null), W_DESC: () => (typeof W_DESC !== 'undefined' ? W_DESC : null), FEATIX: () => (typeof featIndex === 'function' ? featIndex() : null) /* (0.4.8) 🔍 기능 찾기 전체 = FEAT + 섹션(SECS) + 홈 칸 — 지금 웹앱 기능 찾기와 같은 목록 */ };
   L.list = (n) => { try { return GL[n] ? GL[n]() : null; } catch (e) { return null; } };
   /* 기능 찾기 — 같은 이름 → 앞 그림 글자만 뗀 이름이 같음('🚚 오늘 출고' = '오늘 출고') → 그 글을 품은 것 중 가장 짧은 이름
    * (11/10) 예전엔 '품은 것 중 맨 앞'이라, 지금 웹앱 1.78.463이 목록 앞에 '🔎 오늘 출고 검색창 — …'을 더하자 '오늘 출고' 단추가 그 긴 기능으로 바뀌었음 */
   L.findFeat = (q) => { const F = L.list('FEAT'); if (!F || !q) return null; const bare = (t) => String(t).replace(/^[^0-9A-Za-z가-힣]+/u, '').trim(); const qb = bare(q);
     return F.find((f) => f.t === q) || F.find((f) => bare(f.t) === qb) || F.filter((f) => String(f.t).indexOf(q) >= 0).sort((a, b) => String(a.t).length - String(b.t).length)[0] || null; };
+  /* (0.4.8) 기능 찾기 항목을 그대로 엶(이름으로 다시 찾지 않음 — 섹션·홈 칸 항목은 FEAT에 없어서) */
+  L.featGo = (f) => { if (!f) return; L.userAt = performance.now(); U2.setCtx('feat:' + f.t); try { return typeof featGo === 'function' ? featGo(f) : f.go && f.go.fn && f.go.fn(); } catch (e) { U2.toast('기능 실행 중 오류: ' + e.message, 1); } };
   L.feat = (q) => { const f = L.findFeat(q); if (!f) return U2.toast('기능을 찾지 못함: ' + q, 1); L.userAt = performance.now(); /* 새 웹앱에서 일부러 연 것 = 여는 동안 막이를 끝냄 */ U2.setCtx('feat:' + q); try { return typeof featGo === 'function' ? featGo(f) : f.go && f.go.fn && f.go.fn(); } catch (e) { U2.toast('기능 실행 중 오류: ' + e.message, 1); } };
   /* 대상이 있어야 열리는 화면 — 지금 웹앱은 상세 화면 함수를 '화면 쌓기'(navWrap)로 감싸 인자 수(fn.length)가 늘 0으로 보임 → 11/05 실화면 점검에서 대상 없이 열면 오류 난 8개 + 열어 보다 오류가 난 것(이 기기에 기억 rn2-scrArg) */
   L.ARG_SCR = new Set(['shipDay', 'invMatch', 'shipCost', 'book', 'cashForm', 'purEntry', 'sellerCount', 'listView']);

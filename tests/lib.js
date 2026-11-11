@@ -14,7 +14,7 @@ async function open(opt) {
   opt = opt || {};
   const b = opt.browser || (await chromium.launch());
   const ctx = await b.newContext({ viewport: opt.vp || { width: 1400, height: 900 }, serviceWorkers: 'block', ...(opt.touch ? { hasTouch: true, isMobile: true } : {}), ...(opt.ua ? { userAgent: opt.ua } : {}) });
-  const p = await ctx.newPage(); const errs = [];
+  const p = await ctx.newPage(); const errs = []; p.setDefaultNavigationTimeout(+process.env.U2_NAV_MS || 120000); /* (0.4.8) 기계가 바쁠 때(여러 일꾼이 함께 시험) 30초 안에 못 여는 일 — 2분까지 */
   p.on('pageerror', (e) => errs.push('PAGEERR ' + e.message));
   p.on('console', (m) => { if (m.type() === 'error' && !/Failed to load resource|ERR_TUNNEL|net::ERR/.test(m.text())) errs.push('CONSOLE ' + m.text().slice(0, 200)); });
   const dialogs = []; p.on('dialog', (d) => { dialogs.push(d.type() + ': ' + d.message()); d.dismiss().catch(() => {}); });

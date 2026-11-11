@@ -39,7 +39,7 @@
   };
 
   /* ── 🔎 어디서나 찾기 ── */
-  F.SCOPES = [['all', '🌐 전체'], ['page', '📄 페이지'], ['feat', '🔧 기능'], ['scr', '🪟 화면'], ['wid', '🧱 위젯'], ['data', '👥 자료(고객·상품·주문)']];
+  F.SCOPES = [['all', '🌐 전체'], ['page', '📄 페이지'], ['feat', '🔧 기능'], ['set', '⚙ 설정'], ['scr', '🪟 화면'], ['wid', '🧱 위젯'], ['data', '👥 자료(고객·상품·주문)']];
   const norm = (s) => String(s || '').toLowerCase().replace(/[\s·・,.()\[\]『』「」|:/_-]+/g, '').replace(/[^0-9a-z가-힣ㄱ-ㅎ]/g, '');
   const CHO = 'ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ';
   const cho = (s) => [...String(s || '')].map((ch) => { const c = ch.charCodeAt(0) - 0xac00; return c >= 0 && c < 11172 ? CHO[Math.floor(c / 588)] : ch; }).join('');
@@ -53,7 +53,10 @@
     const out = []; const L = U2.legacy || {}; const W = window.U2W || { defs: {} };
     (U2.site && U2.site.nav || []).forEach((n) => out.push({ kind: 'page', icon: n.icon || '📄', title: n.title, sub: '페이지', go: () => U2.go(n.id) }));
     Object.values(U2.pages || {}).forEach((p) => { if (!(U2.site.nav || []).some((n) => n.id === p.id) && p.title) out.push({ kind: 'page', icon: p.icon || '📄', title: p.title, sub: '페이지(메뉴 밖)', go: () => U2.go(p.id) }); });
-    try { (L.list && L.list('FEAT') || []).forEach((f) => out.push({ kind: 'feat', icon: '🔧', title: f.t, sub: f.w || '', extra: f.k || '', go: () => L.feat(f.t) })); } catch (e) {}
+    /* (0.4.8 · 성공 사례 견줌 ⑧ 설정 찾기 — Shopify 관리자 검색이 설정 안까지 찾듯) 지금 웹앱 🔍 기능 찾기 전체(FEAT + 섹션 + 홈 칸)를 씀 · 설정 탭 칸은 '⚙ 설정' 범위로도
+     *  예전엔 FEAT만(357) 봐서 섹션 이름(🧪 번외 수집기 설정·🔀 번외로 넘기기 등 200여 칸)이 안 찾혔음 · 연 것은 지금 웹앱 featGo 그대로(이름으로 다시 찾지 않음) */
+    try { const ix = (L.list && (L.list('FEATIX') || L.list('FEAT'))) || []; const seen = new Set();
+      ix.forEach((f) => { if (!f || !f.t) return; const g = f.go || {}; const k = f.t + '|' + (g.tab || '') + '|' + (g.sec || g.sel || ''); if (seen.has(k)) return; seen.add(k); const set = g.tab === 'settings' || /^⚙\s*설정/.test(f.w || ''); out.push({ kind: 'feat', set, icon: set ? '⚙' : '🔧', title: f.t, sub: f.w || '', extra: f.k || '', go: () => (L.featGo ? L.featGo(f) : L.feat(f.t)) }); }); } catch (e) {}
     try { (L.list && L.list('PG_SCR') || []).forEach((r) => { if (L.needsArg && L.needsArg(r[0])) return; out.push({ kind: 'scr', icon: '🪟', title: String(r[1]), sub: '지금 웹앱 화면', extra: r[0], go: () => L.screen(r[0]) }); }); } catch (e) {}
     Object.values(U2.pages || {}).forEach((p) => Object.entries(p.widgets || {}).forEach(([wid, w]) => { const d = W.defs[w.type] || {}; const pr = w.props || {}; const t = pr.s_title || pr.title || pr.label || pr.text || ''; if (!t || /^legacy\.(tab|header)$/.test(w.type)) return; out.push({ kind: 'wid', icon: d.icon || '🧱', title: String(t).split('\n')[0].slice(0, 80), sub: (p.icon || '') + ' ' + (p.title || p.id) + ' 페이지 › ' + (d.name || w.type), go: () => F.goWidget(p.id, wid) }); }));
     return out;
@@ -65,14 +68,16 @@
     if (!hasQ()) await U2.go('home');
     let qi = null; for (let i = 0; i < 30 && !(qi = hasQ()); i++) await new Promise((r) => setTimeout(r, 100));
     if (!qi) return U2.toast('지금 웹앱 검색창을 찾지 못함 — 🏠 홈 페이지에서 검색창을 쓰세요', 1);
-    U2.legacy.userAt = performance.now(); qi.focus(); qi.value = q; qi.dispatchEvent(new Event('input', { bubbles: true }));
+    /* (0.4.8) 페이지를 막 바꾼 뒤엔 지금 웹앱이 머리줄(검색창)을 한 번 더 그려 넣은 글이 지워질 수 있음(설정 탭 → 홈 등) → 들어갔는지 보고 두 번까지 다시 넣음 */
+    for (let i = 0; i < 3; i++) { U2.legacy.userAt = performance.now(); qi.focus(); qi.value = q; qi.dispatchEvent(new Event('input', { bubbles: true }));
+      await new Promise((r) => setTimeout(r, 250)); const q2 = hasQ(); let sq = q; try { sq = S.q; } catch (e) {} if (q2 && q2.value === q && sq === q) return; qi = q2 || qi; }
   };
   F.search = (q, scope) => {
     scope = scope || 'all'; const rows = [];
     if (String(q || '').trim() && (scope === 'all' || scope === 'data')) rows.push({ kind: 'data', icon: '👥', title: `‘${String(q).trim()}’ 자료에서 찾기`, sub: '고객·전화 · 주문번호 · 책 제목·ISBN — 지금 웹앱 검색 그대로(결과 위 범위 칩)', s: 9, go: () => F.dataGo(String(q).trim()) });
     if (scope === 'data') return rows;
     const per = { page: 6, feat: 10, scr: 6, wid: 6 }; const by = {};
-    F.sources().forEach((r) => { if (scope !== 'all' && r.kind !== scope) return; const s = F.score(q, r.title, (r.sub || '') + ' ' + (r.extra || '')); if (!s) return; r.s = s; (by[r.kind] = by[r.kind] || []).push(r); });
+    F.sources().forEach((r) => { if (scope === 'set' ? !r.set : scope !== 'all' && r.kind !== scope) return; const s = F.score(q, r.title, (r.sub || '') + ' ' + (r.extra || '')); if (!s) return; r.s = s; (by[r.kind] = by[r.kind] || []).push(r); });
     ['page', 'feat', 'scr', 'wid'].forEach((k) => { const a = (by[k] || []).sort((x, y) => y.s - x.s || String(x.title).length - String(y.title).length); rows.push(...a.slice(0, scope === 'all' ? per[k] : 60)); });
     return rows;
   };

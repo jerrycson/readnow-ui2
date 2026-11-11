@@ -60,6 +60,17 @@ const CLASSIC = 'https://jerrycson.github.io/readnow-scripts/app/index.html'; co
   const still = /readnow-scripts/.test(a.q.url()); await a.q.evaluate(() => { RN2_MOVE_SYNC(firebase.firestore()); }).catch(() => {}); await a.q.waitForTimeout(3000);
   ok((HAS ? !still : still) && /readnow-ui2\/?/.test(a.q.url()), '기기 저장이 없는 기기: 로그인 뒤 RN2_MOVE_SYNC(문서 1개 읽기)로 새 웹앱으로 넘어감' + (HAS ? '(지금 웹앱이 로그인 뒤 저절로 부름)' : '(견본 — 시험이 부름)'), a.q.url()); await a.q.close();
   await p.evaluate((m) => { localStorage.setItem('rn2-move', JSON.stringify(m)); }, await p.evaluate(() => Object.assign({}, U2.move.cur())));
+  /* ③-3 (0.4.8 · MOVE.md 1-5) 📱 화면마다 설치 앱·알림 바로 가기(?go=) — 지금 웹앱 주소로 열어도 새 웹앱 안 옛 본문이 그 화면을 엶(예전: 여는 동안 닫기 막이가 닫아 버림) */
+  const GOS = [['deliv', 'sheet', /출고/], ['reg', 'sheet', /상품 등록/], ['batch', 'sheet', /수동 일괄 처리/], ['qna', 'search', 'qna']]; /* confirm·y24ord·ppt·mgr·products·orders·search도 같은 길(손으로 견줌 11/11 — 메모리 아끼려 넷만) */
+  for (const [k, kind, want] of GOS) {
+    a = await tab(CLASSIC + '?go=' + k, seedOn, 2500);
+    await a.q.waitForFunction((kind) => { const sh = document.querySelector('#sheet'); return window.U2 && U2.legacy && U2.legacy.shellDone && (kind === 'sheet' ? sh && sh.classList.contains('on') && sh.innerText.length > 40 : U2.cur === kind); }, kind, { timeout: 20000 }).catch(() => {}); await a.q.waitForTimeout(kind === 'sheet' ? 3000 : 1500); /* 여는 동안 닫기 막이가 닫으면 이 사이에 닫힘 */
+    const r = await a.q.evaluate(() => { const sh = document.querySelector('#sheet'); const cs = sh && getComputedStyle(sh); const rc = sh && sh.getBoundingClientRect(); const vis = !!(sh && sh.classList.contains('on') && cs.display !== 'none' && cs.visibility !== 'hidden' && rc.width > 50 && rc.height > 50);
+      return { ui2: /readnow-ui2/.test(location.pathname), vis, h: vis ? sh.innerText.replace(/\s+/g, ' ').slice(0, 80) : '', page: window.U2 && U2.cur, cv: typeof S !== 'undefined' ? S.custView : null }; });
+    const pass = r.ui2 && (kind === 'sheet' ? r.vis && want.test(r.h) : !r.vis && r.page === kind && (!want || r.cv === want));
+    ok(pass, `?go=${k} — 지금 웹앱 주소로 열어도 새 웹앱 안에서 ` + (kind === 'sheet' ? '그 옛 화면이 열린 채로 보임' : `'${kind}' 페이지${want ? '(' + want + ' 보기)' : ''}로`), JSON.stringify(r).slice(0, 160));
+    await a.q.close();
+  }
   /* ④ 한 번에 되돌리기 */
   await p.evaluate(() => U2.moveScreen()); await p.waitForSelector('[data-mvback]:not([disabled])');
   await p.click('[data-mvback]'); await p.click('[data-mvback]'); await p.waitForTimeout(500);

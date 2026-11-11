@@ -80,10 +80,20 @@
     props: [
       { k: 'b_src', label: '책 자료', type: 'select', opts: { demo: '견본 책(지어낸 제목 · 손님·상품 정보 아님)', url: '우리숍 책장 자료 주소(읽기만)' }, def: 'demo', group: '블록' },
       { k: 'b_n', label: '견본 책 수', type: 'number', def: 240, min: 20, max: 1200, step: 20, group: '블록' },
-      { k: 'b_url', label: '책장 자료 주소(우리숍 /shop/shelf · 비우면 견본)', type: 'text', def: '', group: '블록', help: '다른 주소(우리숍)의 자료는 그 서버가 이 주소를 허락해야 읽힘 — 안 되면 칸 안에 까닭이 나옴' }],
+      { k: 'b_url', label: '책장 자료 주소(우리숍 /shop/shelf · 비우면 견본)', type: 'text', def: '', group: '블록', help: '다른 주소(우리숍)의 자료는 그 서버가 이 주소를 허락해야 읽힘 — 안 되면 칸 안에 까닭이 나옴' },
+      { k: 'b_bar', label: '관리 줄 보이기(관리자 기기만 — 이 설정으로 우리숍 손님 화면 미리 보기 · 설정 글 복사)', type: 'check', def: true, group: '블록' },
+      { k: 'b_shop', label: '우리숍 주소(미리 보기 링크)', type: 'text', def: 'https://booksqueen.com/', group: '블록' }],
     skip: ['on'], /* 우리숍 메뉴에 '서가 책장' 보이기 — 새 웹앱에선 페이지 배치가 대신함 */
     mount(b, p, ctx) {
       const B0 = window.BQS; const cfg = B0.cfgOf(p);
+      /* 관리 줄(관리자 기기 · 보기 모드): 우리숍 관리 화면 '미리 보기'와 같은 주소(#/shelf?cfg=… — 저장 없이 그 화면만) · 설정 글(기본값과 다른 칸만) 복사 — 여기서는 우리숍 설정을 쓰지 않음(ui2_ 밖 쓰기 0) */
+      if (p.b_bar && !ctx.edit && U2.isAdmin && U2.isAdmin()) {
+        const base = /^https:\/\//.test(p.b_shop || '') ? String(p.b_shop).replace(/[#?].*$/, '').replace(/\/?$/, '/') : 'https://booksqueen.com/';
+        const bar = document.createElement('div'); bar.className = 'u2-blkbar'; const diff = B0.cfgDiff(cfg); const n = Object.keys(diff).length;
+        bar.innerHTML = `<span class="u2-sub">📚 우리숍 서가 책장 블록 · 기본값과 다른 칸 ${n}개</span><a class="u2-btn" target="_blank" rel="noopener" href="${esc(base + '#/shelf?cfg=' + B0.previewArg(cfg))}">🔗 이 설정으로 우리숍 미리 보기 ›</a><button type="button" class="u2-btn" data-cp>📋 설정 글 복사</button>`;
+        bar.querySelector('[data-cp]').onclick = () => { const t = JSON.stringify(diff); const done = () => U2.toast('📋 설정 글 복사 — 우리숍 ⚙ 서가 책장 설정에 그대로 옮길 값(' + n + '칸)'); try { navigator.clipboard.writeText(t).then(done, () => U2.toast('복사하지 못함 — 브라우저가 막음', 1)); } catch (e) { U2.toast('복사하지 못함', 1); } };
+        b.appendChild(bar);
+      }
       const host = document.createElement('div'); host.className = 'u2-shelfhost'; b.appendChild(host);
       const load = (prog) => {
         if (p.b_src === 'url' && /^https?:\/\//.test(p.b_url || '')) return fetch(p.b_url).then((r) => { if (!r.ok) throw new Error('책장 자료를 못 받음(' + r.status + ')'); return r.json(); }).then((J) => (J && J.cols ? B0.unpack(J) : Array.isArray(J) ? J : (J && J.items) || []));

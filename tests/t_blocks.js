@@ -42,6 +42,12 @@ const put = (p, pg) => p.evaluate(async (pg) => { U2.pages.bk = pg; U2.render({ 
   /* 정렬 바꾸기(손님 화면 동작이 그대로) */
   const so = await p.evaluate(async () => { const c = U2.view.cell('s'); const sel = c.querySelector('.bqs-sort'); sel.value = 'title'; sel.dispatchEvent(new Event('change', { bubbles: true })); await new Promise((r) => setTimeout(r, 600)); return { n: c.querySelectorAll('.sp').length, v: sel.value }; });
   ok(so.n > 50 && so.v === 'title', '정렬 바꾸기(상품명) — 책장이 다시 꽂힘', '책등 ' + so.n);
+  /* 관리 줄(관리자 기기): 우리숍 미리 보기 주소 = 우리숍 관리 화면과 같은 꼴(#/shelf?cfg=기본값과 다른 칸) · 일반 기기엔 없음 */
+  const bar0 = await p.evaluate(() => !!U2.view.cell('s').querySelector('.u2-blkbar'));
+  await p.evaluate(() => { U2._adminOverride = true; }); await put(p, PG({ wood: 'cherry', seed: 7 }));
+  const bar1 = await p.evaluate(() => { const a = U2.view.cell('s').querySelector('.u2-blkbar a'); if (!a) return null; const u = new URL(a.href); const arg = decodeURIComponent(u.hash.split('cfg=')[1] || ''); return { host: u.host, tgt: a.target, cfg: BQS.previewCfg(arg) }; });
+  ok(!bar0 && bar1 && bar1.host === 'booksqueen.com' && bar1.tgt === '_blank' && bar1.cfg.wood === 'cherry' && bar1.cfg.seed === 7 && bar1.cfg.fontsOn === false, "관리 줄 — 관리자 기기에만 '🔗 이 설정으로 우리숍 미리 보기'(우리숍 #/shelf?cfg= · 새 탭 · 저장 없음)", JSON.stringify({ bar0, bar1 }));
+  await p.evaluate(() => { U2._adminOverride = false; }); await put(p, PG());
   /* ⑥ 저장 열쇠 */
   const ls1 = await p.evaluate(() => Object.keys(localStorage));
   const newKeys = ls1.filter((k) => !ls0.includes(k));

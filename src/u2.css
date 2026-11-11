@@ -307,3 +307,5 @@ body.u2-dockdrag { user-select: none; cursor: col-resize; } body.u2-dockdrag #sh
 @media (max-width: 480px) { .u2-pilot { flex-wrap: nowrap; font-size: 12.5px; padding: 4px 8px; } .u2-pilot > .u2-sub { display: none; } .u2-pilot .u2-pilott { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; } .u2-pilot .u2-btn { flex: 0 0 auto; padding: 3px 8px; font-size: 12.5px; } }
 /* (0.4.9) 편집 머리줄: 상태 글이 길어도 '저장·게시' 단추가 둘째 줄로 밀리지 않게 — 넓은 화면에선 상태 글을 줄임표로(전체는 마우스를 올리면) */
 @media (min-width: 1000px) { .u2-edtop { flex-wrap: nowrap; } .u2-edtop > * { flex-shrink: 0; } .u2-edtop .u2-edst { flex: 1 1 auto; flex-shrink: 1; min-width: 60px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } }
+.u2-blkbar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 6px 10px; background: var(--soft); border-bottom: 1px solid var(--line); }
+.u2-blkbar .u2-sub { flex: 1 1 auto; font-size: 12px; }

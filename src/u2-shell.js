@@ -44,7 +44,8 @@
     flow: { name: '처리 흐름(단계 칸) 견본', make: (id) => { const p = U2.TEMPLATES.blank.make(id); const w = mk(p);
       w('h', 'heading', { text: '오늘 처리 흐름', size: 'l' }, 0, 0, 24, 3); w('bd', 'board', { cols: '① 주문 확인: 가, 나, 다\n② 송장: 라\n③ 발송 요청: 마, 바\n④ 끝: 사' }, 0, 3, 16, 14);
       w('pg', 'progress', { label: '오늘 출고', value: 1, max: 7 }, 16, 3, 8, 4); w('ck', 'checklist', { items: '상자 접기\n테이프 확인\n송장 붙이기\n사진 찍기' }, 16, 7, 8, 10);
-      w('b', 'cardbtn', { icon: '🚚', label: '지금 웹앱 오늘 출고', act: 'screen', arg: 'ship' }, 0, 17, 8, 6); w('tl', 'timeline', { items: '09:00 | 주문 확인\n11:00 | 송장\n14:00 | 출고 마감' }, 8, 17, 8, 6); return p; } },
+      w('b', 'cardbtn', { icon: '🚚', label: '지금 웹앱 오늘 출고', act: 'screen', arg: 'ship' }, 0, 17, 8, 6); w('tl', 'timeline', { items: '09:00 | 주문 확인\n11:00 | 송장\n14:00 | 출고 마감' }, 8, 17, 8, 6);
+      p.layouts.pc.forEach((it) => { if (it.id !== 'h') it.y += 9; }); w('sb', 'shipbar', {}, 0, 3, 24, 9); /* (0.4.9) 맨 위에 진짜 숫자 — 🚦 처리할 주문(지금 웹앱 셈 그대로) */ return p; } },
     settings: { name: '설정형 견본', make: (id) => { const p = U2.TEMPLATES.blank.make(id); const w = mk(p);
       w('h', 'heading', { text: '이 기기 설정', size: 'l' }, 0, 0, 24, 3); w('s1', 'switch', { label: '밤에는 출고 페이지 숨김', var: '밤숨김' }, 0, 3, 12, 2); w('s2', 'switch', { label: '진동 알림', var: '진동' }, 12, 3, 12, 2);
       w('ac', 'accordion', { items: '테마\n☰ 메뉴 → 테마에서 밝음·어두움·높은 대비\n---\n쓰기 허락\n☰ 메뉴 → 🔒 쓰기 허락(관리자 기기)\n---\n개인 배치\n✏ 꾸미기 → 📱 이 기기만' }, 0, 5, 16, 12); w('m', 'memo', {}, 16, 5, 8, 12); return p; } },

@@ -58,6 +58,11 @@ const { open, ok, done, nonU2Writes } = require('./lib');
   await p.keyboard.press('a'); await tryWrite(null); await p.waitForTimeout(200); const tk = await toastN();
   await p.evaluate(() => { U2.guard.toastAt = 0; }); await p.mouse.click(5, 300); await tryWrite(null); await p.waitForTimeout(200); const tc = await toastN();
   ok(tk === 0 && tc >= 1, "막은 쓰기 알림 — 글자를 친 2초 안 뒤쪽 쓰기엔 없음 · 누른 직후엔 '🔒 시범 중 — 이 일은 지금 웹앱에서'", JSON.stringify({ 글자: tk, 누름: tc }));
+  /* 옛 등록 화면을 '열기만' 했을 때 지금 웹앱이 쓰는 자리 표시(regPresence)는 막되 알림 없음 */
+  await p.evaluate(() => { U2.guard.toastAt = 0; document.querySelectorAll('#u2-toast .u2-note').forEach((e) => e.remove()); }); await p.mouse.click(5, 300);
+  const pr0 = await p.evaluate(() => U2.guard.blocked.length); await p.evaluate(() => { function regPresence() { return firebase.firestore().collection('app_settings').doc('reg_presence').set({ at: 1 }).catch(() => {}); } return regPresence(); }); await p.waitForTimeout(200);
+  const pr = await p.evaluate((n) => ({ blocked: U2.guard.blocked.length - n, toast: [...document.querySelectorAll('#u2-toast .u2-note')].filter((e) => /시범 중 — 이 일은/.test(e.textContent)).length }), pr0);
+  ok(pr.blocked >= 1 && pr.toast === 0, "자리 표시(regPresence — 옛 등록 화면을 열 때)는 막되 '시범 중' 알림은 띄우지 않음", JSON.stringify(pr));
   ok(t.dialogs.length === 0, '브라우저 팝업 0');
   await t.close(); done('t_perm');
 })();

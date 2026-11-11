@@ -17,6 +17,9 @@
   /* 지금 웹앱이 사람 손 없이 뒤에서 도는 쓰기 함수(이름) — 위젯 몫으로 치지 않음. 새로 찾으면 여기 더함(이름이 바뀌어도 '막는 쪽'이라 안전) */
   G.BG = ['y24oScan', 'y24oAuto', 'aoInfoBackfill', 'Backfill', 'autoSched', 'bcObsSave', 'heartbeat', 'Heartbeat', 'homeSumWrite', 'frwAlPub', 'chkSeed'];
   /* 지금 웹앱이 뒤에서만 쓰는 문서(이름 없는 함수·거래 안에서 써서 함수 이름으로 못 잡는 것) — 위젯 몫으로 치지 않음 */
+  /* (0.4.9) 알림만 조용히(쓰기 허락 판단은 그대로): 사람이 화면을 '열기만' 해도 지금 웹앱이 쓰는 자리 표시·성능 기록 — 옛 등록 화면을 열면 regPresence(누가 등록 중) → '🔒 시범 중 — 이 일은 지금 웹앱에서' 알림이 뜨던 것 */
+  G.QUIET = ['regPresence', 'Presence', 'presence', 'perfLog', 'perfFlush'];
+  G.QUIET_DOCS = [/presence/i, /^perf_logs\//, /^prd_system\//];
   G.BG_DOCS = [/^app_summary\//, /^app_settings\/(y24_link|y24_ord_state|purchase|bench_obs)$/, /^prd_price_batches\//, /^prd_system\//];
   /* (0.4.6) 칸까지 허락 — 켠 위젯이라도 허락한 칸(컬렉션)에만 */
   G.colOk = (k, col) => { const o = G.writeOk[k]; return !!(o && o.on && Array.isArray(o.cols) && o.cols.indexOf(col) >= 0); };
@@ -35,7 +38,7 @@
     G._dirty = true;
     /* 사람이 방금 누른 것일 때만 알림(웹앱이 뒤에서 하는 쓰기마다 알리면 시끄러움) */
     /* (0.4.9) 알림은 '눌러서 한 일'(누름·Enter·Space — G.actAt)일 때만 · 뒤에서 도는 함수·문서(G.BG·G.BG_DOCS)가 쓴 것은 알리지 않음 — 예전엔 Ctrl+K·글자 치기 2초 안에 지금 웹앱이 뒤에서 app_settings를 쓰면 사람 탓처럼 빨간 알림이 떴음 */
-    let quiet = !!bg; if (!quiet && Date.now() - (G.actAt || 0) < 2000) { try { const st = new Error().stack || ''; quiet = G.BG.some((n) => st.indexOf(n) >= 0) || G.BG_DOCS.some((re) => re.test(String(path))); } catch (e) {} }
+    let quiet = !!bg; if (!quiet && Date.now() - (G.actAt || 0) < 2000) { try { const st = new Error().stack || ''; quiet = G.BG.concat(G.QUIET).some((n) => st.indexOf(n) >= 0) || G.BG_DOCS.concat(G.QUIET_DOCS).some((re) => re.test(String(path))); } catch (e) {} }
     if (!quiet && Date.now() - (G.actAt || 0) < 2000 && Date.now() - (G.toastAt || 0) > 3000) { G.toastAt = Date.now(); try { U2.toast('🔒 시범 중 — 이 일은 지금 웹앱에서 해 주세요 (' + colOf(path) + ')', true, 3500); } catch (e) {} }
     try { U2.emit && U2.emit('blocked', G.blocked[G.blocked.length - 1]); } catch (e) {}
     return false;

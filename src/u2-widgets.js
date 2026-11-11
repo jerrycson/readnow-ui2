@@ -158,6 +158,29 @@
       b.querySelectorAll('[data-i]').forEach((x) => (x.onclick = () => { if (ctx.edit) return; const r = rows[+x.dataset.i]; U2.actions.run(U2.actions.parseSeq(r.ac), ctx); }));
       return { dyn: true }; } });
 
+  /* ═══ 🚦 처리할 주문 숫자 줄(성공 사례 견줌 ⑥ — Shopify 주문 목록 위 '처리할 주문 n건' 띠처럼) ═══
+   *  지금 웹앱 🚚 오늘 출고 단계 칸 셈(shipCnt · SHIP_STG) 그대로 · 판매처 칩(전체·알라딘·예스24·네이버·우리숍 — 고른 것은 이 기기에 기억) · 단계를 누르면 그 단계 출고 화면(S.shipTab → openShip) · 읽기만 */
+  W.SHIP_SRC = { all: '전체', al: '🟥 알라딘', y24: '🟦 예스24', nv: '🟩 네이버', shop: '🛍 우리숍' };
+  W.SHIP_STG0 = [['confirm', '🆕', '확인할 주문', '확인'], ['deliv', '📦', '출고 준비', '준비'], ['printed', '🖨', '송장 인쇄됨', '인쇄됨'], ['sending', '📤', '송장 보내는 중', '보내는 중'], ['done', '✅', '오늘 끝', '끝']];
+  const SHIP_LEFT = ['confirm', 'deliv', 'printed', 'sending'];
+  W.def('shipbar', { name: '처리할 주문 숫자 줄', group: '자료 보기', icon: '🚦', w: 24, h: 9, props: [{ k: 'src', label: '판매처(처음)', type: 'select', opts: W.SHIP_SRC, def: 'all' }, { k: 'chips', label: '판매처 칩 보이기', type: 'check', def: true }, { k: 'done', label: "'오늘 끝' 칸도 보이기", type: 'check', def: true }],
+    render(b, p, ctx) {
+      let stg = W.SHIP_STG0; try { if (typeof SHIP_STG !== 'undefined' && Array.isArray(SHIP_STG) && SHIP_STG.length) stg = SHIP_STG; } catch (e) {}
+      const key = 'shipbarSrc:' + (ctx.page || '') + ':' + (ctx.wid || ''); let src = U2.ls.get(key, null) || p.src || 'all'; if (!W.SHIP_SRC[src]) src = 'all';
+      const ok = !!(U2.legacy && U2.legacy.ready) && (!U2.adapters || !U2.adapters.kindOk || U2.adapters.kindOk('shipbar'));
+      let C = null; try { if (ok && typeof S !== 'undefined' && (S.ship || S.shipC) && typeof shipCnt === 'function') C = shipCnt(); } catch (e) { C = null; }
+      const sum = (c) => SHIP_LEFT.reduce((a, k) => a + ((c || {})[k] || 0), 0);
+      const c = C ? C[src] || {} : null; const left = c ? sum(c) : null;
+      const chip = (k) => { const n = C ? sum(C[k]) : null; return `<button type="button" class="u2-chip ${k === src ? 'u2-on' : ''}" data-src="${k}" aria-pressed="${k === src}">${esc(W.SHIP_SRC[k])}${n != null ? ` <b>${n}</b>` : ''}</button>`; };
+      b.innerHTML = `<div class="u2-shipbar"><div class="u2-sbh"><b>🚦 처리할 주문</b> <span class="u2-sbn ${left ? 'u2-t-red' : 'u2-t-cloth'}">${left == null ? '—' : left.toLocaleString()}</span>${p.chips ? `<span class="u2-sbsrc" role="group" aria-label="판매처">${Object.keys(W.SHIP_SRC).map(chip).join('')}</span>` : ''}</div>
+        <div class="u2-sbst">${stg.filter((x) => p.done || x[0] !== 'done').map((x) => { const n = c ? c[x[0]] || 0 : null; return `<button type="button" class="u2-sbs ${n ? 'u2-on' : ''} ${x[0] === 'done' ? 'u2-sbdone' : ''}" data-st="${esc(x[0])}" ${ok ? '' : 'disabled'} title="${esc(x[2])} — 누르면 🚚 오늘 출고 화면"><span class="u2-sbl">${esc(x[1])} ${esc(x[2])}</span><span class="u2-sbsh">${esc(x[1])} ${esc(x[3] || x[2])}</span><b>${n == null ? '—' : n}</b></button>`; }).join('<span class="u2-sbarr" aria-hidden="true">›</span>')}</div>
+        ${C ? '' : `<div class="u2-sub u2-sbnote">${ok ? '출고 기록을 아직 받지 않음 — 단계를 누르면 🚚 오늘 출고 화면이 열리고 숫자가 채워짐' : '지금 웹앱을 불러오지 못해 숫자를 볼 수 없음'}</div>`}</div>`;
+      b.querySelectorAll('[data-src]').forEach((x) => (x.onclick = () => { if (ctx.edit) return; U2.ls.set(key, x.dataset.src); U2.mountCell(ctx.cell, ctx.wid, ctx.pg, false); }));
+      b.querySelectorAll('[data-st]').forEach((x) => (x.onclick = () => { if (ctx.edit || !ok) return; const st = x.dataset.st; U2.legacy.userAt = performance.now(); U2.setCtx('screen:ship');
+        try { S.shipTab = st === 'confirm' ? 'confirm' : st === 'done' ? 'all' : 'deliv'; if (src !== 'all') S.shipSrc = src; openShip(); } catch (e) { U2.toast('열지 못함: ' + U2.errKo(e), 1); } }));
+      return { dyn: true };
+    } });
+
   /* ═══ 🔎 스캔 검수(N8 ①) — 바코드(블루투스 스캐너는 글 칸에 치고 Enter · 휴대폰은 카메라 BarcodeDetector)로 '맞는 책인지' 대조 · 읽기만(자료를 바꾸지 않음) ═══ */
 
 

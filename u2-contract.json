@@ -152,7 +152,16 @@
   [
    "shipCnt",
    null,
-   []
+   [
+    "shipbar"
+   ]
+  ],
+  [
+   "openShip",
+   0,
+   [
+    "shipbar"
+   ]
   ]
  ],
  "vals": [
@@ -230,7 +239,9 @@
   "S.secOnly",
   "S.ptOnly",
   "S.mkOnly",
-  "S.limit"
+  "S.limit",
+  "S.shipTab",
+  "S.shipSrc"
  ],
  "baseline": "1.78.369",
  "_baseline": "이 판부터 따라잡음(새 웹앱 0.1.0이 처음 맞춘 판) — 그 전 판은 ➖"

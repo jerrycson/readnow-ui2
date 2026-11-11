@@ -32,6 +32,19 @@ const sim = (a, b) => { if (!a.length) return 100; /* 지금 웹앱에 있는 �
   /* 견본 */
   const tp = await p.evaluate(async () => { const out = []; for (const [k, T] of Object.entries(U2.TEMPLATES)) { const pg = T.make('tpl'); U2.pages.tpl = pg; await U2.go('tpl', { replace: true }); await new Promise((r) => setTimeout(r, 120)); const cells = [...document.querySelectorAll('#u2-page .u2-cell')]; const err = cells.filter((c) => /위젯 오류|모르는 위젯/.test(c.textContent)).length; out.push({ k, n: Object.keys(pg.widgets).length, cells: cells.length, ov: !!U2Grid.hasOverlap(U2.view._items), err }); } return out; });
   ok(tp.length >= 6 && tp.every((x) => !x.ov && !x.err && (x.k === 'blank' || x.k === 'same' || x.cells > 0)), '견본 배치 ' + tp.length + '가지(지금 웹앱 그대로·대시보드·목록+상세·처리 흐름·설정·빈 페이지) — 겹침 0 · 오류 0', tp.map((x) => x.k + ' ' + x.cells).join(' · '));
+  /* (0.4.9 · 성공 사례 견줌 ⑥) 🚦 처리할 주문 숫자 줄 — 지금 웹앱 출고 단계 셈 그대로 · 판매처 칩(이 기기 기억) · 단계를 누르면 그 단계 출고 화면 */
+  const sbw = await p.evaluate(async () => {
+    const o = window.shipCnt; const had = S.ship; window.shipCnt = () => ({ all: { confirm: 3, deliv: 2, printed: 1, done: 4 }, al: { confirm: 2, deliv: 1, printed: 1, done: 3 }, y24: { confirm: 1, deliv: 1, done: 1 }, nv: {}, shop: { confirm: 1 }, cash: {} }); if (!S.ship) S.ship = {};
+    U2.pages.sbt = { id: 'sbt', title: '숫자 줄', grid: { rowH: 16 }, rev: 0, widgets: { sb: { type: 'shipbar', props: U2W.defaults('shipbar') } }, layouts: { pc: [{ id: 'sb', x: 0, y: 0, w: 24, h: 9 }] } }; await U2.go('sbt'); await new Promise((r) => setTimeout(r, 200));
+    const read = () => { const c = U2.view.cell('sb'); return { n: c.querySelector('.u2-sbn').textContent, st: [...c.querySelectorAll('.u2-sbs')].map((x) => x.querySelector('b').textContent).join(','), on: c.querySelectorAll('.u2-sbs.u2-on').length, chips: [...c.querySelectorAll('[data-src]')].map((x) => x.textContent.replace(/\s+/g, ' ').trim()).join('|') }; };
+    const a = read(); U2.view.cell('sb').querySelector('[data-src="y24"]').click(); await new Promise((r) => setTimeout(r, 100)); const b = read(); const kept = U2.ls.get('shipbarSrc:sbt:sb');
+    U2.view.cell('sb').querySelector('[data-src="all"]').click(); await new Promise((r) => setTimeout(r, 100));
+    window.shipCnt = o; S.ship = had; return { a, b, kept }; });
+  ok(sbw.a.n === '6' && sbw.a.st === '3,2,1,0,4' && sbw.b.n === '2' && sbw.b.st === '1,1,0,0,1' && sbw.kept === 'y24' && /🟦 예스24 2/.test(sbw.a.chips), "🚦 처리할 주문 숫자 줄 — 단계 5칸(확인할 주문 3·출고 준비 2·인쇄됨 1·보내는 중 0·오늘 끝 4) · 판매처 칩 🟦 예스24 → 2 · 고른 칩은 이 기기에 기억", JSON.stringify(sbw));
+  await p.evaluate(() => [...U2.view.cell('sb').querySelectorAll('.u2-sbs')].find((x) => x.dataset.st === 'confirm').click()); await p.waitForTimeout(1500);
+  const sbo = await p.evaluate(() => ({ sheet: document.getElementById('sheet').classList.contains('on'), tab: S.shipTab, w: (window.__FSW || []).filter((w) => !/^ui2_/.test(String(w.n).split('/')[0])).length }));
+  ok(sbo.sheet && sbo.tab === 'confirm', "숫자 줄 '🆕 확인할 주문'을 누르면 지금 웹앱 🚚 오늘 출고 화면이 그 단계로 열림", JSON.stringify(sbo));
+  await p.evaluate(() => { try { U2.dock.close(); } catch (e) {} }); await p.waitForTimeout(300);
   /* 📥 할 일 */
   await p.evaluate(() => U2.go('inbox')); await p.waitForTimeout(1500);
   const ib = await p.evaluate(() => { const c = U2.view.cell('ib'); return { rows: c ? c.querySelectorAll('.u2-ibr').length : 0, total: c ? c.querySelector('.u2-ibh b').textContent : '', card: !!(U2.view.cell('al') && U2.view.cell('al').textContent.length > 5) }; });

@@ -9,9 +9,9 @@ const mk = (types) => { const p = { id: 'wt', title: '위젯 시험', icon: '�
   console.log('[단계 4] 기본 위젯·디자인');
   let t = await open({ q: '?p=wt', settle: 1500 }); let p = t.p;
   await p.addStyleTag({ content: '.verbar{display:none!important}' });
-  const types = await p.evaluate(() => U2W.order.filter((k) => !U2W.defs[k].legacy));
+  const types = await p.evaluate(() => U2W.order.filter((k) => !U2W.defs[k].legacy && !U2W.defs[k].block));
   ok(types.length >= 45, '기본 UI 위젯 종류', types.length + '종 (설계안 45종)');
-  const groups = await p.evaluate(() => [...new Set(U2W.order.filter((k) => !U2W.defs[k].legacy).map((k) => U2W.defs[k].group))]);
+  const groups = await p.evaluate(() => [...new Set(U2W.order.filter((k) => !U2W.defs[k].legacy && !U2W.defs[k].block).map((k) => U2W.defs[k].group))]);
   ok(groups.length === 6, '6묶음(글·그림·단추·링크·틀·자료 보기·입력·기타)', groups.join(' · '));
   /* 하나씩 */
   const res = await p.evaluate(async (types) => {

@@ -6,7 +6,7 @@ const { open, seed, ok, done, nonU2Writes } = require('./lib');
   const t = await open({ q: '?p=hx', settle: 3000 }); const p = t.p; await seed(p); await p.waitForTimeout(2000);
   /* H-02 ① 기본 위젯 모든 짝 */
   const r1 = await p.evaluate(async () => {
-    const T = U2W.order.filter((k) => !U2W.defs[k].legacy && k !== 'query'); const out = { n: 0, err: [], dup: 0 }; /* (0.4.7) 남은 타이머는 새 웹앱 위젯이 만든 것만 셈 — 지금 웹앱이 뒤에서 시작한 받기(상품·지표 syncColl 등 1.78.481)는 위젯 짝과 무관 */
+    const T = U2W.order.filter((k) => !U2W.defs[k].legacy && !U2W.defs[k].block && k !== 'query'); const out = { n: 0, err: [], dup: 0 }; /* (0.4.7) 남은 타이머는 새 웹앱 위젯이 만든 것만 셈 — 지금 웹앱이 뒤에서 시작한 받기(상품·지표 syncColl 등 1.78.481)는 위젯 짝과 무관 */
     const live = new Map(), si = window.setInterval, ci = window.clearInterval; window.setInterval = function () { const h = si.apply(this, arguments); if (!/readnow-(webapp|[a-z-]+-core)\.js|readnow-registry/.test(new Error().stack || '')) live.set(h, 1); return h; }; window.clearInterval = function (h) { live.delete(h); return ci.apply(this, arguments); };
     for (let i = 0; i < T.length; i++) for (let j = i + 1; j < T.length; j++) {
       U2.pages.hx = { id: 'hx', title: 'hx', grid: { rowH: 16 }, rev: 0, widgets: { a: { type: T[i], props: {} }, b: { type: T[j], props: {} } }, layouts: { pc: [{ id: 'a', x: 0, y: 0, w: 12, h: 8 }, { id: 'b', x: 12, y: 0, w: 12, h: 8 }] } };
@@ -57,7 +57,7 @@ const { open, seed, ok, done, nonU2Writes } = require('./lib');
   /* H-04 흔들기: 무작위 배치 200 · 폭 4단계 */
   const r4 = await p.evaluate(async () => {
     let seed = 99; const R = (n) => { seed = (seed * 1103515245 + 12345) % 2147483648; return seed % n; };
-    const T = U2W.order.filter((k) => !U2W.defs[k].legacy && k !== 'query' && k !== 'iframe'); const out = { n: 0, ov: 0, err: 0, out: 0 };
+    const T = U2W.order.filter((k) => !U2W.defs[k].legacy && !U2W.defs[k].block && k !== 'query' && k !== 'iframe'); const out = { n: 0, ov: 0, err: 0, out: 0 };
     for (let s = 0; s < 200; s++) {
       const W0 = {}, L0 = []; const n = 3 + R(14);
       for (let i = 0; i < n; i++) { const id = 'z' + i; W0[id] = { type: T[R(T.length)], props: {} }; const it = { id, x: R(24), y: R(30), w: 1 + R(12), h: 1 + R(10) }; if (R(10) === 0) it.lock = true; if (R(12) === 0) it.float = true; U2Grid.clamp(it, 24, 1); L0.push(it); U2Grid.resolve(L0, id); }

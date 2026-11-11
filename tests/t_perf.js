@@ -11,7 +11,7 @@ const { open, ok, done } = require('./lib');
   M.files = res.length; M.kb = Math.round(res.reduce((s, r) => s + (r[1] || 0), 0) / 1024);
   M.first = await p.evaluate(() => U2._firstMs);
   const big = await p.evaluate(async () => {
-    const T = U2W.order.filter((k) => !U2W.defs[k].legacy && !['query', 'iframe', 'fab', 'scan'].includes(k)); const W0 = {}, L0 = [];
+    const T = U2W.order.filter((k) => !U2W.defs[k].legacy && !U2W.defs[k].block && !['query', 'iframe', 'fab', 'scan'].includes(k)); const W0 = {}, L0 = [];
     for (let i = 0; i < 80; i++) { const ty = T[i % T.length]; W0['b' + i] = { type: ty, props: {} }; L0.push({ id: 'b' + i, x: (i % 4) * 6, y: Math.floor(i / 4) * 8, w: 6, h: 8 }); }
     U2.pages.pf = { id: 'pf', title: '긴 페이지', grid: { rowH: 16 }, rev: 0, widgets: W0, layouts: { pc: L0 } };
     const ts = []; for (let k = 0; k < 7; k++) { const t0 = performance.now(); U2.render({ reset: true }); ts.push(performance.now() - t0); await new Promise((r) => setTimeout(r, 120)); } ts.sort((a, b) => a - b); const ms = ts[3]; /* 7번 중 가운데 값 */ await new Promise((r) => setTimeout(r, 300));

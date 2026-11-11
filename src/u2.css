@@ -279,3 +279,18 @@ body.u2-dockdrag { user-select: none; cursor: col-resize; } body.u2-dockdrag #sh
 .u2-findhelp { font-size: 11.5px; }
 .u2-flash { outline: 3px solid var(--cloth); outline-offset: 2px; transition: outline-color .4s; }
 @media (max-width: 640px) { .u2-findk { display: none; } .u2-find { padding-top: 10px; } .u2-findbox { max-height: calc(100vh - 20px); } }
+/* (0.4.9) 속성판 묶음 머리·여럿 고르기 · 🧩 우리숍 블록 자리(블록 CSS는 @scope로 블록 칸 안에만) */
+.u2-pgh { margin: 10px 0 2px; padding-top: 6px; border-top: 1px solid var(--line); font-size: 12px; font-weight: 700; color: var(--ink); }
+.u2-multi .u2-ml { font-size: 12.5px; color: var(--sub); }
+.u2-mopts { display: flex; flex-wrap: wrap; gap: 2px 10px; max-height: 150px; overflow: auto; padding: 4px 6px; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); }
+.u2-mopts .u2-chk { font-size: 12.5px; color: var(--ink); }
+.u2-blk { padding: 0; }
+.u2-blk .u2-shelfhost { min-height: 100%; }
+.u2-blk-shelf .bqs { margin: 0; min-height: 100%; padding: 0 12px 40px; border-radius: inherit; }
+.u2-blk-shelf .bqs-bar { top: 0; }
+.u2-blk-shelf .bqs-cart { display: none; } /* 장바구니는 우리숍에서 — 새 웹앱 화면 오른쪽 아래(옛 떠 있는 단추 자리)를 덮지 않게 */
+.u2-blk-shelf .bqs-arrow { position: absolute; top: 220px; } /* 화면 가장자리 대신 블록 칸 가장자리 */
+/* (0.4.9) 휴대폰 머리줄 한 줄에 — ☰ 메뉴가 혼자 둘째 줄로 내려가던 것(390px) : 판 글자·'꾸미기' 글은 좁은 폭에서 숨김(단추 이름은 aria-label로 남음) */
+@media (max-width: 480px) { .u2-nosm { display: none; } .u2-brand small { display: none; } .u2-barrow { gap: 6px; } }
+/* 받은편지함 줄 조금 촘촘히 — 7줄이 기본 높이에 다 보이게 */
+.u2-ibr { padding: 4px 8px; } .u2-ibr .u2-btn { padding-top: 4px; padding-bottom: 4px; }

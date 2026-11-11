@@ -263,10 +263,14 @@
     if (f.type === 'area') return `<div class="u2-fld">${lab}<textarea id="${id}" data-k="${esc(f.k)}" class="u2-in" rows="4">${esc(v)}</textarea></div>`;
     if (f.type === 'check') return `<div class="u2-fld"><label class="u2-chk"><input id="${id}" type="checkbox" data-k="${esc(f.k)}" ${v ? 'checked' : ''}> ${esc(f.label)}</label></div>`;
     if (f.type === 'select') return `<div class="u2-fld">${lab}<select id="${id}" data-k="${esc(f.k)}" class="u2-in">${Object.entries(f.opts).map(([a, b]) => `<option value="${esc(a)}" ${String(v) === String(a) ? 'selected' : ''}>${esc(b)}</option>`).join('')}</select></div>`;
+    if (f.type === 'multi') { const on = new Set((Array.isArray(v) ? v : String(v || '').split(/[,\s]+/)).map(String)); return `<div class="u2-fld u2-multi" role="group" aria-label="${esc(f.label)}"><span class="u2-ml">${esc(f.label)}</span><div class="u2-mopts">${Object.entries(f.opts || {}).map(([a, b]) => `<label class="u2-chk"><input type="checkbox" data-mk="${esc(f.k)}" value="${esc(a)}" ${on.has(String(a)) ? 'checked' : ''}> ${esc(b)}</label>`).join('')}</div>${f.help ? `<small class="u2-hint">${esc(f.help)}</small>` : ''}</div>`; } /* (0.4.9) 여럿 고르기 — 우리숍 설정 틀(multi)과 같은 꼴 · 하나도 안 고르면 '모두' */
     if (f.type === 'icon') return `<div class="u2-fld">${lab}<input id="${id}" data-k="${esc(f.k)}" class="u2-in" value="${esc(v)}" list="u2-icons"></div>`;
     if (f.type === 'scr' || f.type === 'hw') { const cat = U2.legacy && U2.legacy.ready ? U2.legacy.catalog() : { screens: [], home: [] }; const L0 = f.type === 'scr' ? cat.screens : cat.home; return `<div class="u2-fld">${lab}<select id="${id}" data-k="${esc(f.k)}" class="u2-in">${L0.map((s) => `<option value="${esc(s.k)}" ${s.k === v ? 'selected' : ''}>${esc(s.t)}</option>`).join('') || `<option value="${esc(v)}">${esc(v)}</option>`}</select></div>`; }
-    return `<div class="u2-fld">${lab}<input id="${id}" data-k="${esc(f.k)}" class="u2-in" type="${f.type === 'number' ? 'number' : 'text'}" value="${esc(v)}"></div>`;
+    const rng = f.type === 'number' ? ['min', 'max', 'step'].filter((k) => f[k] != null).map((k) => ` ${k}="${esc(f[k])}"`).join('') : '';
+    return `<div class="u2-fld">${lab}<input id="${id}" data-k="${esc(f.k)}" class="u2-in" type="${f.type === 'number' ? 'number' : 'text'}" value="${esc(v)}"${rng}>${f.help ? `<small class="u2-hint">${esc(f.help)}</small>` : ''}</div>`;
   };
+  /* (0.4.9) 속성이 묶음(group)을 가지면 묶음마다 작은 머리 — 우리숍 블록처럼 칸이 많은 위젯을 읽기 쉽게 */
+  const fieldsOf = (props, p) => { let g = null; return props.map((f) => { const h = f.group && f.group !== g ? `<div class="u2-pgh">${esc(f.group)}</div>` : ''; g = f.group || g; return h + field(f, p[f.k]); }).join(''); };
   Editor.prototype.drawProps = function () {
     const E = this, pr = U2.$('#u2-edprops'); if (!pr) return; const ids = [...E.sel];
     const tree = `<details class="u2-drg" open><summary>층 나무(위→아래)</summary><div class="u2-tree">${E.items().slice().sort((a, b) => a.y - b.y || a.x - b.x).map((i) => { const w = E.draft.widgets[i.id]; return `<button type="button" class="u2-dri ${E.sel.has(i.id) ? 'on' : ''}" data-pick="${esc(i.id)}">${esc((W.defs[w.type] || {}).icon || '')} ${esc(((w.props || {}).s_title) || (w.props || {}).title || (w.props || {}).label || (W.defs[w.type] || {}).name)} <small>${i.x},${i.y} · ${i.w}×${i.h}</small></button>`; }).join('') || '<p class="u2-hint">아직 위젯이 없음 — 왼쪽 서랍에서 넣으세요</p>'}</div></details>`;
@@ -274,7 +278,7 @@
     if (ids.length === 1) {
       const id = ids[0], w = E.draft.widgets[id], d = W.defs[w.type] || { props: [] }, p = Object.assign(W.defaults(w.type), w.props || {}), it = E.cur.find((i) => i.id === id) || {};
       h = `<div class="u2-prh"><b>${esc(d.icon || '')} ${esc(d.name || w.type)}</b> <small>${esc(id)}</small></div>
-        <details class="u2-drg" open><summary>내용·기능</summary>${d.props.map((f) => field(f, p[f.k])).join('') || '<p class="u2-hint">고칠 내용 없음</p>'}${field({ k: 'guide', label: '📖 이 위젯 설명(ⓘ로 보임)', type: 'area' }, p.guide || '')}</details>
+        <details class="u2-drg" open><summary>내용·기능</summary>${fieldsOf(d.props, p) || '<p class="u2-hint">고칠 내용 없음</p>'}${field({ k: 'guide', label: '📖 이 위젯 설명(ⓘ로 보임)', type: 'area' }, p.guide || '')}</details>
         <details class="u2-drg" open><summary>자리 (${esc(G.bpByKey(E.bp).name)} ${E.bpo().cols}칸)</summary><div class="u2-row u2-xywh">${['x', 'y', 'w', 'h'].map((k) => `<label>${{ x: '가로 자리', y: '세로 자리', w: '폭', h: '높이' }[k]}<input type="number" class="u2-in" data-pos="${k}" step="${k === 'x' || k === 'w' ? E.step() : 1}" value="${it[k] != null ? it[k] : ''}"></label>`).join('')}</div>
           <label class="u2-chk"><input type="checkbox" data-flag="lock" ${it.lock ? 'checked' : ''}> 🔒 못 움직이게</label> <label class="u2-chk"><input type="checkbox" data-flag="float" ${it.float ? 'checked' : ''}> 겹쳐 놓기 허락</label>
           <div>이 폭에서 숨김: ${G.BPS.map((b) => `<label class="u2-chk"><input type="checkbox" data-hide="${b.k}" ${(w.hide || {})[b.k] ? 'checked' : ''}> ${esc(b.name)}</label>`).join(' ')}</div></details>
@@ -300,6 +304,7 @@
     /* 고치기: 글자를 치는 동안은 한 걸음으로 묶음(칸에 들어갈 때 한 번 기록) */
     const one = ids.length === 1 ? ids[0] : null;
     const cc = pr.querySelector('[data-condchk]'); const condUpd = () => { if (!cc || !one) return; const si = (E.draft.widgets[one].props || {}).showIf; if (!si) { cc.textContent = ''; return; } const r = U2.data.eval(si); cc.textContent = r.err ? '⚠ 식 오류: ' + r.err + ' (틀리면 늘 보임)' : '지금 값: ' + U2Expr.show(r.v) + ' → ' + (U2Expr.truthy(r.v) ? '보임' : '숨김'); }; condUpd();
+    pr.querySelectorAll('[data-mk]').forEach((el) => el.addEventListener('change', () => { if (!one) return; E.push(); const k = el.dataset.mk; const v = [...pr.querySelectorAll('[data-mk]')].filter((x) => x.dataset.mk === k && x.checked).map((x) => x.value); const w = E.draft.widgets[one]; w.props = Object.assign({}, w.props, { [k]: v }); E.remount(one); E.saveDraft(); }));
     pr.querySelectorAll('[data-k]').forEach((el) => {
       el.addEventListener('focus', () => { el._pushed = false; });
       const apply = () => {

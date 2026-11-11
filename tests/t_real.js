@@ -59,7 +59,7 @@ const inspect = () => {
     /* B. 모든 위젯 */
     console.log('[실화면 점검] B. 모든 위젯 — ' + dev);
     await p.evaluate(() => U2W.lazyLoad && U2W.lazyLoad()).catch(() => {}); await p.waitForTimeout(800);
-    const types = await p.evaluate(() => U2W.order.filter((k) => !U2W.defs[k].legacy));
+    const types = await p.evaluate(() => U2W.order.filter((k) => !U2W.defs[k].legacy && !U2W.defs[k].block));
     const chunk = dev === 'pc' ? 20 : 12; let wBad = []; let k = 0;
     for (let i = 0; i < types.length; i += chunk, k++) {
       const part = types.slice(i, i + chunk); const e0 = t.errs.length;

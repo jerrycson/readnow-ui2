@@ -38,7 +38,7 @@ const { open, ok, done, nonU2Writes } = require('./lib');
     const ids = ['bz_pace', 'bz_margin', 'bz_inv']; const W0 = {}; const L0 = []; ids.forEach((id, i) => { W0['s' + i] = { type: 'legacy.sec', props: { ref: id, tab: 'biz' } }; L0.push({ id: 's' + i, x: i * 8, y: 0, w: 8, h: 16 }); });
     U2.pages.ad = { id: 'ad', title: '셋', grid: { rowH: 16 }, rev: 0, widgets: W0, layouts: { pc: L0 } }; const r0 = U2.adapters.renders; U2.render({ reset: true }); await new Promise((r) => setTimeout(r, 50));
     const once = U2.adapters.renders - r0; const shown = ids.filter((id, i) => U2.view.cell('s' + i).querySelector(`details.sec[data-sec="${id}"]`)).length;
-    const r1 = U2.adapters.renders; renderMain(); renderMain(); renderMain(); await new Promise((r) => setTimeout(r, 1000)); const again = U2.adapters.renders - r1;
+    const r1 = U2.adapters.renders; renderMain(); renderMain(); renderMain(); for (let k = 0; k < 40 && U2.adapters.renders === r1; k++) await new Promise((r) => setTimeout(r, 100)); await new Promise((r) => setTimeout(r, 900)); const again = U2.adapters.renders - r1; /* (0.4.9) 기계가 바쁘면 0.7초 모음이 1초를 넘김 — 다시 그릴 때까지(4초 안) 기다린 뒤 0.9초 더 보고 셈 */
     const r2 = U2.adapters.renders; await new Promise((r) => setTimeout(r, 3000)); const idle = U2.adapters.renders - r2;
     return { once, shown, again, idle, dup: U2.guard.dupIds(), tab: S.tab };
   });

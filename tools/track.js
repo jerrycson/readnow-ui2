@@ -5,7 +5,7 @@
  *   + 계약 목록(u2-contract.json — 새 웹앱이 부르는 옛 함수·값·화면 id)이 살아 있나·인자 수가 같은가
  *   + 그 판 바뀐 것(CHANGELOG 첫 줄)과 날짜(UPDATE_DATES)
  * → TRACK.json(기계) · TRACK.md(사람) · 새 항목이나 ❌가 있으면 끝 코드 1
- * 쓰는 법: node tools/track.js [--repo ../readnow-scripts] [--since 7] [--max 400] [--out .] [--quiet]
+ * 쓰는 법: node tools/track.js [--repo ../readnow-scripts] [--rev origin/main(기본 HEAD — 그 저장소가 다른 가지에 있어도 main을 읽게)] [--since 7] [--max 400] [--out .] [--quiet]
  *   이미 표에 있는 커밋은 건너뜀(이어서) · ✅로 고친 줄은 그대로 둠 */
 'use strict';
 const fs = require('fs'), path = require('path'), cp = require('child_process');
@@ -98,7 +98,7 @@ function run(opt) {
   const jf = path.join(opt.out, 'TRACK.json'); let J = { kind: 'readnow-ui2-track', rows: [] }; try { J = JSON.parse(fs.readFileSync(jf, 'utf8')); } catch (e) {}
   J.plan = readPlan(); /* 전체 일정 — 늘 이 판의 PLAN.json으로 */
   J.rows = (J.rows || []).filter((r) => r.sha); const have = new Set(J.rows.map((r) => r.sha.slice(0, 9)));
-  const log = git(['log', '--since=' + opt.since + '.days', '--format=%H|%cI|%s', '--reverse', '--', 'src/app.html']).trim().split('\n').filter(Boolean).slice(-opt.max);
+  const log = git(['log', opt.rev || 'HEAD', '--since=' + opt.since + '.days', '--format=%H|%cI|%s', '--reverse', '--', 'src/app.html']).trim().split('\n').filter(Boolean).slice(-opt.max);
   if (!log.length) { fs.writeFileSync(jf, JSON.stringify(J, null, 1) + '\n'); fs.writeFileSync(path.join(opt.out, 'TRACK.md'), md(J)); if (!opt.quiet) console.log('바뀐 판 없음'); return { J, added: 0, todo: 0, bad: 0 }; }
   /* 앞 판 = 그 커밋의 첫 부모(가지가 섞인 log 차례로 견주면 판이 오락가락함) */
   const memo = new Map(); const ex = (sha) => { if (memo.has(sha)) return memo.get(sha); let v = null; try { v = extract(git(['show', sha + ':src/app.html']), contract); } catch (e) {} memo.set(sha, v); if (memo.size > 40) memo.delete(memo.keys().next().value); return v; };
@@ -150,6 +150,6 @@ module.exports.mark = mark;
 if (require.main === module && process.argv.includes('--plan')) { const J = writePlan(path.resolve(arg('out', ROOT))); const T = planSum(J.plan); console.log('전체 일정: ' + T.pct + '% · 단계 ' + T.n + ' · 어림 ' + T.est + '시간'); } /* node tools/track.js --plan — PLAN.json만 표에 옮김(git 안 읽음) */
 else if (require.main === module && process.argv.includes('--mark')) { const i = process.argv.indexOf('--mark'); const n = mark(path.resolve(arg('out', ROOT)), process.argv[i + 1], process.argv[i + 2], process.argv[i + 3]); console.log('표시함 ' + n + '줄'); }
 else if (require.main === module) {
-  const r = run({ repo: arg('repo', path.join(ROOT, '..', 'readnow-scripts')), since: +arg('since', 7), max: +arg('max', 400), out: path.resolve(arg('out', ROOT)), quiet: process.argv.includes('--quiet') });
+  const r = run({ repo: arg('repo', path.join(ROOT, '..', 'readnow-scripts')), since: +arg('since', 7), max: +arg('max', 400), rev: arg('rev', 'HEAD'), out: path.resolve(arg('out', ROOT)), quiet: process.argv.includes('--quiet') });
   process.exitCode = r.bad || r.added && r.todo ? 1 : 0;
 }

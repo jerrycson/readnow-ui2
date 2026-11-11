@@ -23,7 +23,7 @@
       layouts: { pc: [{ id: 'hdr', x: 0, y: 0, w: 24, h: 8 }, { id: 'main', x: 0, y: 8, w: 24, h: 40 }], tab: null, sm: null, phone: null } };
     if (id === 'inbox') { const p = { id, title: '할 일', icon: '📥', grid: { rowH: 16, half: false, compact: false }, rev: 0, widgets: {}, layouts: { pc: [], tab: null, sm: null, phone: null } }; const w = mk(p);
       w('h', 'heading', { text: '📥 할 일 받은편지함', size: 'l', guide: '흩어져 있던 처리할 일을 한곳에 — 숫자가 0이 아니면 빨강 · 누르면 그 화면으로' }, 0, 0, 24, 3);
-      w('ib', 'inbox', {}, 0, 3, 14, 19); w('al', 'legacy.homecard', { ref: 'alerts', s_title: '오늘 확인할 것(지금 웹앱 홈 칸)' }, 14, 3, 10, 19); w('vw', 'views', { save: false }, 0, 22, 24, 4); return p; }
+      w('ib', 'inbox', {}, 0, 3, 14, 27); w('al', 'legacy.homecard', { ref: 'alerts', s_title: '오늘 확인할 것(지금 웹앱 홈 칸)' }, 14, 3, 10, 27); w('vw', 'views', { save: false }, 0, 30, 24, 4); /* (0.4.9) 받은편지함 7줄이 잘리지 않게 19 → 27 */ return p; }
     return { id, title: id, icon: '📄', grid: { rowH: 16, half: false, compact: false }, rev: 0, widgets: {}, layouts: { pc: [], tab: null, sm: null, phone: null } };
   };
   /* ── 견본 배치(Q8 ② · 설계안 5-7 빈 페이지 견본) — 시험 자료는 '손님A'처럼 개인 정보 없음 ── */
@@ -187,7 +187,7 @@
     bar.innerHTML = `<div class="u2-barrow"><a class="u2-brand" href="?p=home" data-pg="home">리드나우 2 <small>시범 ${esc(U2.ver)}</small></a>
       <span class="u2-chip" id="u2-mine" hidden title="이 기기 개인 배치를 쓰는 중">📱 이 기기 배치</span>
       <button type="button" class="u2-chip" id="u2-mode" title="쓰기 허락 보기">${mode}</button><span class="u2-chip u2-warnchip" id="u2-both" hidden>⚠ 다른 리드나우 탭도 열려 있음(메모리 2배 — 하나만 여세요)</span>
-      <span class="u2-sp"></span>${U2.find ? U2.find.barHtml() : ''}<button type="button" class="u2-btn" id="u2-editbtn">✏ 꾸미기</button><button type="button" class="u2-btn" id="u2-menubtn" aria-label="메뉴">☰</button></div>
+      <span class="u2-sp"></span>${U2.find ? U2.find.barHtml() : ''}<button type="button" class="u2-btn" id="u2-editbtn" aria-label="꾸미기" title="꾸미기(편집기)">✏<span class="u2-nosm"> 꾸미기</span></button><button type="button" class="u2-btn" id="u2-menubtn" aria-label="메뉴">☰</button></div>
       <nav class="u2-nav" aria-label="페이지">${(U2.site.nav || []).filter((n) => !n.hide).map((n) => `<a href="?p=${encodeURIComponent(n.id)}" data-pg="${esc(n.id)}" class="${n.id === U2.cur ? 'on' : ''}">${esc(n.icon || '')} ${esc(n.title)}</a>`).join('')}</nav>`;
     bar.querySelectorAll('[data-pg]').forEach((a) => (a.onclick = (e) => { e.preventDefault(); U2.go(a.dataset.pg); }));
     U2.$('#u2-editbtn').onclick = () => U2.openEditor && U2.openEditor();

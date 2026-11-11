@@ -34,7 +34,8 @@ const SEC = +(process.env.U2_SOAK_SEC || 150);
   ovRef.fn = () => ({ status: 503, body: '' }); await p.reload(); await p.waitForFunction(() => window.U2 && U2.safe, null, { timeout: 20000 }).catch(() => {}); await p.waitForTimeout(800); /* 망 끊김 */
   const off = await p.evaluate(() => ({ safe: !!U2.safe, cells: document.querySelectorAll('#u2-page .u2-cell').length, banner: !!document.getElementById('u2-safe') }));
   ok(off.safe && off.banner, 'H-15 망이 끊겨 지금 웹앱을 못 받으면 안전 모드 띠', JSON.stringify(off));
-  await p.evaluate(() => { U2._adminOverride = true; U2.pages.dr = U2.TEMPLATES.dash.make('dr'); if (!U2.edit) U2.openEditor('pub'); });
+  await p.evaluate(async () => { U2._adminOverride = true; U2.pages.dr = U2.TEMPLATES.dash.make('dr'); if (!U2.edit) await U2.openEditor('pub'); });
+  await p.waitForFunction(() => window.U2 && U2.edit, null, { timeout: 20000 }).catch(() => {}); /* (0.4.9) 안전 모드에서는 편집기 파일을 그때 받음 — 설 때까지 기다림(시험 쪽 경쟁) */
   const dr = await p.evaluate(() => ({ from: !!U2.edit.fromDraft, badge: Object.values(U2.edit.draft.widgets).some((w) => w.type === 'badge' && w.props.text === '초안 표시') }));
   ok(dr.from && dr.badge, 'H-15 끊긴 뒤에도 편집 중이던 초안을 잃지 않음(이 기기 rn2-draft)', JSON.stringify(dr));
   await t.close(); done('t_soak');

@@ -52,6 +52,12 @@ const { open, ok, done, nonU2Writes } = require('./lib');
   await p.evaluate(() => U2.guard.flush()); await p.waitForTimeout(200);
   const bl = await p.evaluate(() => { const d = Object.values(__FS.ui2_blocked || {})[0]; return d ? { n: d.n, keys: Object.keys(d.last[0] || {}).join(','), hasData: JSON.stringify(d).includes('memo') } : null; });
   ok(bl && bl.n > 0 && !bl.hasData, '막은 쓰기 기록 ui2_blocked — 칸 이름·작업·위젯·시각만(자료 내용 없음)', JSON.stringify(bl));
+  /* (0.4.9) 막은 쓰기 알림은 '눌러서 한 일'일 때만 — 글자 치기·Ctrl+K 2초 안에 지금 웹앱이 뒤에서 쓴 것은 알리지 않음 */
+  const toastN = () => p.evaluate(() => [...document.querySelectorAll('#u2-toast .u2-note')].filter((e) => /시범 중 — 이 일은/.test(e.textContent)).length);
+  await p.evaluate(() => { U2.guard.toastAt = 0; document.querySelectorAll('#u2-toast .u2-note').forEach((e) => e.remove()); }); await p.waitForTimeout(2300); /* 앞 단계에서 누른 것이 2초 안에 남지 않게 */
+  await p.keyboard.press('a'); await tryWrite(null); await p.waitForTimeout(200); const tk = await toastN();
+  await p.evaluate(() => { U2.guard.toastAt = 0; }); await p.mouse.click(5, 300); await tryWrite(null); await p.waitForTimeout(200); const tc = await toastN();
+  ok(tk === 0 && tc >= 1, "막은 쓰기 알림 — 글자를 친 2초 안 뒤쪽 쓰기엔 없음 · 누른 직후엔 '🔒 시범 중 — 이 일은 지금 웹앱에서'", JSON.stringify({ 글자: tk, 누름: tc }));
   ok(t.dialogs.length === 0, '브라우저 팝업 0');
   await t.close(); done('t_perm');
 })();

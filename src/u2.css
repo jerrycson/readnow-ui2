@@ -294,3 +294,16 @@ body.u2-dockdrag { user-select: none; cursor: col-resize; } body.u2-dockdrag #sh
 @media (max-width: 480px) { .u2-nosm { display: none; } .u2-brand small { display: none; } .u2-barrow { gap: 6px; } }
 /* 받은편지함 줄 조금 촘촘히 — 7줄이 기본 높이에 다 보이게 */
 .u2-ibr { padding: 4px 8px; } .u2-ibr .u2-btn { padding-top: 4px; padding-bottom: 4px; }
+/* (0.4.9) 🔎 찾기 📌 고정 — 줄 오른쪽 작은 단추(누르면 고정/풀기) · 고정한 것은 빈 칸일 때 맨 위 */
+.u2-findwrap { display: flex; align-items: stretch; gap: 2px; }
+.u2-findwrap .u2-findrow { flex: 1; min-width: 0; }
+.u2-findpin { flex: 0 0 auto; width: 34px; border: 0; background: transparent; border-radius: 8px; cursor: pointer; font-size: 14px; opacity: .28; filter: grayscale(1); }
+.u2-findwrap:hover .u2-findpin, .u2-findpin:focus-visible { opacity: .7; }
+.u2-findpin.on { opacity: 1; filter: none; }
+.u2-findpin:hover { background: var(--soft); opacity: 1; }
+/* (0.4.9) 휴대폰: 빠른 작업(📥 등록·🚚 오늘 출고·＋ 매입)은 머리줄 아래 제 줄에 셋 고르게 — 🔎·✏·☰가 첫 줄에 함께 남게(지금 웹앱 머리 칸 세 단추 줄과 같은 모양) */
+@media (max-width: 480px) { .u2-qa { order: 10; flex: 1 0 100%; display: flex; gap: 6px; } .u2-qa .u2-btn { flex: 1 1 0; justify-content: center; padding-left: 4px; padding-right: 4px; } }
+/* (0.4.9) 휴대폰 시범 띠 한 줄 — 통과 숫자는 단추 안 작은 글로 대신(띠가 두 줄로 첫 화면을 밀던 것) */
+@media (max-width: 480px) { .u2-pilot { flex-wrap: nowrap; font-size: 12.5px; padding: 4px 8px; } .u2-pilot > .u2-sub { display: none; } .u2-pilot .u2-pilott { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; } .u2-pilot .u2-btn { flex: 0 0 auto; padding: 3px 8px; font-size: 12.5px; } }
+/* (0.4.9) 편집 머리줄: 상태 글이 길어도 '저장·게시' 단추가 둘째 줄로 밀리지 않게 — 넓은 화면에선 상태 글을 줄임표로(전체는 마우스를 올리면) */
+@media (min-width: 1000px) { .u2-edtop { flex-wrap: nowrap; } .u2-edtop > * { flex-shrink: 0; } .u2-edtop .u2-edst { flex: 1 1 auto; flex-shrink: 1; min-width: 60px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } }

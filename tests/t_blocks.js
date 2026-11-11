@@ -50,8 +50,8 @@ const put = (p, pg) => p.evaluate(async (pg) => { U2.pages.bk = pg; U2.render({ 
   /* ④ 편집기 속성판 = 우리숍 설정 틀 */
   await p.evaluate(() => U2.openEditor('mine')); await p.waitForFunction(() => U2.edit && U2.view && U2.view.cell('s'), null, { timeout: 20000 });
   await p.evaluate(async () => { for (let i = 0; i < 60 && !U2W.defs['shop.shelf']._full; i++) await new Promise((r) => setTimeout(r, 100)); const E = U2.edit; E.sel.clear(); E.sel.add('s'); E.markSel(); E.drawProps(); });
-  const pr = await p.evaluate(() => { const P = document.getElementById('u2-edprops'); const schema = (window.BQS && BQS.SCHEMA) || []; return { n: schema.length, fields: schema.filter((f) => P.querySelector(`[data-k="${f.k}"],[data-mk="${f.k}"]`)).length, heads: [...P.querySelectorAll('.u2-pgh')].map((h) => h.textContent), multi: P.querySelectorAll('.u2-multi').length }; });
-  ok(pr.n > 20 && pr.fields === pr.n, '속성판에 우리숍 설정 틀 칸이 모두(같은 이름·같은 꼴)', pr.fields + '/' + pr.n);
+  const pr = await p.evaluate(() => { const P = document.getElementById('u2-edprops'); const skip = (U2.blocks.specs['shop.shelf'].skip || []); const schema = ((window.BQS && BQS.SCHEMA) || []).filter((f) => !skip.includes(f.k)); /* 우리숍 메뉴 칸(on)은 새 웹앱에 뜻이 없어 뺌 */ return { n: schema.length, fields: schema.filter((f) => P.querySelector(`[data-k="${f.k}"],[data-mk="${f.k}"]`)).length, heads: [...P.querySelectorAll('.u2-pgh')].map((h) => h.textContent), multi: P.querySelectorAll('.u2-multi').length, onShown: !!P.querySelector('[data-k="on"]') }; });
+  ok(pr.n > 20 && pr.fields === pr.n && !pr.onShown, '속성판에 우리숍 설정 틀 칸이 모두(같은 이름·같은 꼴 · 우리숍 메뉴 칸만 뺌)', pr.fields + '/' + pr.n);
   ok(pr.heads.length >= 5 && pr.heads.includes('책장') && pr.heads.includes('블록'), '속성판 묶음 머리(블록·책장·정렬·책등·글꼴·움직임·확대)', pr.heads.join(' · '));
   ok(pr.multi >= 2, '여럿 고르기 칸(정렬 고르기·책등 디자인·글꼴)', pr.multi);
   const ch = await p.evaluate(async () => { const P = document.getElementById('u2-edprops'); const s = P.querySelector('[data-k="wood"]'); s.value = 'walnut'; s.dispatchEvent(new Event('change', { bubbles: true })); await new Promise((r) => setTimeout(r, 900));

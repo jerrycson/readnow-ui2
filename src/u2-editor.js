@@ -83,7 +83,7 @@
     const E = this; const st = U2.$('#u2-edst'); if (!st) return;
     const own = E.bp === 'pc' ? '' : E.own() ? ' · 이 폭: PC에서 흘린 배치 + 따로 고친 위젯 ' + E.ovIds().size + '개' : ' · 이 폭은 PC 배치에서 저절로(고친 위젯만 따로 기억)';
     const pm = U2.catalog && U2.legacy && U2.legacy.ready ? U2.catalog.pageMem(E.draft) : null; const memTxt = pm ? ` · <span class="u2-membar ${E.bp === 'phone' && pm.mb > U2.catalog.PHONE_MB ? 'u2-t-red' : ''}" title="이 페이지 옛 기능 위젯이 받는 자료">받는 자료 ≈${pm.mb}MB${pm.unknown ? '+' : ''}${E.bp === 'phone' ? ' / 휴대폰 예산 ' + U2.catalog.PHONE_MB + 'MB' : ''}</span>` : '';
-    st.innerHTML = `${E.scope === 'mine' ? '📱 이 기기 배치' : '🌐 공용 배치'} · ${esc(E.draft.title)} · ${E.dirty() ? '<b>게시 안 한 고침 있음</b>' + (E.savedAt ? ' · 초안 저장됨' : '') : '바뀐 것 없음'}${own}${E.lockedBy ? ' · <b class="u2-t-red">' + esc(E.lockedBy) + '가 편집 중 — 게시 막힘</b>' : ''}${memTxt}`;
+    st.innerHTML = `${E.scope === 'mine' ? '📱 이 기기 배치' : '🌐 공용 배치'} · ${esc(E.draft.title)} · ${E.dirty() ? '<b>게시 안 한 고침 있음</b>' + (E.savedAt ? ' · 초안 저장됨' : '') : '바뀐 것 없음'}${own}${E.lockedBy ? ' · <b class="u2-t-red">' + esc(E.lockedBy) + '가 편집 중 — 게시 막힘</b>' : ''}${memTxt}`; st.title = st.textContent; /* (0.4.9) 넓은 화면에서 줄임표로 줄 때 전체 글 */
     U2.$$('#u2-edtop [data-bp]').forEach((b) => b.classList.toggle('u2-pri', b.dataset.bp === E.bp));
     U2.$$('#u2-edtop [data-scope]').forEach((b) => b.classList.toggle('u2-pri', b.dataset.scope === E.scope));
     const pb = U2.$('#u2-edtop [data-e="pub"]'); if (pb && !pb.classList.contains('u2-armed')) pb.textContent = E.scope === 'mine' ? '💾 이 기기에 저장' : '🚀 게시';

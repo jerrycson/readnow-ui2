@@ -48,6 +48,9 @@
     settings: { name: '설정형 견본', make: (id) => { const p = U2.TEMPLATES.blank.make(id); const w = mk(p);
       w('h', 'heading', { text: '이 기기 설정', size: 'l' }, 0, 0, 24, 3); w('s1', 'switch', { label: '밤에는 출고 페이지 숨김', var: '밤숨김' }, 0, 3, 12, 2); w('s2', 'switch', { label: '진동 알림', var: '진동' }, 12, 3, 12, 2);
       w('ac', 'accordion', { items: '테마\n☰ 메뉴 → 테마에서 밝음·어두움·높은 대비\n---\n쓰기 허락\n☰ 메뉴 → 🔒 쓰기 허락(관리자 기기)\n---\n개인 배치\n✏ 꾸미기 → 📱 이 기기만' }, 0, 5, 16, 12); w('m', 'memo', {}, 16, 5, 8, 12); return p; } },
+    shop: { name: '🛍 우리숍 책장 견본', make: (id) => { const p = U2.TEMPLATES.blank.make(id); const w = mk(p); /* (0.4.9 · 약속 53) 우리숍 블록을 페이지로 — 견본 책(지어낸 제목)으로 미리 보기 · 설정은 블록을 눌러 속성판에서 */
+      w('h', 'heading', { text: '📚 우리숍 서가 책장 (미리 보기)', size: 'l', guide: '우리숍 손님 화면의 서가 책장을 그대로 — 블록을 누르고 오른쪽 속성판에서 나무 색·정렬·책등·글꼴·움직임을 바꿔 봄 · 여기서 바꾼 값은 이 페이지 배치에만(우리숍 손님 화면은 그대로)' }, 0, 0, 24, 3);
+      w('sh', 'shop.shelf', {}, 0, 3, 24, 44); return p; } },
     blank: { name: '빈 페이지', make: (id) => { const p = U2.defaultPage(id); p.widgets = {}; p.layouts = { pc: [], tab: null, sm: null, phone: null }; return p; } },
   };
 
@@ -194,6 +197,8 @@
     U2.$('#u2-menubtn').onclick = () => U2.menu();
     U2.$('#u2-mode').onclick = () => U2.permScreen();
     if (U2._both) U2.$('#u2-both').hidden = false;
+    /* (0.4.9) 페이지 줄이 가로로 넘칠 때(휴대폰 · 페이지 13개) 지금 페이지를 보이는 곳 가운데로 — 예전엔 늘 맨 앞(🏠 홈)이 보여 '📥 할 일'에 있어도 줄에서 안 보임 */
+    try { const on = bar.querySelector('.u2-nav a.on'); const nv = on && on.parentNode; if (nv && nv.scrollWidth > nv.clientWidth + 2) { const r = on.getBoundingClientRect(), nr = nv.getBoundingClientRect(); nv.scrollLeft += (r.left - nr.left) - (nv.clientWidth - r.width) / 2; } } catch (e) {}
     const pg = U2.cur && U2.effective(U2.cur); U2.$('#u2-mine').hidden = !(pg && pg._mine);
     if (U2.find) U2.find.bindBar(bar); /* ⚡ 빠른 작업 · 🔎 어디서나 찾기(u2-find.js · 0.4.5) */
     if (U2.pilotBar) U2.pilotBar(); /* 맨 위 시범 띠 + ✅ 체크리스트 열기(u2-check.js) */

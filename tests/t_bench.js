@@ -59,6 +59,16 @@ const { open, ok, done, nonU2Writes, seed } = require('./lib');
   await p.keyboard.press('Escape'); await p.waitForTimeout(150);
   const f5b = await p.evaluate(() => !document.getElementById('u2-find'));
   ok(f5.empty && f5.all && f5b, "없으면 '여기엔 없음 · 🌐 전체에서 찾기' · Esc로 닫힘", JSON.stringify(f5));
+  /* (0.4.9 · 약속 50 '2번 누름 안' · Linear·Notion 즐겨찾기) 📌 고정 — 줄 오른쪽 📌 → 빈 칸일 때 맨 위 '📌 고정' · 다시 누르면 풀림 · 이 기기 rn2-findPins */
+  await p.keyboard.press('Control+k'); await p.waitForTimeout(200); await p.click('#u2-find [data-sc="all"]'); await p.fill('#u2-find input', '오늘 출고'); await p.waitForTimeout(250);
+  const pinT = await p.evaluate(() => { const w = [...document.querySelectorAll('#u2-find .u2-findwrap')].find((x) => /🪟/.test(x.textContent) && /오늘 출고/.test(x.textContent)); if (!w) return null; const t = w.querySelector('.u2-findt').firstChild.textContent; w.querySelector('[data-pin]').click(); return t; });
+  await p.fill('#u2-find input', ''); await p.waitForTimeout(250);
+  const pz = await p.evaluate(() => ({ head: (document.querySelector('#u2-find .u2-findk2') || {}).textContent, first: ((document.querySelector('#u2-find .u2-findrow .u2-findt') || {}).firstChild || {}).textContent, saved: localStorage.getItem('rn2-findPins'), on: !!document.querySelector('#u2-find .u2-findpin.on'), focus: document.activeElement === document.querySelector('#u2-find input') }));
+  ok(pinT && pz.head === '📌 고정' && pz.first === pinT && /오늘 출고/.test(pz.saved || '') && pz.on && pz.focus, "📌 고정 — 줄 오른쪽 📌를 누르면 빈 칸일 때 맨 위 '📌 고정'(Ctrl+K 한 번 + 누름 한 번) · 이 기기 rn2-findPins · 찾을 글 칸에 초점 그대로", JSON.stringify(Object.assign({ pinT }, pz)));
+  await p.click('#u2-find .u2-findpin.on'); await p.waitForTimeout(200);
+  const pu = await p.evaluate(() => ({ pins: JSON.parse(localStorage.getItem('rn2-findPins') || '[]').length, head: [...document.querySelectorAll('#u2-find .u2-findk2')].map((h) => h.textContent) }));
+  ok(pu.pins === 0 && !pu.head.includes('📌 고정'), '📌 다시 누르면 고정 풀림', JSON.stringify(pu));
+  await p.keyboard.press('Escape'); await p.waitForTimeout(150);
   /* (0.4.8 · 견줌 ⑧ 설정 찾기) 섹션 이름(지금 웹앱 🔍 기능 찾기의 SECS)도 찾힘 · ⚙ 설정 범위 = 설정 탭 칸만 · Enter = 설정 탭에서 그 칸을 펼침 */
   await p.keyboard.press('Control+k'); await p.waitForTimeout(200); await p.click('#u2-find [data-sc="set"]'); await p.fill('#u2-find input', '번외 수집기'); await p.waitForTimeout(250);
   const g1 = await p.evaluate(() => ({ rows: [...document.querySelectorAll('#u2-find .u2-findrow')].map((b) => b.textContent.replace(/\s+/g, ' ').slice(0, 50)), allSet: U2.find.search('', 'set').every((r) => r.set), nSet: U2.find.search('', 'set').length, nFeat: U2.find.sources().filter((r) => r.kind === 'feat').length, nOld: (U2.legacy.list('FEAT') || []).length }));

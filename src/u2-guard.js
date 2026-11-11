@@ -34,13 +34,16 @@
     G.blocked.push({ at: Date.now(), col: colOf(path), op, by: k || (bg ? '뒤에서:' + bg : ''), ...(out ? { out: 1 } : {}) }); if (G.blocked.length > 500) G.blocked.splice(0, G.blocked.length - 500);
     G._dirty = true;
     /* 사람이 방금 누른 것일 때만 알림(웹앱이 뒤에서 하는 쓰기마다 알리면 시끄러움) */
-    if (Date.now() - (G.userAt || 0) < 2000 && Date.now() - (G.toastAt || 0) > 3000) { G.toastAt = Date.now(); try { U2.toast('🔒 시범 중 — 이 일은 지금 웹앱에서 해 주세요 (' + colOf(path) + ')', true, 3500); } catch (e) {} }
+    /* (0.4.9) 알림은 '눌러서 한 일'(누름·Enter·Space — G.actAt)일 때만 · 뒤에서 도는 함수·문서(G.BG·G.BG_DOCS)가 쓴 것은 알리지 않음 — 예전엔 Ctrl+K·글자 치기 2초 안에 지금 웹앱이 뒤에서 app_settings를 쓰면 사람 탓처럼 빨간 알림이 떴음 */
+    let quiet = !!bg; if (!quiet && Date.now() - (G.actAt || 0) < 2000) { try { const st = new Error().stack || ''; quiet = G.BG.some((n) => st.indexOf(n) >= 0) || G.BG_DOCS.some((re) => re.test(String(path))); } catch (e) {} }
+    if (!quiet && Date.now() - (G.actAt || 0) < 2000 && Date.now() - (G.toastAt || 0) > 3000) { G.toastAt = Date.now(); try { U2.toast('🔒 시범 중 — 이 일은 지금 웹앱에서 해 주세요 (' + colOf(path) + ')', true, 3500); } catch (e) {} }
     try { U2.emit && U2.emit('blocked', G.blocked[G.blocked.length - 1]); } catch (e) {}
     return false;
   };
   const err = (path) => { const e = new Error('🔒 리드나우 2 시범 중 — 읽기만 (' + colOf(path) + ')'); e.code = 'u2/readonly'; return e; };
   document.addEventListener('pointerdown', () => { G.userAt = Date.now(); }, true);
-  document.addEventListener('keydown', () => { G.userAt = Date.now(); }, true);
+  document.addEventListener('keydown', (e) => { G.userAt = Date.now(); if (e.key === 'Enter' || e.key === ' ') G.actAt = Date.now(); }, true);
+  document.addEventListener('pointerdown', () => { G.actAt = Date.now(); }, true);
 
   function wrapP(proto, name, pathOf, kind) {
     if (!proto || typeof proto[name] !== 'function' || proto[name].__u2) return false;

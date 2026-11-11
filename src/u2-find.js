@@ -81,6 +81,9 @@
     ['page', 'feat', 'scr', 'wid'].forEach((k) => { const a = (by[k] || []).sort((x, y) => y.s - x.s || String(x.title).length - String(y.title).length); rows.push(...a.slice(0, scope === 'all' ? per[k] : 60)); });
     return rows;
   };
+  /* 📌 고정 — 이 기기(rn2-findPins) · 이름으로 기억(페이지·기능·화면·위젯) · 20개까지 */
+  F.pins = () => (U2.ls.get('findPins', []) || []).filter((x) => typeof x === 'string');
+  F.pinToggle = (t) => { const L = F.pins(); const on = L.indexOf(t) < 0; U2.ls.set('findPins', on ? [t].concat(L).slice(0, 20) : L.filter((x) => x !== t)); return on; };
   F.open = (q0) => {
     if (document.getElementById('u2-find')) { const i = document.querySelector('#u2-find input'); if (i) i.focus(); return; }
     const L = document.createElement('div'); L.id = 'u2-find'; L.className = 'u2-find'; L.setAttribute('role', 'dialog'); L.setAttribute('aria-modal', 'true'); L.setAttribute('aria-label', '어디서나 찾기');
@@ -93,12 +96,18 @@
     const run = (r) => { if (!r) return; close(); U2.ls.set('findRecent', [r.title].concat((U2.ls.get('findRecent', []) || []).filter((x) => x !== r.title)).slice(0, 8)); try { r.go(); } catch (e) { U2.toast('열지 못함: ' + U2.errKo(e), 1); } };
     const draw = () => {
       const q = inp.value; rows = F.search(q, scope);
-      if (!q.trim()) { const rec = U2.ls.get('findRecent', []) || []; const all = F.sources(); const rr = rec.map((t) => all.find((x) => x.title === t)).filter(Boolean); rows = rr.length ? rr : rows.slice(0, 12); }
-      sel = Math.min(sel, Math.max(0, rows.length - 1)); let lastK = '';
       const KN = { data: '👥 자료', page: '📄 페이지', feat: '🔧 기능(지금 웹앱 🔍 기능 찾기)', scr: '🪟 지금 웹앱 화면', wid: '🧱 이 웹앱 위젯' };
-      res.innerHTML = rows.length ? rows.map((r, i) => { const h = r.kind !== lastK ? `<div class="u2-findk2">${esc(!q.trim() && (U2.ls.get('findRecent', []) || []).length ? '최근 연 것' : KN[r.kind])}</div>` : ''; lastK = !q.trim() ? lastK || r.kind : r.kind; return h + `<button type="button" class="u2-findrow ${i === sel ? 'on' : ''}" role="option" aria-selected="${i === sel}" data-i="${i}"><span class="u2-findi">${esc(r.icon)}</span><span class="u2-findt">${esc(r.title)}<small class="u2-sub">${esc(r.sub || '')}</small></span></button>`; }).join('')
+      const pins = F.pins();
+      if (!q.trim()) { /* (0.4.9) 빈 칸 = 📌 고정한 것 → 최근 연 것(Linear·Notion 즐겨찾기처럼 — 자주 여는 것은 Ctrl+K 한 번 + 누름 한 번) */
+        const rec = U2.ls.get('findRecent', []) || []; const all = F.sources(); const pick = (t) => all.find((x) => x.title === t);
+        const pp = pins.map(pick).filter(Boolean).map((r) => Object.assign({}, r, { _sec: '📌 고정' })); const rr = rec.filter((t) => pins.indexOf(t) < 0).map(pick).filter(Boolean).map((r) => Object.assign({}, r, { _sec: '🕘 최근 연 것' }));
+        rows = pp.length || rr.length ? pp.concat(rr) : rows.slice(0, 12); }
+      rows.forEach((r) => { if (!r._sec) r._sec = KN[r.kind] || ''; });
+      sel = Math.min(sel, Math.max(0, rows.length - 1)); let lastS = null;
+      res.innerHTML = rows.length ? rows.map((r, i) => { const h = r._sec !== lastS ? `<div class="u2-findk2">${esc(r._sec)}</div>` : ''; lastS = r._sec; const pin = r.kind !== 'data' ? `<button type="button" class="u2-findpin ${pins.indexOf(r.title) >= 0 ? 'on' : ''}" data-pin="${i}" aria-pressed="${pins.indexOf(r.title) >= 0}" aria-label="${pins.indexOf(r.title) >= 0 ? '고정 풀기' : '📌 고정(빈 칸일 때 맨 위)'}" title="${pins.indexOf(r.title) >= 0 ? '고정 풀기' : '📌 고정 — 찾기 칸이 비었을 때 맨 위에'}">📌</button>` : ''; return h + `<div class="u2-findwrap"><button type="button" class="u2-findrow ${i === sel ? 'on' : ''}" role="option" aria-selected="${i === sel}" data-i="${i}"><span class="u2-findi">${esc(r.icon)}</span><span class="u2-findt">${esc(r.title)}<small class="u2-sub">${esc(r.sub || '')}</small></span></button>${pin}</div>`; }).join('')
         : `<div class="u2-empty">‘${esc(q)}’ — 여기엔 없음${scope !== 'all' ? ' · <button type="button" class="u2-btn" data-allsc>🌐 전체에서 찾기</button>' : ''}</div>`;
       res.querySelectorAll('[data-i]').forEach((b) => (b.onclick = () => run(rows[+b.dataset.i])));
+      res.querySelectorAll('[data-pin]').forEach((b) => (b.onclick = (e) => { e.stopPropagation(); const r = rows[+b.dataset.pin]; if (!r) return; const on = F.pinToggle(r.title); U2.toast(on ? '📌 고정: ' + r.title + ' — 찾기 칸이 비었을 때 맨 위에' : '고정 풀기: ' + r.title); draw(); inp.focus(); }));
       const a = res.querySelector('[data-allsc]'); if (a) a.onclick = () => setScope('all');
       const on = res.querySelector('.u2-findrow.on'); if (on && on.scrollIntoView) on.scrollIntoView({ block: 'nearest' });
     };

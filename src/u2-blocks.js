@@ -44,7 +44,7 @@
     spec.type = type; spec.cls = spec.cls || type.replace(/[^a-z0-9]+/gi, '-'); B.specs[type] = spec;
     const base = spec.props || [];
     const d = { name: spec.name, group: GROUP, icon: spec.icon || '🧩', w: spec.w || 12, h: spec.h || 24, minW: spec.minW || 4, minH: spec.minH || 8, block: true, one: !!spec.one, props: base.slice(), desc: spec.desc || '' };
-    const fill = () => { if (d._full || !spec.ready || !spec.ready()) return false; d.props = base.concat(B.propsOf(spec.schema ? spec.schema() : [])); d._full = true; return true; };
+    const fill = () => { if (d._full || !spec.ready || !spec.ready()) return false; d.props = base.concat(B.propsOf((spec.schema ? spec.schema() : []).filter((f) => !(spec.skip || []).includes(f.k)))); d._full = true; return true; };
     B.fill = B.fill || {}; B.fill[type] = fill;
     d.render = function (b, p, ctx) {
       b.classList.add('u2-blk', 'u2-blk-' + spec.cls); let dead = false, off = null;
@@ -80,11 +80,11 @@
     props: [
       { k: 'b_src', label: '책 자료', type: 'select', opts: { demo: '견본 책(지어낸 제목 · 손님·상품 정보 아님)', url: '우리숍 책장 자료 주소(읽기만)' }, def: 'demo', group: '블록' },
       { k: 'b_n', label: '견본 책 수', type: 'number', def: 240, min: 20, max: 1200, step: 20, group: '블록' },
-      { k: 'b_url', label: '책장 자료 주소(우리숍 /shop/shelf · 비우면 견본)', type: 'text', def: '', group: '블록' },
-      { k: 'b_fit', label: '칸 안에서 굴리기(끄면 칸 높이를 책장에 맞춤)', type: 'check', def: true, group: '블록' }],
+      { k: 'b_url', label: '책장 자료 주소(우리숍 /shop/shelf · 비우면 견본)', type: 'text', def: '', group: '블록', help: '다른 주소(우리숍)의 자료는 그 서버가 이 주소를 허락해야 읽힘 — 안 되면 칸 안에 까닭이 나옴' }],
+    skip: ['on'], /* 우리숍 메뉴에 '서가 책장' 보이기 — 새 웹앱에선 페이지 배치가 대신함 */
     mount(b, p, ctx) {
       const B0 = window.BQS; const cfg = B0.cfgOf(p);
-      const host = document.createElement('div'); host.className = 'u2-shelfhost' + (p.b_fit ? ' u2-fit' : ''); b.appendChild(host);
+      const host = document.createElement('div'); host.className = 'u2-shelfhost'; b.appendChild(host);
       const load = (prog) => {
         if (p.b_src === 'url' && /^https?:\/\//.test(p.b_url || '')) return fetch(p.b_url).then((r) => { if (!r.ok) throw new Error('책장 자료를 못 받음(' + r.status + ')'); return r.json(); }).then((J) => (J && J.cols ? B0.unpack(J) : Array.isArray(J) ? J : (J && J.items) || []));
         if (prog) { try { prog(1, 1); } catch (e) {} }

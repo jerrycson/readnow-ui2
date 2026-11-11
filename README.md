@@ -47,7 +47,7 @@
 | `src/u2-move.js` | 🚚 단계 13 이전 장치(정범님 ㉮) — 이전 전 점검표(✗면 시작 못 함) · 이전 시작/한 번에 되돌리기(두 번 누르기) · 옛 화면 `<지금 웹앱>?old=1` 30일 · `ui2_site/main.move` + 기기 저장 `rn2-move` · 되돌린 뒤 넘어오면 한 번만 돌려보냄 |
 | `tools/move-snippet.js` | 지금 웹앱 쪽에 넣을 짧은 글 견본(리드가 `src/app.html` `<head>` 맨 앞에) — `rn2-move`가 on이면 새 웹앱으로 · `?old=1`은 옛 화면 · 로그인 뒤 `RN2_MOVE_SYNC` |
 | `src/u2-blocks.js` | 🧩 바깥 블록 받는 자리(0.4.9 · 약속 53) — 우리숍(`shop/`) 화면 조각을 파일 그대로 받아 격자 위젯으로(`U2.blocks.add`) · 설정 틀(SCHEMA)이 속성판에 그대로(묶음 머리·여럿 고르기) · CSS는 `@scope`로 블록 칸 안에만 · 기기 저장 `rn2-blk-` · 첫 블록 📚 서가 책장(`BQShelf.mount` · 우리숍 파일 주소 `U2_SHOP_BASE`, 없으면 지금 웹앱 옆 `shop/`) · ☰ 견본 '🛍 우리숍 책장 견본' |
-| `src/u2-find.js` | ⚡ 머리줄 빠른 작업 · 🔎 어디서나 찾기 Ctrl+K(페이지·기능·⚙ 설정·화면·위젯·자료 · 📌 고정 · ⚡ 명령) · 📷 스캔이 첫 동작(0.4.10 — 입력 칸 밖에서 바코드를 찍으면 찾기가 그 ISBN으로 · 맨 위 📥 등록에 넣기 · 등록 화면이 열려 있으면 지금 웹앱 그대로) |
+| `src/u2-find.js` | (0.4.11 ⚙ 설정 범위를 빈 칸으로 열면 갈래 목차 — 지금 웹앱 ⑧ 설정 묶음 + 🧩 리드나우 2) ⚡ 머리줄 빠른 작업 · 🔎 어디서나 찾기 Ctrl+K(페이지·기능·⚙ 설정·화면·위젯·자료 · 📌 고정 · ⚡ 명령) · 📷 스캔이 첫 동작(0.4.10 — 입력 칸 밖에서 바코드를 찍으면 찾기가 그 ISBN으로 · 맨 위 📥 등록에 넣기 · 등록 화면이 열려 있으면 지금 웹앱 그대로) |
 | `src/u2-shell.js` | 머리줄·페이지·주소 길·메뉴·쓰기 허락·견본·내보내기/가져오기 |
 | `src/u2.css` | 모양(모두 `.u2-` 머리) |
 | `PLAN.json` | 🗓 전체 일정(설계안 단계 0~13 · 예상·실제 시간·상태 끝/진행 중/정범님 필요) — 손으로 고침 → `node tools/track.js --plan`이 TRACK.json `plan`·TRACK.md 맨 위 '전체 일정 요약'으로 · 새 웹앱 ☰ 메뉴·🧪 프로젝트 페이지 '🗓 새 웹앱 일정'에서 막대로 |
@@ -114,12 +114,17 @@ NODE_PATH=... node tests/t_dev5.js       # 단계 10 기기 5가지 모양(PC 19
 NODE_PATH=... node tests/t_move.js       # 단계 13 이전 장치(0.4.6) — 이전 전 점검 · 시작/되돌리기 · 지금 웹앱 주소에서 넘어감(짧은 글이 든 판이면 그대로 · 없으면 견본을 끼워 흉내 · 0.4.7) · ?old=1 · 돌고 돌지 않음 · 개인 배치 되돌리기 알림
 NODE_PATH=... node tests/t_blocks.js     # 🧩 우리숍 블록(0.4.9) — 📚 서가 책장: 파일 없을 때 알림 · 그려짐 · CSS 안 샘 · 속성판 = 우리숍 설정 틀 · rn2- 열쇠 · 휴대폰 (서가 파일: U2_SHELF_DIR, 기본 <U2_TEST_OUT>/shop-shelf)
 NODE_PATH=... node tests/t_scanlist.js   # 성공 사례 견줌 리드나우 2 빈 곳(0.4.10) — 더블클릭 두 번째 무시·↶ 되돌리기 · 📷 스캔(ISBN) 첫 동작 → 📥 등록에 넣기 · 📋 목록 보기 탭(⭐ 저장한 거르기) · 휴대폰
+NODE_PATH=... node tests/t_chips.js     # 성공 사례 견줌 리드나우 2 빈 곳 다음 차례(0.4.11) — 📋 목록 보기 탭 거르기 칩(× 풀기·＋ 거르기) · 🔎 ⚙ 설정 갈래 목차 · ☰ 메뉴 할 일 갈래·저장한 보기 한 곳 · 휴대폰
 NODE_PATH=... node tests/t_nav.js        # 메뉴 틀 맞춤(0.4.6) — 지금 웹앱 탭 차례·새 탭(nav1 🛒 판매처·🔬 연구 흉내)이 메뉴에 저절로 · 저장 안 함
 ```
 - 인터넷의 지금 웹앱은 받지 않습니다 — `U2_BASE`로 가는 요청을 기기 안 배포본 사본(`U2_TEST_OUT`, 기본 `/home/user/w/out`)에서 돌려줍니다.
 - Firebase는 가짜(`tests/fbstub2.js`)입니다.
 
-### 마지막 결과 (11/12 · 새 웹앱 0.4.10 · 지금 웹앱 1.78.487 main 배포본 — 우리숍 서가 파일 shop/ 들어 있음)
+### 마지막 결과 (11/12 · 새 웹앱 0.4.11 · 지금 웹앱 1.78.489 main 배포본 — 우리숍 서가 4차(휴대폰 모양) 들어 있음)
+시험 31묶음 모두 통과 — t_grid_unit 23 · t_expr_unit 203 · t_load 21 · t_editor 49 · t_widgets 29 · t_perm 24 · t_mem 6 · t_actions 25 · t_adapters 23 · t_track 18 · t_new 9 · t_feats 8 · t_tabswap 7 · t_pairs 9 · t_coexist 12 · t_soak 8 · t_perf 4 · t_dual 45 · t_real 17 · t_check 17 · t_parity 21 · t_sync 26 · t_bench 32 · t_dev5 37 · t_move 27 · t_nav 13 · t_default 13 · t_money 4 · t_blocks 23(+2 휴대폰 아래 줄·시트) · t_scanlist 20 · **t_chips 25(새)**.
+- 우리숍 서가 4차가 지금 웹앱 1.78.489에 들어오며 휴대폰 아래 고정 줄(정렬·표지·찜·장바구니)이 블록 칸 밖 화면 맨 아래(다른 위젯 위)에 떠 있었음 → 블록 칸 아래에 붙임(u2.css · 우리숍 파일은 안 고침).
+
+#### 지난 결과 (11/12 · 새 웹앱 0.4.10 · 지금 웹앱 1.78.487 main 배포본 — 우리숍 서가 파일 shop/ 들어 있음)
 시험 30묶음 모두 통과 — t_grid_unit 23 · t_expr_unit 203 · t_load 21 · t_editor 49 · t_widgets 29 · t_perm 24 · t_mem 6 · t_actions 25 · t_adapters 23 · t_track 18 · t_new 9 · t_feats 8 · t_tabswap 7 · t_pairs 9 · t_coexist 12 · t_soak 8 · t_perf 4 · t_dual 45 · t_real 17 · t_check 17 · t_parity 21 · t_sync 26 · t_bench 32 · t_dev5 37 · t_move 27 · t_nav 13 · t_default 13 · t_money 4 · t_blocks 21 · **t_scanlist 20(새)**.
 - 시험용 지금 웹앱 = readnow-scripts origin/main(3f16061 · 1.78.487)을 `git archive`로 푼 사본(app·shop·공용 파일) → `U2_TEST_OUT`.
 - t_blocks: 서가 파일이 main에 들어와 배포본 사본의 `shop/`을 그대로 씀(U2_SHELF_DIR 기본) · '파일 없을 때' 줄은 shop/shelf* 요청을 404로 흉내.

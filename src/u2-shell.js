@@ -41,7 +41,7 @@
       w('vb', 'varbar', { vars: '판매처: 전체, 알라딘, 예스24\n기간: 오늘, 7일, 30일' }, 0, 0, 24, 3); w('q', 'search', { ph: '책 제목·주문번호', var: '찾기' }, 0, 3, 24, 3);
       w('tb', 'table', { data: '주문,손님,책,금액\nA-001,손님A,책 하나,12000\nA-002,손님B,책 둘,4500\nA-003,손님C,책 셋,9000', s_title: '목록(견본 — 자료 연결은 질의 위젯으로)' }, 0, 6, 16, 16);
       w('dt', 'card', { title: '고른 것', text: '찾기: {{찾기}}\n판매처: {{판매처}} · 기간: {{기간}}' }, 16, 6, 8, 8); w('vw', 'views', {}, 16, 14, 8, 8);
-      p.layouts.pc.forEach((it) => { it.y += 6; }); w('lt', 'listtabs', {}, 0, 0, 24, 6); /* (0.4.10) 맨 위 = 지금 웹앱 큰 목록 보기 탭(⭐ 저장한 거르기) */ return p; } },
+      p.layouts.pc.forEach((it) => { it.y += 8; }); w('lt', 'listtabs', {}, 0, 0, 24, 8); /* (0.4.10) 맨 위 = 지금 웹앱 큰 목록 보기 탭(⭐ 저장한 거르기) */ return p; } },
     flow: { name: '처리 흐름(단계 칸) 견본', make: (id) => { const p = U2.TEMPLATES.blank.make(id); const w = mk(p);
       w('h', 'heading', { text: '오늘 처리 흐름', size: 'l' }, 0, 0, 24, 3); w('bd', 'board', { cols: '① 주문 확인: 가, 나, 다\n② 송장: 라\n③ 발송 요청: 마, 바\n④ 끝: 사' }, 0, 3, 16, 14);
       w('pg', 'progress', { label: '오늘 출고', value: 1, max: 7 }, 16, 3, 8, 4); w('ck', 'checklist', { items: '상자 접기\n테이프 확인\n송장 붙이기\n사진 찍기' }, 16, 7, 8, 10);
@@ -211,31 +211,48 @@
   U2.panel = (title, html, cls) => { const L = W.layer('u2-modal u2-panel ' + (cls || ''), title, ''); L.querySelector('.u2-lbody').classList.remove('u2-txt'); L.querySelector('.u2-lbody').innerHTML = html; return L; };
   U2.menu = () => {
     const adm = U2.isAdmin(); const pg = U2.effective(U2.cur);
-    const L = U2.panel('메뉴', `<div class="u2-col">
+    /* (0.4.11 · 성공 사례 견줌 '메뉴를 할 일 갈래로'·'한 일의 설정은 한 곳' — Amazon 판매자 센터 메뉴 갈래 · Shopify 배송 설정 한 곳)
+     *  예전엔 한 줄로 늘어선 단추 14개 → 할 일 갈래 6(모양·옛 화면·보기·배치·안전·살피기) · ⭐ 저장한 보기 두 가지(자료 보기 · 📋 목록 보기 탭)를 한 곳에서 열고 지움 · 단추·하는 일은 그대로 */
+    const L = U2.panel('메뉴', `<div class="u2-col u2-menu">
       ${U2.checkScreen ? (() => { const s = U2.check.sum(); return `<button type="button" class="u2-btn u2-pri" data-m="check">✅ 시범 체크리스트 (단계 12 · ✓ ${s.ok}/${s.total}${s.no ? ' · ✕ ' + s.no : ''})</button>`; })() : ''}
+      <button type="button" class="u2-btn" data-m="settoc">⚙ 설정 목차·찾기 <small class="u2-sub">(지금 웹앱 설정 + 이 웹앱 설정 · Ctrl+K ⚙)</small></button>
+      <div class="u2-mg" data-mg="look"><div class="u2-mgh">🎨 모양</div>
       <div class="u2-sec"><b>테마(이 기기)</b><div class="u2-row">${Object.entries(U2.theme.THEMES).map(([k, t]) => `<button type="button" class="u2-btn ${U2.theme.cur === k ? 'u2-pri' : ''}" data-th="${k}">${esc(t.name)}</button>`).join('')}</div></div>
-      ${U2.dock ? (() => { const c = U2.dock.cfg(); const B = (k, v, t) => `<button type="button" class="u2-btn ${c[k] === v ? 'u2-pri' : ''}" data-dkset="${k}:${v}" aria-pressed="${c[k] === v}">${t}</button>`; return `<div class="u2-sec" data-dksec><b>🪟 옛 화면(등록·출고 등 · 이 기기)</b>
-        <div class="u2-row"><span class="u2-sub">페이지 바꿀 때</span>${B('keep', 'keep', '두기 — 페이지와 함께 씀')}${B('keep', 'close', '닫기')}</div>
-        <div class="u2-row"><span class="u2-sub">넓은 화면 자리</span>${B('pos', 'side', '◫ 오른쪽 나란히')}${B('pos', 'full', '⤢ 전체(머리 아래)')}<span class="u2-sub">폭 ${Math.round((+c.w || 0.5) * 100)}%</span><button type="button" class="u2-btn" data-dkset="w:0.5">반반으로</button></div>
-        <p class="u2-hint">옛 화면은 한 번에 하나입니다(지금 웹앱이 상세 화면을 한 층에만 그림 — 등록 화면을 연 채 출고를 열면 등록 화면이 출고로 바뀜). 그 하나를 새 웹앱 페이지와 함께 씁니다: 넓은 화면(${U2.dock.MIN_W}px 넘음)은 오른쪽 나란히(가운데 손잡이를 끌어 폭 조절 · 기억), 휴대폰은 페이지를 바꾸면 접히고 아래 '▸ 펼치기'로 다시. 페이지에 '🪟 옛 화면 자리' 위젯을 두면 그 칸 안에 열립니다. ✕ 닫기·Esc·뒤로 가기로 닫음.</p></div>`; })() : ''}
       ${adm ? `<div class="u2-sec"><b>공용 모양(관리자 · 모든 기기 기본)</b><div class="u2-row">
         <label class="u2-lab">강조 색 <input type="color" class="u2-in" data-st="--cloth" value="${esc((U2.site.theme.tokens || {})['--cloth'] || U2.theme.LIGHT['--cloth'])}"></label>
         <label class="u2-lab">둥근 정도(px) <input type="number" class="u2-in" data-sh="--u2-radius" min="0" max="24" value="${parseInt((U2.site.theme.shape || {})['--u2-radius'] || '10', 10)}"></label>
         <label class="u2-lab">글꼴 <select class="u2-in" data-font>${Object.entries(U2.theme.FONTS).map(([k, f]) => `<option value="${k}" ${U2.site.theme.font === k ? 'selected' : ''}>${esc(f.name)}</option>`).join('')}</select></label>
         <label class="u2-lab">기본 테마 <select class="u2-in" data-def>${Object.entries(U2.theme.THEMES).map(([k, t]) => `<option value="${k}" ${U2.site.theme.def === k ? 'selected' : ''}>${esc(t.name)}</option>`).join('')}</select></label></div>
         <button type="button" class="u2-btn u2-pri" data-m="savetheme">공용 모양 저장</button> <span class="u2-hint" data-contrast></span></div>` : ''}
-      <div class="u2-sec"><b>⭐ 저장한 보기</b><div class="u2-row">${U2.data.views().map((v) => `<button type="button" class="u2-btn" data-view="${esc(v.name)}">${esc(v.name)} <small class="u2-sub">${esc(v.scope)}</small></button>`).join('') || '<span class="u2-sub">없음</span>'}</div>
-        <div class="u2-row"><input class="u2-in" style="width:160px" data-vname placeholder="지금 보기 이름" aria-label="지금 보기 이름"><button type="button" class="u2-btn" data-m="vsave">이 기기에 저장</button>${adm ? '<button type="button" class="u2-btn" data-m="vsavepub">공용으로 저장</button>' : ''}</div></div>
-      <button type="button" class="u2-btn" data-m="perm">🔒 쓰기 허락 (위젯마다 · 기본 모두 꺼짐)</button>
+      </div>
+      <div class="u2-mg" data-mg="dock"><div class="u2-mgh">🪟 옛 화면</div>
+      ${U2.dock ? (() => { const c = U2.dock.cfg(); const B = (k, v, t) => `<button type="button" class="u2-btn ${c[k] === v ? 'u2-pri' : ''}" data-dkset="${k}:${v}" aria-pressed="${c[k] === v}">${t}</button>`; return `<div class="u2-sec" data-dksec><b>🪟 옛 화면(등록·출고 등 · 이 기기)</b>
+        <div class="u2-row"><span class="u2-sub">페이지 바꿀 때</span>${B('keep', 'keep', '두기 — 페이지와 함께 씀')}${B('keep', 'close', '닫기')}</div>
+        <div class="u2-row"><span class="u2-sub">넓은 화면 자리</span>${B('pos', 'side', '◫ 오른쪽 나란히')}${B('pos', 'full', '⤢ 전체(머리 아래)')}<span class="u2-sub">폭 ${Math.round((+c.w || 0.5) * 100)}%</span><button type="button" class="u2-btn" data-dkset="w:0.5">반반으로</button></div>
+        <p class="u2-hint">옛 화면은 한 번에 하나입니다(지금 웹앱이 상세 화면을 한 층에만 그림 — 등록 화면을 연 채 출고를 열면 등록 화면이 출고로 바뀜). 그 하나를 새 웹앱 페이지와 함께 씁니다: 넓은 화면(${U2.dock.MIN_W}px 넘음)은 오른쪽 나란히(가운데 손잡이를 끌어 폭 조절 · 기억), 휴대폰은 페이지를 바꾸면 접히고 아래 '▸ 펼치기'로 다시. 페이지에 '🪟 옛 화면 자리' 위젯을 두면 그 칸 안에 열립니다. ✕ 닫기·Esc·뒤로 가기로 닫음.</p></div>`; })() : ''}
+      </div>
+      <div class="u2-mg" data-mg="views"><div class="u2-mgh">⭐ 보기</div>
+      <div class="u2-sec" data-mgsec="views"><b>⭐ 저장한 보기 <small class="u2-sub">— 자료 보기·📋 목록 보기를 한 곳에서</small></b><div class="u2-row"><span class="u2-sub">자료 보기</span>${U2.data.views().map((v) => `<button type="button" class="u2-btn" data-view="${esc(v.name)}">${esc(v.name)} <small class="u2-sub">${esc(v.scope)}</small></button>`).join('') || '<span class="u2-sub">없음</span>'}</div>
+        <div class="u2-row"><input class="u2-in" style="width:160px" data-vname placeholder="지금 보기 이름" aria-label="지금 보기 이름"><button type="button" class="u2-btn" data-m="vsave">이 기기에 저장</button>${adm ? '<button type="button" class="u2-btn" data-m="vsavepub">공용으로 저장</button>' : ''}</div>
+        ${window.U2W && U2W.lvAll ? `<div class="u2-row" data-mlv><span class="u2-sub">📋 목록 보기</span>${U2W.lvAll().map((v, i) => `<span class="u2-lvv"><button type="button" class="u2-btn" data-mlvo="${i}" title="${esc(v.title + ' · ' + U2W.lvDesc(v))}">⭐ ${esc(v.name)}</button><button type="button" class="u2-lvx" data-mlvx="${i}" aria-label="목록 보기 지우기: ${esc(v.name)}" title="지우기(이 기기 · 10초 안 되돌리기)">×</button></span>`).join('') || '<span class="u2-sub">없음 — 📋 목록 보기 탭 위젯에서 ＋ 지금 보기 저장</span>'}</div>` : ''}
+      </div>
+      </div>
+      <div class="u2-mg" data-mg="lay"><div class="u2-mgh">📐 배치(페이지 꾸미기)</div>
       <button type="button" class="u2-btn" data-m="mine">📱 이 기기 화면 꾸미기 (개인 배치)</button>
       ${pg._mine ? '<button type="button" class="u2-btn" data-m="unmine">↩ 이 페이지 개인 배치 끄고 공용으로</button>' : ''}
       <button type="button" class="u2-btn" data-m="export">⬇ 배치 내보내기(JSON 파일)</button>
       <label class="u2-btn u2-file">⬆ 배치 가져오기 <input type="file" accept="application/json" data-m="import" hidden></label>
+      </div>
+      <div class="u2-mg" data-mg="safe"><div class="u2-mgh">🔒 안전</div>
+      <button type="button" class="u2-btn" data-m="perm">🔒 쓰기 허락 (위젯마다 · 기본 모두 꺼짐)</button>
       <button type="button" class="u2-btn" data-m="watch">🩺 충돌 감시 보기</button>
+      </div>
+      <div class="u2-mg" data-mg="see"><div class="u2-mgh">🧭 살피기·옮기기</div>
       <button type="button" class="u2-btn" data-m="track">🔁 따라잡기 표</button>
       <button type="button" class="u2-btn" data-m="plan">🗓 전체 일정·진행(설계안 단계 0~13)</button>
       <button type="button" class="u2-btn" data-m="move">🚚 이전(단계 13 · 옮기기 ㉮)${U2.move && U2.move.cur().state === 'on' ? ' — 옮김' : ''}</button>
       ${U2.move && U2.move.cur().state === 'on' ? `<a class="u2-btn" data-oldlink href="${esc(U2.move.oldUrl())}">↩ 옛 화면(지금 웹앱 · ${U2.move.daysLeft()}일 남음)</a>` : `<a class="u2-btn" data-oldlink href="${esc(U2.base)}">↩ 지금 웹앱으로 가기</a>`}
+      </div>
       <p class="u2-hint">이 기기: <b>${esc(U2.dev())}</b> · ${adm ? '관리자 기기(공용 배치 게시 가능)' : '관리자 기기 아님(개인 배치만)'} · 지금 웹앱 ${esc(U2.legacy.appVer || '불러오지 못함')} · 새 웹앱 ${esc(U2.ver)}</p></div>`);
     L.querySelectorAll('[data-dkset]').forEach((b) => (b.onclick = () => { const [k, v] = b.dataset.dkset.split(':'); U2.dock.set({ [k]: k === 'w' ? +v : v }); L.remove(); U2.menu(); U2.toast(k === 'keep' ? (v === 'keep' ? '페이지를 바꿔도 옛 화면을 둠' : '페이지를 바꾸면 옛 화면을 닫음') : k === 'pos' ? (v === 'side' ? '옛 화면을 오른쪽 나란히' : '옛 화면을 전체로') : '옛 화면 폭 반반'); }));
     L.querySelectorAll('[data-th]').forEach((b) => (b.onclick = () => { U2.theme.choose(b.dataset.th); L.remove(); U2.render({ reset: true }); }));
@@ -252,6 +269,10 @@
     m('unmine', (e) => U2.twice(e.currentTarget, '개인 배치 끔(공용 배치로)', async () => { const pid = U2.cur; const keep = U2.clone(U2.prefs.pages[pid]); delete U2.prefs.pages[pid]; await U2.savePrefs(); L.remove(); U2.render({ reset: true });
       /* (0.4.6 · 견줌 ⑪) 끈 개인 배치를 10초 안에 되살림 */ U2.toast('공용 배치로 돌아감', false, 0, { act: { label: '↶ 되돌리기', fn: async () => { U2.prefs = U2.prefs || { pages: {} }; U2.prefs.pages = U2.prefs.pages || {}; U2.prefs.pages[pid] = keep; await U2.savePrefs(); if (U2.cur === pid) U2.render({ reset: true }); U2.toast('이 기기 개인 배치를 되살림'); } } }); }));
     m('export', () => U2.exportJson()); m('import', (e) => { const f = e.target.files[0]; if (f) U2.importJson(f).then(() => L.remove()); });
+    m('settoc', () => { L.remove(); if (U2.find && U2.find.openSettings) U2.find.openSettings(); });
+    L.querySelectorAll('[data-mlvo]').forEach((b) => (b.onclick = () => { const v = U2W.lvAll()[+b.dataset.mlvo]; if (!v) return; L.remove(); U2W.lvOpen(v.scr, v); }));
+    L.querySelectorAll('[data-mlvx]').forEach((b) => (b.onclick = () => { const all = U2W.lvAll(); const v = all[+b.dataset.mlvx]; if (!v) return; U2.ls.set('listViews', all.filter((y) => y !== v)); U2.emit('listViews'); L.remove(); U2.menu();
+      U2.toast('보기 지움: ⭐ ' + v.name, false, 0, { act: { label: '↶ 되돌리기', fn: () => { U2.ls.set('listViews', U2W.lvAll().filter((y) => y.name !== v.name).concat([v])); U2.emit('listViews'); U2.toast('되살림: ⭐ ' + v.name); } } }); }));
     m('watch', () => { L.remove(); U2.watchScreen(); }); m('track', () => { L.remove(); U2.trackScreen(); }); m('plan', () => { L.remove(); U2.planScreen(); }); m('move', () => { L.remove(); U2.moveScreen(); }); m('check', () => { L.remove(); U2.checkScreen(); });
   };
   U2.savePrefs = async () => { U2.prefs = U2.prefs || { pages: {} }; U2.prefs.at = U2.now(); U2.prefs.dev = U2.dev(); await U2.store.set('ui2_prefs', U2.devKey(), U2.prefs); };

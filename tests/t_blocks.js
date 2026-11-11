@@ -79,6 +79,23 @@ const put = (p, pg) => p.evaluate(async (pg) => { U2.pages.bk = pg; U2.render({ 
   const ph = await p.evaluate(() => { const c = U2.view.cell('s'); return { n: c.querySelectorAll('.sp').length, sx: document.documentElement.scrollWidth - innerWidth, bw: Math.round(c.getBoundingClientRect().width) }; });
   ok(ph.n > 10 && ph.sx <= 1, '휴대폰 390: 책장이 그려지고 가로 스크롤 없음', JSON.stringify(ph));
   if (SHOT) await p.screenshot({ path: path.join(SHOT, 'u2night_shelf_phone.png') });
+  /* (0.4.11 · 약속 53) 우리숍 서가 휴대폰 모양(shelf4 — 아래 고정 줄·분야 칩·아래 시트)이 들어온 서가 파일이면: 아래 줄이 블록 칸 안에 붙고 다른 위젯을 덮지 않음 */
+  const hasMob = await p.evaluate(() => !!U2.view.cell('s').querySelector('.bqs-mbar'));
+  if (hasMob) {
+    await p.evaluate(async () => { const pg = U2.pages.bk; pg.widgets.z = { type: 'text', props: { text: '아래 칸' } }; pg.layouts.pc.push({ id: 'z', x: 0, y: 50, w: 24, h: 4 }); U2.render({ reset: true });
+      for (let i = 0; i < 80; i++) { await new Promise((r) => setTimeout(r, 100)); const c = U2.view.cell('s'); if (c && c.querySelector('.bqs .sp')) break; } U2.view.cell('z').scrollIntoView({ block: 'end' }); });
+    await p.waitForTimeout(500);
+    const mb = await p.evaluate(() => { const c = U2.view.cell('s'); const m = c.querySelector('.bqs-mbar'); const z = U2.view.cell('z'); const a = m.getBoundingClientRect(), cz = z.getBoundingClientRect(), cc = c.getBoundingClientRect(); const cart = m.querySelector('.mb-c');
+      return { pos: getComputedStyle(m).position, shown: !m.hidden && a.height > 0, inCell: a.top >= cc.top - 1 && a.bottom <= cc.bottom + 1, coverZ: !(a.bottom <= cz.top || a.top >= cz.bottom), cart: cart ? getComputedStyle(cart).display : 'none', sx: document.documentElement.scrollWidth - innerWidth }; });
+    ok(mb.shown && mb.pos === 'sticky' && mb.inCell && !mb.coverZ && mb.cart === 'none' && mb.sx <= 1, '휴대폰 서가 아래 줄(정렬·표지·찜)이 블록 칸 아래에 붙음 — 화면 맨 아래 다른 위젯을 덮지 않음 · 장바구니는 우리숍에서(숨김)', JSON.stringify(mb));
+    if (SHOT) await p.screenshot({ path: path.join(SHOT, 'u2go7_shelf_phone_bar.png') });
+    await p.evaluate(() => U2.view.cell('s').scrollIntoView({ block: 'start' })); await p.waitForTimeout(300);
+    await p.evaluate(() => { const b = U2.view.cell('s').querySelector('.sp'); b.scrollIntoView({ block: 'center' }); b.click(); }); await p.waitForTimeout(600);
+    const shv = await p.evaluate(() => { const sh = U2.view.cell('s').querySelector('.bqs-sheet'); const r = sh && sh.querySelector('.sh-p').getBoundingClientRect(); return { on: !!sh && !sh.hidden, bottom: r ? Math.round(r.bottom) : null, vh: innerHeight, txt: sh ? sh.textContent.replace(/\s+/g, ' ').slice(0, 60) : '' }; });
+    ok(shv.on && Math.abs(shv.bottom - shv.vh) <= 2, '책을 누르면 아래 시트(책 보기)가 화면 아래에서 — 우리숍 휴대폰과 같음', JSON.stringify(shv));
+    if (SHOT) await p.screenshot({ path: path.join(SHOT, 'u2go7_shelf_phone_sheet.png') });
+    await p.evaluate(() => { const x = U2.view.cell('s').querySelector('.bqs-sheet [data-a="x"]'); if (x) x.click(); }); await p.waitForTimeout(500);
+  } else console.log('  · (서가 파일에 휴대폰 아래 줄이 아직 없음 — shelf4 전 판 · 그 줄은 건너뜀)');
   ok(E(t).length === 0, '오류 0(휴대폰)', E(t).join(' | ').slice(0, 300));
   await t.close();
   done('t_blocks');

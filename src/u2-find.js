@@ -63,6 +63,15 @@
     try { Object.entries((U2.theme && U2.theme.THEMES) || {}).forEach(([k, t]) => add('🎨', '테마: ' + t.name, () => { U2.theme.choose(k); U2.render({ reset: true }); U2.toast('🎨 테마: ' + t.name + '(이 기기)'); }, '이 기기')); } catch (e) {}
     add('☰', '메뉴 열기', U2.menu && (() => U2.menu()), '머리줄 ☰');
     return C; };
+  /* (0.4.11 · 성공 사례 견줌 '설정 갈래 목차 + 설정 찾기' — Shopify 설정 왼쪽 목차·지금 웹앱 ⑧ 설정 묶음) 갈래 = 지금 웹앱 UX2_SG(이 기기·등록·출고·가격·수집·알림·보안·그 밖) 그대로 + 🧩 리드나우 2(이 웹앱 설정)
+   *  지금 웹앱에 그 목록이 없으면(옛 판) 한 묶음 '⚙ 설정' — 목차가 없어도 찾기는 그대로 */
+  F.SG_U2 = ['u2', '🧩 리드나우 2(이 웹앱 · 이 기기)'];
+  F.sgList = () => { const L = U2.legacy || {}; const G = (L.list && L.list('UX2_SG')) || [['etc', '⚙ 설정']]; return [F.SG_U2].concat(G.map((x) => [x[0], x[1]])); };
+  F.sgOf = (r) => { if (r.kind === 'cmd') return 'u2'; const L = U2.legacy || {}; const M = (L.list && L.list('UX2_SGSEC')) || {}; if (r.sec && M[r.sec]) return M[r.sec]; const T = (L.list && L.list('UX2_SGTXT')) || [];
+    const t = String(r.title || '') + ' ' + String(r.sub || ''); for (const x of T) { try { if (x[0].test(t)) return x[1]; } catch (e) {} } if (/이 기기|휴대폰|책방 친구/.test(t)) return 'dev'; if (/등록/.test(t)) return 'reg'; if (/출고|송장|택배|가게/.test(t)) return 'ship'; if (/가격|점수|매입가|수수료/.test(t)) return 'price'; if (/수집|자동|관리도구|PC/.test(t)) return 'col'; if (/알림|화면|머리 칸|테마/.test(t)) return 'view'; if (/보안|백업|잠금/.test(t)) return 'sec'; return 'etc'; };
+  F.sgToc = () => { const by = {}; F.sources().forEach((r) => { if (!r.set) return; const g = F.sgOf(r); (by[g] = by[g] || []).push(r); }); const sg = F.sgList(); const known = new Set(sg.map((x) => x[0]));
+    Object.keys(by).forEach((g) => { if (!known.has(g)) { (by.etc = by.etc || []).push(...by[g]); delete by[g]; } }); if (by.etc && !sg.some((x) => x[0] === 'etc')) sg.push(['etc', '🧩 그 밖']);
+    return sg.filter(([g]) => by[g] && by[g].length).map(([g, nm]) => ({ kind: 'toc', g, icon: String(nm).split(' ')[0], title: String(nm).replace(/^\S+\s*/, ''), sub: by[g].length + '칸 · ' + by[g].slice(0, 3).map((x) => { const t = String(x.title).replace(/^[^0-9A-Za-z가-힣]+/u, '').replace(/\s*[(—·].*$/, ''); return t.length > 16 ? t.slice(0, 15) + '…' : t; }).join(' · '), n: by[g].length, rows: by[g] })); };
   F.sources = () => {
     const out = []; const L = U2.legacy || {}; const W = window.U2W || { defs: {} };
     (U2.site && U2.site.nav || []).forEach((n) => out.push({ kind: 'page', icon: n.icon || '📄', title: n.title, sub: '페이지', go: () => U2.go(n.id) }));
@@ -70,7 +79,7 @@
     /* (0.4.8 · 성공 사례 견줌 ⑧ 설정 찾기 — Shopify 관리자 검색이 설정 안까지 찾듯) 지금 웹앱 🔍 기능 찾기 전체(FEAT + 섹션 + 홈 칸)를 씀 · 설정 탭 칸은 '⚙ 설정' 범위로도
      *  예전엔 FEAT만(357) 봐서 섹션 이름(🧪 번외 수집기 설정·🔀 번외로 넘기기 등 200여 칸)이 안 찾혔음 · 연 것은 지금 웹앱 featGo 그대로(이름으로 다시 찾지 않음) */
     try { const ix = (L.list && (L.list('FEATIX') || L.list('FEAT'))) || []; const seen = new Set();
-      ix.forEach((f) => { if (!f || !f.t) return; const g = f.go || {}; const k = f.t + '|' + (g.tab || '') + '|' + (g.sec || g.sel || ''); if (seen.has(k)) return; seen.add(k); const set = g.tab === 'settings' || /^⚙\s*설정/.test(f.w || ''); out.push({ kind: 'feat', set, icon: set ? '⚙' : '🔧', title: f.t, sub: f.w || '', extra: f.k || '', go: () => (L.featGo ? L.featGo(f) : L.feat(f.t)) }); }); } catch (e) {}
+      ix.forEach((f) => { if (!f || !f.t) return; const g = f.go || {}; const k = f.t + '|' + (g.tab || '') + '|' + (g.sec || g.sel || ''); if (seen.has(k)) return; seen.add(k); const set = g.tab === 'settings' || /^⚙\s*설정/.test(f.w || ''); out.push({ kind: 'feat', set, sec: g.sec || '', icon: set ? '⚙' : '🔧', title: f.t, sub: f.w || '', extra: f.k || '', go: () => (L.featGo ? L.featGo(f) : L.feat(f.t)) }); }); } catch (e) {}
     try { (L.list && L.list('PG_SCR') || []).forEach((r) => { if (L.needsArg && L.needsArg(r[0])) return; out.push({ kind: 'scr', icon: '🪟', title: String(r[1]), sub: '지금 웹앱 화면', extra: r[0], go: () => L.screen(r[0]) }); }); } catch (e) {}
     F.cmds().forEach((c) => out.push(c));
     Object.values(U2.pages || {}).forEach((p) => Object.entries(p.widgets || {}).forEach(([wid, w]) => { const d = W.defs[w.type] || {}; const pr = w.props || {}; const t = pr.s_title || pr.title || pr.label || pr.text || ''; if (!t || /^legacy\.(tab|header)$/.test(w.type)) return; out.push({ kind: 'wid', icon: d.icon || '🧱', title: String(t).split('\n')[0].slice(0, 80), sub: (p.icon || '') + ' ' + (p.title || p.id) + ' 페이지 › ' + (d.name || w.type), go: () => F.goWidget(p.id, wid) }); }));
@@ -103,34 +112,38 @@
   /* 📌 고정 — 이 기기(rn2-findPins) · 이름으로 기억(페이지·기능·화면·위젯) · 20개까지 */
   F.pins = () => (U2.ls.get('findPins', []) || []).filter((x) => typeof x === 'string');
   F.pinToggle = (t) => { const L = F.pins(); const on = L.indexOf(t) < 0; U2.ls.set('findPins', on ? [t].concat(L).slice(0, 20) : L.filter((x) => x !== t)); return on; };
+  F.openSettings = () => { U2.ls.set('findScope', 'set'); const ex = document.getElementById('u2-find'); if (ex && ex._close) ex._close(); return F.open(); }; /* (0.4.11) ☰ '⚙ 설정 목차·찾기' = ⚙ 범위 빈 칸(목차) */
   F.open = (q0) => {
     if (document.getElementById('u2-find')) { const i = document.querySelector('#u2-find input'); if (i) i.focus(); return; }
     const L = document.createElement('div'); L.id = 'u2-find'; L.className = 'u2-find'; L.setAttribute('role', 'dialog'); L.setAttribute('aria-modal', 'true'); L.setAttribute('aria-label', '어디서나 찾기');
-    let scope = U2.ls.get('findScope', 'all') || 'all'; if (!F.SCOPES.some((s) => s[0] === scope)) scope = 'all'; let sel = 0; let rows = [];
+    let scope = U2.ls.get('findScope', 'all') || 'all'; if (!F.SCOPES.some((s) => s[0] === scope)) scope = 'all'; let sel = 0; let rows = []; let grp = null; /* (0.4.11) ⚙ 설정 목차에서 고른 갈래 */
     L.innerHTML = `<div class="u2-findbox"><div class="u2-findtop"><input class="u2-in" type="search" placeholder="페이지·기능·화면·위젯·고객·책·주문번호 찾기" aria-label="찾을 글" autocomplete="off"><button type="button" class="u2-btn" data-x aria-label="닫기">✕</button></div>
       <div class="u2-findsc" role="group" aria-label="찾는 곳">${F.SCOPES.map(([k, l]) => `<button type="button" class="u2-chip" data-sc="${k}" aria-pressed="${k === scope}">${esc(l)}</button>`).join('')}</div>
       <div class="u2-findres" role="listbox"></div><div class="u2-sub u2-findhelp">↑↓ 고르기 · Enter 열기 · Esc 닫기 · 초성도 됨(ㅇㄴㅊㄱ = 오늘 출고) · 📷 바코드를 찍으면 어느 페이지든 여기로 · 찾는 곳은 이 기기에 기억</div></div>`;
     document.body.appendChild(L); const inp = L.querySelector('input'); const res = L.querySelector('.u2-findres');
     const close = () => { L.remove(); document.removeEventListener('keydown', kd, true); }; L._close = close;
-    const run = (r) => { if (!r) return; close(); if (r.kind !== 'isbn' && r.kind !== 'data') U2.ls.set('findRecent', [r.title].concat((U2.ls.get('findRecent', []) || []).filter((x) => x !== r.title)).slice(0, 8)); try { r.go(); } catch (e) { U2.toast('열지 못함: ' + U2.errKo(e), 1); } };
+    const run = (r) => { if (!r) return; if (r.kind === 'toc' || r.kind === 'tocback') { grp = r.kind === 'toc' ? r.g : null; sel = 0; draw(); inp.focus(); return; } close(); if (r.kind !== 'isbn' && r.kind !== 'data') U2.ls.set('findRecent', [r.title].concat((U2.ls.get('findRecent', []) || []).filter((x) => x !== r.title)).slice(0, 8)); try { r.go(); } catch (e) { U2.toast('열지 못함: ' + U2.errKo(e), 1); } };
     const draw = () => {
       const q = inp.value; rows = F.search(q, scope);
       const KN = { isbn: '📷 ISBN — 스캔·입력한 책', data: '👥 자료', page: '📄 페이지', cmd: '⚡ 명령(새 웹앱)', feat: '🔧 기능(지금 웹앱 🔍 기능 찾기)', scr: '🪟 지금 웹앱 화면', wid: '🧱 이 웹앱 위젯' };
       const pins = F.pins();
-      if (!q.trim()) { /* (0.4.9) 빈 칸 = 📌 고정한 것 → 최근 연 것(Linear·Notion 즐겨찾기처럼 — 자주 여는 것은 Ctrl+K 한 번 + 누름 한 번) */
+      if (!q.trim() && scope === 'set') { const toc = F.sgToc(); const cur = grp && toc.find((x) => x.g === grp);
+        if (cur) rows = [{ kind: 'tocback', icon: '←', title: '설정 목차로', sub: '갈래 ' + toc.length + '개', _sec: '⚙ ' + cur.icon + ' ' + cur.title + ' — ' + cur.n + '칸' }].concat(cur.rows.map((r) => Object.assign({}, r, { _sec: '⚙ ' + cur.icon + ' ' + cur.title + ' — ' + cur.n + '칸' })));
+        else { grp = null; rows = toc.map((x) => Object.assign(x, { _sec: '⚙ 설정 목차 — 갈래를 누르면 그 갈래 칸만 · 글을 치면 설정 전체에서 찾기' })); } }
+      else if (!q.trim()) { /* (0.4.9) 빈 칸 = 📌 고정한 것 → 최근 연 것(Linear·Notion 즐겨찾기처럼 — 자주 여는 것은 Ctrl+K 한 번 + 누름 한 번) */
         const rec = U2.ls.get('findRecent', []) || []; const all = F.sources(); const pick = (t) => all.find((x) => x.title === t);
         const pp = pins.map(pick).filter(Boolean).map((r) => Object.assign({}, r, { _sec: '📌 고정' })); const rr = rec.filter((t) => pins.indexOf(t) < 0).map(pick).filter(Boolean).map((r) => Object.assign({}, r, { _sec: '🕘 최근 연 것' }));
         rows = pp.length || rr.length ? pp.concat(rr) : rows.slice(0, 12); }
       rows.forEach((r) => { if (!r._sec) r._sec = KN[r.kind] || ''; });
       sel = Math.min(sel, Math.max(0, rows.length - 1)); let lastS = null;
-      res.innerHTML = rows.length ? rows.map((r, i) => { const h = r._sec !== lastS ? `<div class="u2-findk2">${esc(r._sec)}</div>` : ''; lastS = r._sec; const pin = r.kind !== 'data' && r.kind !== 'isbn' ? `<button type="button" class="u2-findpin ${pins.indexOf(r.title) >= 0 ? 'on' : ''}" data-pin="${i}" aria-pressed="${pins.indexOf(r.title) >= 0}" aria-label="${pins.indexOf(r.title) >= 0 ? '고정 풀기' : '📌 고정(빈 칸일 때 맨 위)'}" title="${pins.indexOf(r.title) >= 0 ? '고정 풀기' : '📌 고정 — 찾기 칸이 비었을 때 맨 위에'}">📌</button>` : ''; return h + `<div class="u2-findwrap"><button type="button" class="u2-findrow ${i === sel ? 'on' : ''}" role="option" aria-selected="${i === sel}" data-i="${i}"><span class="u2-findi">${esc(r.icon)}</span><span class="u2-findt">${esc(r.title)}<small class="u2-sub">${esc(r.sub || '')}</small></span></button>${pin}</div>`; }).join('')
+      res.innerHTML = rows.length ? rows.map((r, i) => { const h = r._sec !== lastS ? `<div class="u2-findk2">${esc(r._sec)}</div>` : ''; lastS = r._sec; const pin = r.kind !== 'data' && r.kind !== 'isbn' && r.kind !== 'toc' && r.kind !== 'tocback' ? `<button type="button" class="u2-findpin ${pins.indexOf(r.title) >= 0 ? 'on' : ''}" data-pin="${i}" aria-pressed="${pins.indexOf(r.title) >= 0}" aria-label="${pins.indexOf(r.title) >= 0 ? '고정 풀기' : '📌 고정(빈 칸일 때 맨 위)'}" title="${pins.indexOf(r.title) >= 0 ? '고정 풀기' : '📌 고정 — 찾기 칸이 비었을 때 맨 위에'}">📌</button>` : ''; return h + `<div class="u2-findwrap"><button type="button" class="u2-findrow ${i === sel ? 'on' : ''}" role="option" aria-selected="${i === sel}" data-i="${i}"><span class="u2-findi">${esc(r.icon)}</span><span class="u2-findt">${esc(r.title)}<small class="u2-sub">${esc(r.sub || '')}</small></span></button>${pin}</div>`; }).join('')
         : `<div class="u2-empty">‘${esc(q)}’ — 여기엔 없음${scope !== 'all' ? ' · <button type="button" class="u2-btn" data-allsc>🌐 전체에서 찾기</button>' : ''}</div>`;
       res.querySelectorAll('[data-i]').forEach((b) => (b.onclick = () => run(rows[+b.dataset.i])));
       res.querySelectorAll('[data-pin]').forEach((b) => (b.onclick = (e) => { e.stopPropagation(); const r = rows[+b.dataset.pin]; if (!r) return; const on = F.pinToggle(r.title); U2.toast(on ? '📌 고정: ' + r.title + ' — 찾기 칸이 비었을 때 맨 위에' : '고정 풀기: ' + r.title); draw(); inp.focus(); }));
       const a = res.querySelector('[data-allsc]'); if (a) a.onclick = () => setScope('all');
       const on = res.querySelector('.u2-findrow.on'); if (on && on.scrollIntoView) on.scrollIntoView({ block: 'nearest' });
     };
-    const setScope = (k) => { scope = k; U2.ls.set('findScope', k); L.querySelectorAll('[data-sc]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.sc === k))); sel = 0; draw(); inp.focus(); };
+    const setScope = (k) => { scope = k; grp = null; U2.ls.set('findScope', k); L.querySelectorAll('[data-sc]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.sc === k))); sel = 0; draw(); inp.focus(); };
     L.querySelectorAll('[data-sc]').forEach((b) => (b.onclick = () => setScope(b.dataset.sc)));
     L.querySelector('[data-x]').onclick = close; L.addEventListener('click', (e) => { if (e.target === L) close(); });
     inp.addEventListener('input', () => { sel = 0; draw(); });

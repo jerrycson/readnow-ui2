@@ -291,6 +291,12 @@ body.u2-dockdrag { user-select: none; cursor: col-resize; } body.u2-dockdrag #sh
 .u2-blk-shelf .bqs-bar { top: 0; }
 .u2-blk-shelf .bqs-cart { display: none; } /* 장바구니는 우리숍에서 — 새 웹앱 화면 오른쪽 아래(옛 떠 있는 단추 자리)를 덮지 않게 */
 .u2-blk-shelf .bqs-arrow { position: absolute; top: 220px; } /* 화면 가장자리 대신 블록 칸 가장자리 */
+/* (0.4.11 · 약속 53) 우리숍 서가 휴대폰 모양(shelf4 — 분야 칩 위 붙음 · 아래 고정 줄 정렬·표지/책등·찜·장바구니)이 블록 칸 밖(화면 맨 아래 · 다른 위젯 위)에 떠 있던 것
+ *  → 아래 줄은 블록 칸 아래에 붙음(칸 안에서 굴려도 보임 · 칸을 지나면 함께 사라짐) · 분야 칩은 칸 맨 위에 붙음 · 장바구니는 우리숍에서(떠 있는 🛒와 같이 숨김) · 책 보기 아래 시트는 그대로(화면 안 층) */
+.u2-blk-shelf .bqs-mbar { position: sticky; left: auto; right: auto; bottom: 0; z-index: 5; margin: 0 -12px; padding-bottom: 8px; }
+.u2-blk-shelf .bqs-mbar .mb-c { display: none; }
+.u2-blk-shelf .bqs-chips { top: 0; }
+.u2-blk-shelf .bqs.mob .mcase { padding-bottom: 16px; }
 /* (0.4.9) 휴대폰 머리줄 한 줄에 — ☰ 메뉴가 혼자 둘째 줄로 내려가던 것(390px) : 판 글자·'꾸미기' 글은 좁은 폭에서 숨김(단추 이름은 aria-label로 남음) */
 @media (max-width: 480px) { .u2-nosm { display: none; } .u2-brand small { display: none; } .u2-barrow { gap: 6px; } }
 /* 받은편지함 줄 조금 촘촘히 — 7줄이 기본 높이에 다 보이게 */
@@ -338,6 +344,25 @@ body.u2-dockdrag { user-select: none; cursor: col-resize; } body.u2-dockdrag #sh
 .u2-lvx { border: 0; background: none; color: var(--sub); cursor: pointer; font-size: 15px; padding: 0 4px; min-width: 24px; min-height: 24px; }
 .u2-lvx:hover { color: var(--red); }
 .u2-lvsave { flex-wrap: wrap; gap: 6px; align-items: center; }
+/* (0.4.11) 켜진 거르기 칩 — 한 줄(넘치면 옆으로 밀어 봄) · × 풀기 · ＋ 거르기 */
+.u2-lvchips { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: thin; gap: 4px; align-items: center; padding-bottom: 2px; }
+.u2-lvchips > * { flex: 0 0 auto; white-space: nowrap; }
+.u2-lvck { font-size: 12px; }
+.u2-lvc { display: inline-flex; align-items: center; gap: 2px; padding-right: 2px; }
+.u2-lvc .u2-lvx { color: inherit; opacity: .75; min-width: 22px; min-height: 22px; }
+.u2-lvc .u2-lvx:hover { opacity: 1; }
+.u2-lvadd { border-style: dashed; }
+.u2-lvpan .u2-row { flex-wrap: wrap; gap: 4px; }
 .u2-lvsave .u2-in { width: 14em; max-width: 100%; }
 .u2-lvsave > .u2-sub { min-width: 0; flex: 1 1 12em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 @media (max-width: 480px) { .u2-lvsave { flex-wrap: nowrap; } .u2-lvsave .u2-in { width: 9em; flex: 0 1 auto; } .u2-lvsave .u2-btn { white-space: nowrap; } }
+/* (0.4.11) 목록 보기 탭에서 고른 탭·켜진 거르기 칩이 다른 칩과 같은 모양이던 것 → 강조 색 */
+.u2-lvt .u2-chip.u2-on, .u2-lvpan .u2-chip.u2-on { background: var(--cloth); color: var(--paper); border-color: var(--cloth); }
+.u2-lvt .u2-chip.u2-on b, .u2-lvpan .u2-chip.u2-on b { color: inherit; }
+/* (0.4.11) ☰ 메뉴 할 일 갈래 */
+.u2-menu .u2-mg { border: 1px solid var(--line); border-radius: var(--u2-radius, 10px); padding: 6px 8px 8px; display: flex; flex-direction: column; gap: 6px; }
+.u2-menu .u2-mgh { font-weight: 700; font-size: 13px; color: var(--sub); }
+.u2-menu .u2-mg > .u2-sec { border: 0; padding: 0; margin: 0; }
+.u2-menu [data-mlv] { flex-wrap: wrap; gap: 4px; align-items: center; }
+.u2-menu [data-mg="dock"] > .u2-mgh, .u2-menu [data-mg="views"] > .u2-mgh { display: none; } /* 안 머리(🪟 옛 화면(…) · ⭐ 저장한 보기 —…)가 더 자세해 겹치지 않게 */
+.u2-menu .u2-mg .u2-sec > b:first-child { font-size: 13.5px; }

@@ -163,7 +163,8 @@
   };
   L.refreshCards = function () { if (!L.cards.size) return; clearTimeout(L._ch); L._ch = setTimeout(() => L.cards.forEach((c) => { try { c.draw(); } catch (e) {} }), 700); };
   /* 지금 웹앱 전역 목록(const라 window에 없음 — 이름마다 typeof로 읽음 · eval 안 씀) */
-  const GL = { FEAT: () => (typeof FEAT !== 'undefined' ? FEAT : null), PG_SCR: () => (typeof PG_SCR !== 'undefined' ? PG_SCR : null), WIDGETS: () => (typeof WIDGETS !== 'undefined' ? WIDGETS : null), W_DESC: () => (typeof W_DESC !== 'undefined' ? W_DESC : null), FEATIX: () => (typeof featIndex === 'function' ? featIndex() : null) /* (0.4.8) 🔍 기능 찾기 전체 = FEAT + 섹션(SECS) + 홈 칸 — 지금 웹앱 기능 찾기와 같은 목록 */ };
+  const GL = { FEAT: () => (typeof FEAT !== 'undefined' ? FEAT : null), PG_SCR: () => (typeof PG_SCR !== 'undefined' ? PG_SCR : null), WIDGETS: () => (typeof WIDGETS !== 'undefined' ? WIDGETS : null), W_DESC: () => (typeof W_DESC !== 'undefined' ? W_DESC : null), FEATIX: () => (typeof featIndex === 'function' ? featIndex() : null) /* (0.4.8) 🔍 기능 찾기 전체 = FEAT + 섹션(SECS) + 홈 칸 — 지금 웹앱 기능 찾기와 같은 목록 */,
+    /* (0.4.11) ⚙ 설정 묶음(지금 웹앱 ⑧ 설정 묶음과 같은 갈래 · 없으면 새 웹앱이 한 묶음으로) */ UX2_SG: () => (typeof UX2_SG !== 'undefined' ? UX2_SG : null), UX2_SGSEC: () => (typeof UX2_SGSEC !== 'undefined' ? UX2_SGSEC : null), UX2_SGTXT: () => (typeof UX2_SGTXT !== 'undefined' ? UX2_SGTXT : null) };
   L.list = (n) => { try { return GL[n] ? GL[n]() : null; } catch (e) { return null; } };
   /* 기능 찾기 — 같은 이름 → 앞 그림 글자만 뗀 이름이 같음('🚚 오늘 출고' = '오늘 출고') → 그 글을 품은 것 중 가장 짧은 이름
    * (11/10) 예전엔 '품은 것 중 맨 앞'이라, 지금 웹앱 1.78.463이 목록 앞에 '🔎 오늘 출고 검색창 — …'을 더하자 '오늘 출고' 단추가 그 긴 기능으로 바뀌었음 */

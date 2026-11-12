@@ -15,4 +15,6 @@ W="${PII_WORDS:-../readnow-chats/secure/pii-words.txt}"; files=$(git ls-files | 
 if [ -f "$W" ]; then hit=$(grep -v '^\s*#' "$W" | sed '/^\s*$/d' | grep -nFf - $files 2>/dev/null | head -5); [ -n "$hit" ] && fail "손님 이름 낱말이 들어 있음(내용은 안 보임): $(echo "$hit" | cut -d: -f1 | sort -u | tr '\n' ' ')"; else say "  (낱말 목록 $W 없음 — 번호만 검사)"; fi
 ph=$(grep -nE '01[016789][- ]?[0-9]{3,4}[- ]?[0-9]{4}' $files 2>/dev/null | grep -v '010-0000-0000' | cut -d: -f1,2 | head -5); [ -n "$ph" ] && fail "휴대전화 번호 꼴이 있음: $ph"; say "⑤ 개인 정보 검사 끝"
 nb=$(node -e "try{const J=require('./TRACK.json');console.log((J.rows||[]).filter(r=>r.state==='❌').length)}catch(e){console.log(0)}"); [ "$nb" != 0 ] && echo "⚠ 따라잡기 표에 ❌ $nb줄 — 어댑터를 고쳐야 함(이전 2주 전부터는 막음)"; say "⑥ 따라잡기 표 ❌ $nb"
+# ⑦ (11/12 perf9) 🪶 무게 — 프로그램 KB·타이머·실시간 듣기를 앞 판(tools/weigh2.json)과 견줌 · 경고만 · 새 판이면 기준선에 한 줄 더함(커밋에 함께)
+node tools/weigh2.js 2>/dev/null | head -3
 [ $bad = 0 ] && echo "✓ 리드나우 2 올리기 전 검사 모두 통과" || echo "검사 실패 — 고친 뒤 다시"; exit $bad

@@ -35,6 +35,9 @@
     ['출고.예스24', '🚚 오늘 출고 남은 일 중 🟦 예스24', () => { const b = U2.find && U2.find.qaCounts().shipBy; return b ? b.y24 : null; }],
     ['출고.네이버', '🚚 오늘 출고 남은 일 중 🟩 네이버', () => { const b = U2.find && U2.find.qaCounts().shipBy; return b ? b.nv : null; }],
     ['출고.우리숍', '🚚 오늘 출고 남은 일 중 🛍 우리숍', () => { const b = U2.find && U2.find.qaCounts().shipBy; return b ? b.shop : null; }],
+    /* (0.4.13 · 지금 웹앱 1.78.512·1.78.504 따라 들임) 🔁 사후 확인 · 🔍 실사 목록 — 지금 웹앱 셈(rcBad · ledAuditNow) 그대로 */
+    ['사후확인.어긋남', '🔁 사후 확인 — 재고 자동 처리 뒤 다시 확인했더니 어긋난 일(확인함 전 · 지금 웹앱 rcBad)', () => (typeof rcBad === 'function' ? rcBad().length : null)],
+    ['실사.수', '🔍 실사 목록 — 주문 없이 알라딘 수량이 SKU보다 많은 실물(지금 웹앱 ledAuditNow · 상품 기록을 받은 뒤)', () => { const s = S0(); if (!s || !s.prodLoaded || typeof ledAuditNow !== 'function') return null; return ledAuditNow().length; }],
     ['계약.깨짐', '지금 불러온 판에서 깨진 계약 수', () => (U2.adapters && U2.adapters.bad ? U2.adapters.bad.length : null)],
   ];
   const D = (U2.data = { ALIAS: AL, alias: new Map(AL.map((a) => [a[0], a])) });

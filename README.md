@@ -117,12 +117,18 @@ NODE_PATH=... node tests/t_blocks.js     # 🧩 우리숍 블록(0.4.9) — 📚
 NODE_PATH=... node tests/t_scanlist.js   # 성공 사례 견줌 리드나우 2 빈 곳(0.4.10) — 더블클릭 두 번째 무시·↶ 되돌리기 · 📷 스캔(ISBN) 첫 동작 → 📥 등록에 넣기 · 📋 목록 보기 탭(⭐ 저장한 거르기) · 휴대폰
 NODE_PATH=... node tests/t_chips.js     # 성공 사례 견줌 리드나우 2 빈 곳 다음 차례(0.4.11) — 📋 목록 보기 탭 거르기 칩(× 풀기·＋ 거르기) · 🔎 ⚙ 설정 갈래 목차 · ☰ 메뉴 할 일 갈래·저장한 보기 한 곳 · 휴대폰
 NODE_PATH=... node tests/t_omni.js       # 🛒 통합 판매처(0.4.12) — 상황판 네 줄·숫자 = 지금 웹앱 장부 셈·어긋남 빨강·칸 한 번 → 그 화면 · 상품 하나 카드(네 판매처·내릴 일·값 차이·열기) · 판매처 페이지 기본 · 견본 · 쓰기 0 · 휴대폰
+NODE_PATH=... node tests/t_follow.js     # 지금 웹앱 1.78.491~522 따라 들임(0.4.13) — 🔁 사후 확인·🔍 실사 상황판 아래 줄·받은편지함 · 🔕 출고 시간 방해 금지 새 판 띠 · 휴대폰
 NODE_PATH=... node tests/t_nav.js        # 메뉴 틀 맞춤(0.4.6) — 지금 웹앱 탭 차례·새 탭(nav1 🛒 판매처·🔬 연구 흉내)이 메뉴에 저절로 · 저장 안 함
 ```
 - 인터넷의 지금 웹앱은 받지 않습니다 — `U2_BASE`로 가는 요청을 기기 안 배포본 사본(`U2_TEST_OUT`, 기본 `/home/user/w/out`)에서 돌려줍니다.
 - Firebase는 가짜(`tests/fbstub2.js`)입니다.
 
-### 마지막 결과 (11/12 · 새 웹앱 0.4.12 · 지금 웹앱 1.78.490 main 배포본)
+### 마지막 결과 (11/12 밤 · 새 웹앱 0.4.13 · 지금 웹앱 1.78.522 main 배포본)
+시험 33묶음 모두 통과 — t_actions 25 · t_adapters 23 · t_bench 32 · t_blocks 23 · t_check 17 · t_chips 25 · t_coexist 12 · t_default 13 · t_dev5 37 · t_dual 45 · t_editor 49 · t_expr_unit 203 · t_feats 8 · **t_follow 15(새)** · t_grid_unit 23 · t_load 21 · t_mem 6 · t_money 4 · t_move 27 · t_nav 13 · t_new 9 · t_omni 22 · t_pairs 9 · t_parity 21 · t_perf 4 · t_perm 24 · t_real 17 · t_scanlist 20 · t_soak 8 · t_sync 26 · t_tabswap 7 · t_track 18 · t_widgets 29.
+- 시험용 지금 웹앱 = readnow-scripts origin/main(2d5043ff · 1.78.522)을 `git archive`로 푼 사본.
+- 첫 전체 실행에서 고친 것: t_adapters(const 화살 함수 ledAuditNow·sqNow는 window에 없어 실행 중 계약 검사가 '없음' → look에 더함) · t_real(📥 받은편지함 8줄로 기본 높이 28 → 31) · t_check(STEP12 제목 판) · t_blocks(지금 웹앱이 늦게 쓰는 rn- 열쇠는 블록 몫이 아님) · t_scanlist(쓰기 막이가 지금 웹앱 뒤 묶음 쓰기를 막은 줄은 오류로 안 셈) · t_track(나란히 가지에서 같은 판 번호를 쓴 커밋 — 계약 넷째 칸을 sqNow·sgHere 1.78.500 · rcBad 1.78.515로).
+
+#### 지난 결과 (11/12 · 새 웹앱 0.4.12 · 지금 웹앱 1.78.490 main 배포본)
 시험 32묶음 모두 통과 — t_grid_unit 23 · t_expr_unit 203 · t_load 21 · t_editor 49 · t_widgets 29 · t_perm 24 · t_mem 6 · t_actions 25 · t_adapters 23 · t_track 18 · t_new 9 · t_feats 8 · t_tabswap 7 · t_pairs 9 · t_coexist 12 · t_soak 8 · t_perf 4 · t_dual 45 · t_real 17 · t_check 17 · t_parity 21 · t_sync 26 · t_bench 32 · t_dev5 37 · t_move 27 · t_nav 13 · t_default 13 · t_money 4 · t_blocks 23 · t_scanlist 20 · t_chips 25 · **t_omni 22(새)**.
 - 시험용 지금 웹앱 = readnow-scripts origin/main(754efc5 · 1.78.490)을 `git archive`로 푼 사본(app·shop·공용 파일) · t_track은 `RN_REPO`를 main을 꺼낸 작업 자리로(다른 가지에 있는 저장소면 옛 판을 읽어 실패함).
 - 계약에 통합 장부 함수 넷(ledNow·openLedger·ledOrdRows·openProduct) · 넷째 칸 = 처음 들어온 판(1.78.450·1.78.481) — 따라잡기 표가 그 전 판을 '깨짐'으로 세지 않음(tools/track.js).

@@ -33,6 +33,9 @@
     out.ord = T0(() => (typeof ledOrdRows === 'function' ? ledOrdRows() : []), []) || [];
     out.recon = T0(() => (((S.omni || {}).recon || {}).bad || []).filter((b) => b && (b.kind === 'gone' || b.kind === 'alsold')), []);
     out.ship = T0(() => ((S.ship || S.shipC) && typeof shipCnt === 'function' ? shipCnt() : null), null);
+    /* (0.4.13 · 지금 웹앱 1.78.512 🔁 사후 확인 · 1.78.504 🔍 실사 목록 따라 들임) 지금 웹앱 셈 그대로 — 없는 판이면 null(줄을 숨김) */
+    out.rc = T0(() => (typeof rcBad === 'function' ? rcBad() : null), null);
+    out.aud = out.loaded ? T0(() => (typeof ledAuditNow === 'function' ? ledAuditNow() : null), null) : null;
     return out;
   };
   const LEFT = ['confirm', 'deliv', 'printed', 'sending'];
@@ -43,7 +46,8 @@
     const sc = X.ship && X.ship[c.ship]; const ship = sc ? LEFT.reduce((a, k) => a + (sc[k] || 0), 0) : null;
     const open = X.ord.filter((o) => o.ch === c.k && o.st === 'open').length;
     const has = !!(sm && (sm.live || sm.ord)) || open > 0 || !!ship;
-    return { c, name: cf.n || c.n, ic: cf.ic || c.ic, on: cf.on == null ? 1 : cf.on, plan: cf.plan || '', live: sm ? sm.live : null, ord30: sm ? sm.ord : null, amt: sm ? sm.amt : null, open, todo, rc, mis: todo + rc, ship, has };
+    const after = (X.rc || []).filter((x) => x && x.e && x.e.ch === c.k).length; /* 🔁 사후 확인 어긋남(이 판매처) */
+    return { c, name: cf.n || c.n, ic: cf.ic || c.ic, on: cf.on == null ? 1 : cf.on, plan: cf.plan || '', live: sm ? sm.live : null, ord30: sm ? sm.ord : null, amt: sm ? sm.amt : null, open, todo, rc, after, mis: todo + rc, ship, has };
   };
   /* 이동 — 모두 지금 웹앱 화면을 그대로 엶(새로 그리지 않음) */
   const L = () => U2.legacy;
@@ -70,6 +74,10 @@
       const tot = rows.reduce((a, r) => a + (r.ship || 0) + r.mis, 0);
       const SH = { live: '판매중', ship: '처리', ord: '진행', todo: '🔻 어긋남', ord30: '30일' }; /* 좁은 화면(휴대폰)용 짧은 이름 */
       const cell = (k, v, t, hot, ttl) => `<button type="button" class="u2-cbv ${hot && v ? 'u2-hot' : ''}" data-cb="${k}" ${X.ok ? '' : 'disabled'} title="${esc(ttl)}"><small><span class="u2-cbl">${esc(t)}</span><span class="u2-cbs">${esc(SH[k] || t)}</span></small><b>${v == null ? '—' : n0(v)}</b></button>`;
+      /* (0.4.13) 아래 한 줄 — 🔁 사후 확인 어긋남(재고 자동 처리 뒤 다시 읽었더니 판매처가 실물과 다름) · 🔍 실사 목록 · 판매처별 숫자 · 누르면 지금 웹앱 🧾 통합 장부 그 보기 */
+      const nRc = X.rc ? X.rc.length : null, nAud = X.aud ? X.aud.length : null;
+      const byCh = rows.filter((r) => r.after).map((r) => `${esc(r.ic)}${n0(r.after)}`).join(' ');
+      const foot = X.ok && (nRc != null || nAud != null) ? `<div class="u2-row u2-cbf">${nRc != null ? `<button type="button" class="u2-chip ${nRc ? 'u2-hot' : ''}" data-cb="rc" title="재고 자동 처리(자동 내림·밀린 일·재고 맞추기·처리할 일 맡기기) 뒤 다음 날·3·7·30일에 판매처를 다시 읽었더니 수량·판매상태가 실물과 다른 것(확인함 전) — 이중 판매·묻힌 책 막기 · 🧾 통합 장부 › 🔁 사후 확인">🔁 사후 확인 어긋남 <b>${n0(nRc)}</b>${byCh ? ` <small>${byCh}</small>` : ''}</button>` : ''}${nAud != null ? `<button type="button" class="u2-chip ${nAud ? 'u2-hot' : ''}" data-cb="aud" title="주문 없이 알라딘 개별 상품 수량이 우리 SKU 수보다 많은 실물 — 실사로만 알 수 있어 엔진이 알라딘을 내리지 않음 · 🧾 통합 장부 › 🔍 실사 목록">🔍 실사 필요 <b>${n0(nAud)}</b></button>` : ''}</div>` : '';
       const note = !X.ok ? '지금 웹앱을 불러오지 못해 숫자를 볼 수 없음 — 판매처 칸은 지금 웹앱이 서면 채워짐' : !X.loaded ? '상품 기록을 받는 중 — 판매중·어긋남 숫자는 받은 뒤 채워짐(칸을 누르면 그 화면이 열리고 받기 시작)' : X.err ? '⚠ ' + X.err : '';
       b.innerHTML = `<div class="u2-cb"><div class="u2-cbh"><b>🛒 판매처 상황판</b> <span class="u2-sub">처리할 것</span> <span class="u2-sbn ${tot ? 'u2-t-red' : 'u2-t-cloth'}">${X.ok ? n0(tot) : '—'}</span><button type="button" class="u2-btn u2-cbled" data-cb="all" ${X.ok ? '' : 'disabled'} title="모든 판매처 실물 한 권 = 한 줄">🧾 통합 장부 ›</button></div>
         <div class="u2-cbt" role="table" aria-label="판매처 상황판">${rows.map((r) => `<div class="u2-cbr ${r.on || r.has ? '' : 'u2-cboff'}" role="row" data-ch="${r.c.k}">
@@ -77,10 +85,11 @@
           ${all ? cell('live', r.live, '판매중', false, r.name + ' 판매중 매물 수(통합 장부 셈)') : ''}
           ${cell('ship', r.ship, '처리할 주문', true, '🚚 오늘 출고 — ' + r.name + '만(확인·준비·인쇄·보내는 중)' + (r.ship == null ? ' · 출고 기록을 아직 받지 않음' : ''))}
           ${cell('ord', r.open, '진행 주문', false, '📋 주문 모음 — ' + r.name + ' 30일 진행 중 주문')}
-          ${cell('todo', r.mis, '🔻 재고 어긋남', true, '🛠 처리할 일 — 한 판매처에서 팔렸는데 ' + r.name + '에 수량·판매상태가 아직 남은 것' + (r.rc ? ' · 🔍 재고 맞추기 ' + r.rc : ''))}
+          ${cell('todo', r.mis, '🔻 재고 어긋남', true, '🛠 처리할 일 — 한 판매처에서 팔렸는데 ' + r.name + '에 수량·판매상태가 아직 남은 것' + (r.rc ? ' · 🔍 재고 맞추기 ' + r.rc : '') + (r.after ? ' · 🔁 사후 확인 어긋남 ' + r.after + '(아래 줄)' : ''))}
           ${all ? cell('ord30', r.ord30, '30일 주문', false, r.name + ' 최근 30일 주문 수' + (r.amt ? ' · ' + won(r.amt) : '')) : ''}</div>`).join('')}</div>
-        ${note ? `<div class="u2-sub u2-cbnote">${esc(note)}</div>` : ''}</div>`;
+        ${foot}${note ? `<div class="u2-sub u2-cbnote">${esc(note)}</div>` : ''}</div>`;
       b.querySelectorAll('[data-cb]').forEach((x) => (x.onclick = () => { if (ctx.edit) return; const r = x.closest('[data-ch]'); const ck = r ? r.dataset.ch : ''; const k = x.dataset.cb;
+        if (k === 'rc' || k === 'aud') return O.ledger(k);
         if (k === 'all') return O.go('all'); if (k === 'ship') return O.go('ship', ck); if (k === 'ord' || k === 'ord30') return O.go('ord', ck); if (k === 'todo') return O.go('todo'); return O.go('ch', ck); }));
       return { dyn: true };
     } });

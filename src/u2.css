@@ -392,3 +392,8 @@ body.u2-dockdrag { user-select: none; cursor: col-resize; } body.u2-dockdrag #sh
 .u2-pcn { display: flex; gap: 8px; flex-wrap: wrap; } .u2-pca { color: var(--red); font-weight: 600; font-size: 12px; } .u2-pcgo { margin-top: auto; align-self: flex-start; }
 .u2-pcs { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 @media (max-width: 600px) { .u2-pcg { grid-template-columns: repeat(2, minmax(0, 1fr)); } .u2-cbn small { display: none; } .u2-cbr { grid-template-columns: minmax(70px, 1.1fr); } .u2-cbr [data-cb="live"], .u2-cbr [data-cb="ord30"] { display: none; } .u2-cbl { display: none; } .u2-cbs { display: inline; } .u2-cbv { flex-direction: column; align-items: flex-start; justify-content: center; gap: 0; padding: 2px 6px; } .u2-cbv b { font-size: 14px; } .u2-cbh .u2-cbled { margin-left: 0; } }
+/* (0.4.13) 판매처 상황판 아래 줄 — 🔁 사후 확인 · 🔍 실사 */
+.u2-cbf { gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+.u2-cbf .u2-chip small { opacity: .8; margin-left: 2px; }
+.u2-cbf .u2-chip.u2-hot b { color: var(--red); }
+.u2-nvq { margin-left: 6px; opacity: .85; }

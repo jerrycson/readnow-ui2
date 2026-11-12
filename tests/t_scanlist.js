@@ -81,7 +81,7 @@ const ISBN = '9788937460449';
   const keys = await p.evaluate(() => Object.keys(localStorage).filter((k) => /listView|listTab|findPins/.test(k)));
   ok(keys.every((k) => /^rn2-/.test(k)), '기기 저장 열쇠는 rn2- 만', keys.join(', '));
   ok((await nonU2Writes(p)).length === 0, 'ui2_ 밖 쓰기 0(등록 칸에 넣기·목록 보기 저장 모두 쓰기 없음)', (await nonU2Writes(p)).join(', '));
-  const E = t.errs.filter((e) => !/js-profiling/.test(e));
+  const E = t.errs.filter((e) => !/js-profiling/.test(e) && !/🔒 리드나우 2 시범 중 — 읽기만/.test(e)); /* (0.4.13) 쓰기 막이가 지금 웹앱 뒤 쓰기(등록 칸 묶음 쓰기 등)를 막아 지금 웹앱이 남긴 줄 = 막이가 제대로 일한 것 · 때에 따라 나와 흔들림 */
   ok(E.length === 0 && t.dialogs.length === 0, '오류 0 · 브라우저 팝업 0', E.join(' | ').slice(0, 300));
   await t.close();
   /* 휴대폰: 목록 보기 탭이 가로 스크롤을 만들지 않음 */

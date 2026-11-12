@@ -368,7 +368,9 @@
       U2.banner('u2-loading', ''); U2.render({ reset: true }); setInterval(() => U2.legacy.checkNew(), U2.CFG.verCheckMin * 60e3); document.addEventListener('visibilitychange', () => { if (!document.hidden) U2.legacy.checkNew(); }); });
     U2.on('legacyShell', () => { try { if (U2.syncNav()) U2.drawBar(); } catch (e) {} U2.render({ reset: true }); });
     U2.on('auth', (u) => { if (u) U2.loadAll(); });
-    U2.on('newVer', (v) => { const b = U2.banner('u2-newver', `🆕 ${v.app ? '지금 웹앱 새 판 ' + esc(v.app) : ''}${v.app && v.u2 ? ' · ' : ''}${v.u2 ? '새 웹앱 새 판 ' + esc(v.u2) : ''} — <button type="button" class="u2-btn u2-pri" data-re>눌러서 다시 열기</button>`, 'u2-info'); b.querySelector('[data-re]').onclick = () => location.reload(); });
+    U2.on('newVer', (v) => { const q = U2.shipQuiet(); const b = U2.banner('u2-newver', `🆕 ${v.app ? '지금 웹앱 새 판 ' + esc(v.app) : ''}${v.app && v.u2 ? ' · ' : ''}${v.u2 ? '새 웹앱 새 판 ' + esc(v.u2) : ''} — <button type="button" class="u2-btn u2-pri" data-re>눌러서 다시 열기</button>${q ? ` <small class="u2-nvq" title="지금 웹앱 1.78.497 🔕 출고 시간 방해 금지 · 🛡 출고 보호와 같은 값 — 리드나우 2는 처음부터 저절로 다시 열지 않음(누를 때만)">${esc(q)}</small>` : ''}`, 'u2-info'); b.querySelector('[data-re]').onclick = () => location.reload(); });
+    /* (0.4.13 · 지금 웹앱 1.78.497 따라 들임) 🛡 출고 보호 · 🔕 출고 시간 방해 금지 중이면 새 판 띠에 한 줄 — 지금 웹앱 셈(sgHere · sqNow) 그대로 읽기만 · 없으면 빈 글 */
+    U2.shipQuiet = () => { try { const h = typeof sgHere === 'function' ? sgHere() : null; if (h && h.on) return '🛡 출고 중 — 출고가 끝난 뒤 누르세요'; const q = typeof sqNow === 'function' ? sqNow() : null; if (q && q.on) return `🔕 출고 시간 방해 금지(${q.from}~${q.to}) — ${q.to} 뒤에 누르세요`; } catch (e) {} return ''; };
     /* 두 웹앱을 함께 열면 알림(R3 ★) — 지금 웹앱은 손대지 않으므로, 새 웹앱끼리 + 지금 웹앱 서비스 워커 저장본 이름표로 짐작 */
     try { const bc = new BroadcastChannel('rn2-tabs'); bc.onmessage = (e) => { if (e.data && e.data.hi) { U2._tabs = (U2._tabs || 0) + 1; if (e.data.hi === 'ping') bc.postMessage({ hi: 'pong' }); } }; bc.postMessage({ hi: 'ping' }); } catch (e) {}
     U2.checkClassicOpen();

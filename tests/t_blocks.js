@@ -50,7 +50,7 @@ const put = (p, pg) => p.evaluate(async (pg) => { U2.pages.bk = pg; U2.render({ 
   await p.evaluate(() => { U2._adminOverride = false; }); await put(p, PG());
   /* ⑥ 저장 열쇠 */
   const ls1 = await p.evaluate(() => Object.keys(localStorage));
-  const newKeys = ls1.filter((k) => !ls0.includes(k));
+  const newKeys = ls1.filter((k) => !ls0.includes(k) && !/^rn-/.test(k)); /* (0.4.13) rn- 열쇠는 지금 웹앱 몫(1.78.5xx는 자료를 다 받은 뒤 rn-dl·rn-ltlog·rn-reg-ack를 늦게 씀) — 블록 몫만 봄 */
   ok(newKeys.every((k) => /^rn2-/.test(k)), '블록이 기기에 남긴 열쇠는 rn2- 만', newKeys.join(', ') || '(없음)');
   if (SHOT) { fs.mkdirSync(SHOT, { recursive: true }); await p.screenshot({ path: path.join(SHOT, 'u2night_shelf_pc.png') }); }
   /* ④ 편집기 속성판 = 우리숍 설정 틀 */

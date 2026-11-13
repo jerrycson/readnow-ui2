@@ -16,7 +16,7 @@ async function open(opt) {
   const ctx = await b.newContext({ viewport: opt.vp || { width: 1400, height: 900 }, serviceWorkers: 'block', ...(opt.touch ? { hasTouch: true, isMobile: true } : {}), ...(opt.ua ? { userAgent: opt.ua } : {}) });
   const p = await ctx.newPage(); const errs = []; p.setDefaultNavigationTimeout(+process.env.U2_NAV_MS || 120000); /* (0.4.8) 기계가 바쁠 때(여러 일꾼이 함께 시험) 30초 안에 못 여는 일 — 2분까지 */
   p.on('pageerror', (e) => errs.push('PAGEERR ' + e.message));
-  p.on('console', (m) => { if (m.type() === 'error' && !/Failed to load resource|ERR_TUNNEL|net::ERR/.test(m.text())) errs.push('CONSOLE ' + m.text().slice(0, 200)); });
+  p.on('console', (m) => { if (m.type() === 'error' && !/Failed to load resource|ERR_TUNNEL|net::ERR|Document policy violation: js-profiling/.test(m.text()) /* (0.4.15) 지금 웹앱 켜기 기록(1.78.542)이 시험 브라우저에서 내는 알림 — 기능 오류 아님 */) errs.push('CONSOLE ' + m.text().slice(0, 200)); });
   const dialogs = []; p.on('dialog', (d) => { dialogs.push(d.type() + ': ' + d.message()); d.dismiss().catch(() => {}); });
   await ctx.route(/^https?:\/\/(?!localhost)/, (r) => r.fulfill({ status: 404, body: '' }));
   await ctx.route(/gstatic\.com\/firebasejs\//, (r) => r.fulfill({ body: /firebase-app-compat\.js/.test(r.request().url()) ? STUB : '/* 가짜 */', contentType: 'application/javascript' }));

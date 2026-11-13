@@ -4,7 +4,7 @@
 name: 따라잡기 표
 on:
   schedule:
-    - cron: '7,37 * * * *'
+    - cron: '7 */6 * * *'  # (0.4.14 priv1 11/13) 30분마다 → 6시간마다 — 비공개 저장소의 Actions는 분 요금(무료 한 달 2,000분)이라 줄임 · ⚠ 두 저장소가 모두 비공개가 되면 이 작업의 GitHub 열쇠로는 readnow-scripts를 못 읽음 → 리드나우 2 세션이 node tools/track.js --repo <readnow-scripts>로 TRACK.json을 고쳐 올림
   workflow_dispatch: {}
 permissions:
   contents: write

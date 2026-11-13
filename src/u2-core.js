@@ -13,7 +13,7 @@
     undoMax: 100, /* 되돌리기 걸음 — 설계안 5-2 */
     verCheckMin: 10, /* 새 판 확인 간격(분) — 근거: 없음, 설정으로 바꿈 */
     perfMin: 5, /* 충돌 감시 요약 저장 간격(분) — 설계안 8-3 */
-    iframeOk: ['https://jerrycson.github.io/'], /* 바깥 페이지 보기 위젯이 열 수 있는 주소 머리 */
+    iframeOk: ['https://jerrycson.github.io/', 'https://readnow.kr/'], /* 바깥 페이지 보기 위젯이 열 수 있는 주소 머리 */
   };
   U2.$ = (s, r) => (r || document).querySelector(s);
   U2.$$ = (s, r) => Array.from((r || document).querySelectorAll(s));

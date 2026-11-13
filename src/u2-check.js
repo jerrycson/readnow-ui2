@@ -6,8 +6,8 @@
   'use strict';
   const U2 = (window.U2 = window.U2 || {});
   const esc = (s) => U2.esc(s);
-  const APP = 'https://jerrycson.github.io/readnow-scripts/app/';
-  const SITE = 'https://jerrycson.github.io/readnow-ui2/';
+  const APP = 'https://readnow.kr/app/'; /* (0.4.14 priv1) 저장소 비공개 준비 — readnow.kr */
+  const SITE = 'https://readnow.kr/ui2/';
   const MD = 'https://github.com/jerrycson/readnow-ui2/blob/main/STEP12.md';
   /* go: { p: 페이지 } 이 웹앱 페이지로 · { url } 새 탭 · { fn: 'menu'|'watch'|'track'|'edit'|'perm' } 그 화면을 엶 */
   U2.CHECK12 = [
